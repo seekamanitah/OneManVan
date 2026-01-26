@@ -1,0 +1,55 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="OneManVan.Mobile.Pages.EditProductPage"
+             Title="Edit Product">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="12">
+            <ActivityIndicator x:Name="LoadingIndicator" 
+                             IsVisible="False" 
+                             IsRunning="False"
+                             Color="{DynamicResource Primary}"
+                             Margin="0,8"/>
+            <Entry x:Name="ManufacturerEntry" Placeholder="Manufacturer*"/>
+            <Entry x:Name="ModelNumberEntry" Placeholder="Model Number*"/>
+            <Entry x:Name="ProductNameEntry" Placeholder="Product Name (optional)"/>
+            <Editor x:Name="DescriptionEditor" Placeholder="Description" HeightRequest="80"/>
+            
+            <Picker x:Name="CategoryPicker" Title="Category">
+                <Picker.Items>
+                    <x:String>Unknown</x:String>
+                    <x:String>AirConditioner</x:String>
+                    <x:String>HeatPump</x:String>
+                    <x:String>GasFurnace</x:String>
+                    <x:String>OilFurnace</x:String>
+                    <x:String>ElectricFurnace</x:String>
+                    <x:String>Boiler</x:String>
+                    <x:String>MiniSplit</x:String>
+                    <x:String>PackagedUnit</x:String>
+                    <x:String>AirHandler</x:String>
+                    <x:String>Coil</x:String>
+                    <x:String>Thermostat</x:String>
+                    <x:String>AirPurifier</x:String>
+                    <x:String>Humidifier</x:String>
+                    <x:String>Dehumidifier</x:String>
+                    <x:String>Accessories</x:String>
+                </Picker.Items>
+            </Picker>
+
+            <Entry x:Name="MsrpEntry" Placeholder="MSRP" Keyboard="Numeric"/>
+            <Entry x:Name="WholesaleCostEntry" Placeholder="Wholesale Cost" Keyboard="Numeric"/>
+            <Entry x:Name="SuggestedSellPriceEntry" Placeholder="Suggested Sell Price" Keyboard="Numeric"/>
+            
+            <HorizontalStackLayout Spacing="12">
+                <Label Text="Active" VerticalOptions="Center"/>
+                <Switch x:Name="IsActiveSwitch"/>
+            </HorizontalStackLayout>
+
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="12" Margin="0,16,0,0">
+                <Button Text="Cancel" Grid.Column="0" Clicked="OnCancelClicked" BackgroundColor="Gray"/>
+                <Button Text="Save" Grid.Column="1" Clicked="OnSaveClicked" BackgroundColor="{DynamicResource Primary}"/>
+            </Grid>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

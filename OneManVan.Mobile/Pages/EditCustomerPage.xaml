@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="OneManVan.Mobile.Pages.EditCustomerPage"
+             Title="Edit Customer"
+             BackgroundColor="{AppThemeBinding Light={StaticResource LightBackground}, Dark={StaticResource DarkBackground}}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="12">
+
+            <ActivityIndicator x:Name="LoadingIndicator" 
+                             IsVisible="False" 
+                             IsRunning="False"
+                             Color="{DynamicResource Primary}"
+                             Margin="0,8"/>
+
+            <Label Text="Basic Information" FontSize="18" FontAttributes="Bold" Margin="0,8,0,4" TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"/>
+            <Entry x:Name="NameEntry" Placeholder="Customer Name*"/>
+            <Entry x:Name="CompanyNameEntry" Placeholder="Company Name (optional)"/>
+            
+            <Label Text="Contact" FontSize="18" FontAttributes="Bold" Margin="0,8,0,4" TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"/>
+            <Entry x:Name="EmailEntry" Placeholder="Email" Keyboard="Email"/>
+            <Entry x:Name="PhoneEntry" Placeholder="Phone" Keyboard="Telephone"/>
+            <Entry x:Name="SecondaryPhoneEntry" Placeholder="Secondary Phone (optional)" Keyboard="Telephone"/>
+            <Entry x:Name="SecondaryEmailEntry" Placeholder="Secondary Email (optional)" Keyboard="Email"/>
+
+            <Label Text="Classification" FontSize="18" FontAttributes="Bold" Margin="0,8,0,4" TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"/>
+            <Picker x:Name="CustomerTypePicker" Title="Customer Type">
+                <Picker.Items>
+                    <x:String>Residential</x:String>
+                    <x:String>Commercial</x:String>
+                    <x:String>Industrial</x:String>
+                    <x:String>Government</x:String>
+                </Picker.Items>
+            </Picker>
+
+            <Picker x:Name="StatusPicker" Title="Status">
+                <Picker.Items>
+                    <x:String>Active</x:String>
+                    <x:String>Inactive</x:String>
+                    <x:String>Prospect</x:String>
+                    <x:String>VIP</x:String>
+                </Picker.Items>
+            </Picker>
+
+            <Picker x:Name="PaymentTermsPicker" Title="Payment Terms">
+                <Picker.Items>
+                    <x:String>Due on Receipt</x:String>
+                    <x:String>COD</x:String>
+                    <x:String>Net 15</x:String>
+                    <x:String>Net 30</x:String>
+                    <x:String>Net 45</x:String>
+                    <x:String>Net 60</x:String>
+                </Picker.Items>
+            </Picker>
+
+            <Label Text="Additional Information" FontSize="18" FontAttributes="Bold" Margin="0,8,0,4" TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"/>
+            <Entry x:Name="TagsEntry" Placeholder="Tags (comma-separated)"/>
+            <Editor x:Name="NotesEditor" Placeholder="Notes" HeightRequest="100"/>
+
+            <!-- Action Buttons -->
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="12" Margin="0,16,0,0">
+                <Button Text="Cancel" Grid.Column="0" Clicked="OnCancelClicked" BackgroundColor="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}" TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"/>
+                <Button Text="Save Changes" Grid.Column="1" Clicked="OnSaveClicked" BackgroundColor="{DynamicResource Primary}"/>
+            </Grid>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

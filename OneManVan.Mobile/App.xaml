@@ -1,0 +1,45 @@
+﻿<?xml version = "1.0" encoding = "UTF-8" ?>
+<Application xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:OneManVan.Mobile"
+             xmlns:converters="clr-namespace:OneManVan.Mobile.Converters"
+             x:Class="OneManVan.Mobile.App">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Resources/Styles/Colors.xaml" />
+                <ResourceDictionary Source="Resources/Styles/Styles.xaml" />
+                <ResourceDictionary Source="Resources/Styles/CardStyles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- Converters -->
+            <converters:InitialsConverter x:Key="InitialsConverter"/>
+            <converters:StringToBoolConverter x:Key="StringToBoolConverter"/>
+            <converters:NullToBoolConverter x:Key="NullToBoolConverter"/>
+            <converters:InverseBoolConverter x:Key="InverseBoolConverter"/>
+            <converters:FuelTypeIconConverter x:Key="FuelTypeIconConverter"/>
+            <converters:FuelTypeColorConverter x:Key="FuelTypeColorConverter"/>
+            <converters:WarrantyBadgeColorConverter x:Key="WarrantyBadgeColorConverter"/>
+            <converters:WarrantyDaysConverter x:Key="WarrantyDaysConverter"/>
+            <converters:JobStatusColorConverter x:Key="JobStatusColorConverter"/>
+            <converters:InvoiceStatusColorConverter x:Key="InvoiceStatusColorConverter"/>
+            <converters:PaymentMethodConverter x:Key="PaymentMethodConverter"/>
+            <converters:InventoryCategoryConverter x:Key="InventoryCategoryConverter"/>
+            
+            <!-- Customer Converters -->
+            <converters:CustomerStatusColorConverter x:Key="CustomerStatusColorConverter"/>
+            <converters:CustomerStatusTextConverter x:Key="CustomerStatusTextConverter"/>
+            <converters:CustomerTypeColorConverter x:Key="CustomerTypeColorConverter"/>
+            <converters:CustomerTypeTextColorConverter x:Key="CustomerTypeTextColorConverter"/>
+            <converters:CustomerTypeTextConverter x:Key="CustomerTypeTextConverter"/>
+            <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+            <converters:CurrencyConverter x:Key="CurrencyConverter"/>
+            
+            <!-- Asset/Equipment Converters -->
+            <converters:RefrigerantTypeConverter x:Key="RefrigerantTypeConverter"/>
+            <converters:RefrigerantColorConverter x:Key="RefrigerantColorConverter"/>
+            <converters:EquipmentTypeIconConverter x:Key="EquipmentTypeIconConverter"/>
+            <converters:EquipmentTypeColorConverter x:Key="EquipmentTypeColorConverter"/>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

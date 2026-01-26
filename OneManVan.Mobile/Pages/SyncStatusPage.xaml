@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="OneManVan.Mobile.Pages.SyncStatusPage"
+             Title="Sync Status"
+             BackgroundColor="#F5F5F5">
+
+    <Grid RowDefinitions="Auto, *, Auto">
+        
+        <!-- Connection Status Banner -->
+        <Border x:Name="StatusBanner" Grid.Row="0" 
+                BackgroundColor="#4CAF50" Padding="15" 
+                StrokeShape="RoundRectangle 0" Stroke="Transparent">
+            <Grid ColumnDefinitions="Auto, *, Auto">
+                <Border x:Name="StatusDot" WidthRequest="12" HeightRequest="12" 
+                        StrokeShape="RoundRectangle 6" BackgroundColor="White" 
+                        Stroke="Transparent" VerticalOptions="Center"/>
+                <StackLayout Grid.Column="1" Margin="12,0,0,0">
+                    <Label x:Name="ConnectionStatus" Text="Online" 
+                           FontSize="16" FontAttributes="Bold" TextColor="White"/>
+                    <Label x:Name="ConnectionSubtext" Text="All changes synced" 
+                           FontSize="12" TextColor="#FFFFFFCC"/>
+                </StackLayout>
+                <Button Grid.Column="2" Text="Settings" BackgroundColor="Transparent"
+                        TextColor="White" FontSize="20" WidthRequest="44"
+                        Clicked="OnSettingsClicked"/>
+            </Grid>
+        </Border>
+
+        <!-- Main Content -->
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="15" Spacing="15">
+                
+                <!-- Quick Actions -->
+                <Grid ColumnDefinitions="*, *" ColumnSpacing="10">
+                    <Button x:Name="SyncNowButton" Text="Sync Now" 
+                            Clicked="OnSyncNowClicked"
+                            BackgroundColor="#1976D2" TextColor="White"
+                            HeightRequest="50" CornerRadius="10"/>
+                    <Button Grid.Column="1" Text="View Log" 
+                            Clicked="OnViewLogClicked"
+                            BackgroundColor="White" TextColor="#333"
+                            HeightRequest="50" CornerRadius="10"/>
+                </Grid>
+
+                <!-- Pending Changes Section -->
+                <Border BackgroundColor="White" StrokeShape="RoundRectangle 12" Stroke="Transparent" Padding="0">
+                    <Border.Shadow>
+                        <Shadow Brush="Black" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <StackLayout>
+                        <Grid BackgroundColor="#FFF3E0" Padding="15">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Label Text="?" FontSize="24" VerticalOptions="Center"/>
+                            <StackLayout Grid.Column="1" Margin="10,0">
+                                <Label Text="Pending Changes" FontSize="16" FontAttributes="Bold" TextColor="#333"/>
+                                <Label x:Name="PendingSubtext" Text="0 items waiting to sync" 
+                                       FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            </StackLayout>
+                            <Label x:Name="PendingCount" Grid.Column="2" Text="0" 
+                                   FontSize="24" FontAttributes="Bold" TextColor="#FF9800"
+                                   VerticalOptions="Center"/>
+                        </Grid>
+                        
+                        <CollectionView x:Name="PendingList" HeightRequest="200" SelectionMode="None">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BackgroundColor="White" Padding="12" 
+                                            Margin="10,5" StrokeShape="RoundRectangle 8"
+                                            Stroke="#E0E0E0" StrokeThickness="1">
+                                        <Grid ColumnDefinitions="Auto, *, Auto">
+                                            <Label Text="{Binding OperationIcon}" FontSize="18" VerticalOptions="Center"/>
+                                            <StackLayout Grid.Column="1" Margin="10,0">
+                                                <Label Text="{Binding DisplayTitle}" FontSize="14" 
+                                                       FontAttributes="Bold" TextColor="#333"/>
+                                                <Label Text="{Binding DisplayTime}" FontSize="11" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                                            </StackLayout>
+                                            <Label Grid.Column="2" Text="{Binding RetryText}" 
+                                                   FontSize="11" TextColor="#FF9800"
+                                                   VerticalOptions="Center"
+                                                   IsVisible="{Binding HasRetries}"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                            <CollectionView.EmptyView>
+                                <StackLayout Padding="20">
+                                    <Label Text="?" FontSize="40" TextColor="#4CAF50" HorizontalOptions="Center"/>
+                                    <Label Text="All synced!" FontSize="14" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}" HorizontalOptions="Center"/>
+                                </StackLayout>
+                            </CollectionView.EmptyView>
+                        </CollectionView>
+                    </StackLayout>
+                </Border>
+
+                <!-- Failed Items Section -->
+                <Border x:Name="FailedSection" BackgroundColor="White" StrokeShape="RoundRectangle 12" 
+                        Stroke="Transparent" Padding="0" IsVisible="False">
+                    <Border.Shadow>
+                        <Shadow Brush="Black" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <StackLayout>
+                        <Grid BackgroundColor="#FFEBEE" Padding="15">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackLayout Grid.Column="0" Margin="10,0">
+                                <Label Text="Failed Syncs" FontSize="16" FontAttributes="Bold" TextColor="#333"/>
+                                <Label Text="Items that couldn't sync" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            </StackLayout>
+                            <Label x:Name="FailedCount" Grid.Column="2" Text="0" 
+                                   FontSize="24" FontAttributes="Bold" TextColor="#F44336"
+                                   VerticalOptions="Center"/>
+                        </Grid>
+                        
+                        <CollectionView x:Name="FailedList" HeightRequest="150" SelectionMode="None">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BackgroundColor="#FFF5F5" Padding="12" 
+                                            Margin="10,5" StrokeShape="RoundRectangle 8" Stroke="Transparent">
+                                        <Grid ColumnDefinitions="*, Auto">
+                                            <StackLayout>
+                                                <Label Text="{Binding DisplayTitle}" FontSize="14" 
+                                                       FontAttributes="Bold" TextColor="#333"/>
+                                                <Label Text="{Binding LastError}" FontSize="11" 
+                                                       TextColor="#D32F2F" LineBreakMode="TailTruncation"/>
+                                            </StackLayout>
+                                            <Button Grid.Column="1" Text="?" 
+                                                    BackgroundColor="#F44336" TextColor="White"
+                                                    WidthRequest="36" HeightRequest="36"
+                                                    CornerRadius="18" Padding="0"
+                                                    CommandParameter="{Binding .}"
+                                                    Clicked="OnRetryItemClicked"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                        
+                        <Button Text="Retry All Failed" Clicked="OnRetryAllClicked"
+                                BackgroundColor="#F44336" TextColor="White"
+                                Margin="10" HeightRequest="40" CornerRadius="8"/>
+                    </StackLayout>
+                </Border>
+
+                <!-- Sync History -->
+                <Border BackgroundColor="White" StrokeShape="RoundRectangle 12" Stroke="Transparent" Padding="15">
+                    <Border.Shadow>
+                        <Shadow Brush="Black" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <StackLayout Spacing="12">
+                        <Label Text="Recent Sync Activity" FontSize="16" FontAttributes="Bold" TextColor="#1976D2"/>
+                        <StackLayout x:Name="SyncHistoryList" Spacing="8"/>
+                        <Label x:Name="NoHistoryLabel" Text="No sync history yet" 
+                               FontSize="13" TextColor="#9E9E9E" HorizontalOptions="Center" IsVisible="True"/>
+                    </StackLayout>
+                </Border>
+
+                <!-- Storage Info -->
+                <Border BackgroundColor="White" StrokeShape="RoundRectangle 12" Stroke="Transparent" Padding="15">
+                    <Border.Shadow>
+                        <Shadow Brush="Black" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <StackLayout Spacing="8">
+                        <Label Text="Local Storage" FontSize="16" FontAttributes="Bold" TextColor="#1976D2"/>
+                        
+                        <Grid ColumnDefinitions="*, Auto">
+                            <Label Text="Database size" FontSize="14" TextColor="#333"/>
+                            <Label x:Name="DbSizeLabel" Grid.Column="1" Text="0 KB" FontSize="14" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                        </Grid>
+                        
+                        <Grid ColumnDefinitions="*, Auto">
+                            <Label Text="Cached photos" FontSize="14" TextColor="#333"/>
+                            <Label x:Name="PhotoCacheLabel" Grid.Column="1" Text="0 photos" FontSize="14" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                        </Grid>
+                        
+                        <Grid ColumnDefinitions="*, Auto">
+                            <Label Text="Sync queue" FontSize="14" TextColor="#333"/>
+                            <Label x:Name="QueueSizeLabel" Grid.Column="1" Text="0 KB" FontSize="14" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                        </Grid>
+                    </StackLayout>
+                </Border>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- Bottom Action Bar -->
+        <Border Grid.Row="2" BackgroundColor="White" Padding="15" StrokeShape="RoundRectangle 0" Stroke="Transparent">
+            <Border.Shadow>
+                <Shadow Brush="Black" Offset="0,-2" Radius="4" Opacity="0.1"/>
+            </Border.Shadow>
+            <Grid ColumnDefinitions="*, *, *" ColumnSpacing="10">
+                <Button Text="Clear" Clicked="OnClearQueueClicked"
+                        BackgroundColor="#FFEBEE" TextColor="#D32F2F"
+                        HeightRequest="44" CornerRadius="8" FontSize="12"/>
+                <Button Grid.Column="1" Text="Export" Clicked="OnExportClicked"
+                        BackgroundColor="#E3F2FD" TextColor="#1976D2"
+                        HeightRequest="44" CornerRadius="8" FontSize="12"/>
+                <Button Grid.Column="2" Text="Force" Clicked="OnForceSyncClicked"
+                        BackgroundColor="#E8F5E9" TextColor="#388E3C"
+                        HeightRequest="44" CornerRadius="8" FontSize="12"/>
+            </Grid>
+        </Border>
+    </Grid>
+</ContentPage>

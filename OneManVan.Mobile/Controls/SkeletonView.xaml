@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="OneManVan.Mobile.Controls.SkeletonView"
+             x:Name="Root">
+    
+    <Border Style="{StaticResource CardStyle}"
+            Margin="16,4">
+        <VerticalStackLayout Spacing="12">
+            
+            <!-- Header Line -->
+            <BoxView HeightRequest="20" 
+                     WidthRequest="200"
+                     BackgroundColor="{AppThemeBinding Light=#E0E0E0, Dark=#424242}"
+                     CornerRadius="4"
+                     HorizontalOptions="Start"/>
+            
+            <!-- Body Lines -->
+            <BoxView HeightRequest="16" 
+                     WidthRequest="300"
+                     BackgroundColor="{AppThemeBinding Light=#E0E0E0, Dark=#424242}"
+                     CornerRadius="4"
+                     HorizontalOptions="Start"/>
+            
+            <BoxView HeightRequest="16" 
+                     WidthRequest="250"
+                     BackgroundColor="{AppThemeBinding Light=#E0E0E0, Dark=#424242}"
+                     CornerRadius="4"
+                     HorizontalOptions="Start"/>
+            
+            <!-- Footer Line -->
+            <HorizontalStackLayout Spacing="12" Margin="0,4,0,0">
+                <BoxView HeightRequest="14" 
+                         WidthRequest="80"
+                         BackgroundColor="{AppThemeBinding Light=#E0E0E0, Dark=#424242}"
+                         CornerRadius="4"/>
+                <BoxView HeightRequest="14" 
+                         WidthRequest="100"
+                         BackgroundColor="{AppThemeBinding Light=#E0E0E0, Dark=#424242}"
+                         CornerRadius="4"/>
+            </HorizontalStackLayout>
+            
+        </VerticalStackLayout>
+    </Border>
+    
+</ContentView>

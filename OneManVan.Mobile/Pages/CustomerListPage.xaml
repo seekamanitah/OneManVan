@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="OneManVan.Mobile.Pages.CustomerListPage"
+             Title="Customers"
+             BackgroundColor="{AppThemeBinding Light={StaticResource LightBackground}, Dark={StaticResource DarkBackground}}">
+
+    <Grid RowDefinitions="Auto,*">
+        
+        <!-- Search Bar -->
+        <SearchBar Grid.Row="0"
+                   x:Name="SearchBar"
+                   Placeholder="Search customers..."
+                   BackgroundColor="{AppThemeBinding Light=White, Dark=#3D3D3D}"
+                   TextChanged="OnSearchTextChanged"
+                   SearchButtonPressed="OnSearchButtonPressed"/>
+
+        <!-- Loading Indicator -->
+        <ActivityIndicator Grid.Row="1"
+                           x:Name="LoadingIndicator"
+                           IsRunning="False"
+                           IsVisible="False"
+                           Color="#1976D2"
+                           VerticalOptions="Center"
+                           HorizontalOptions="Center"
+                           HeightRequest="50"
+                           WidthRequest="50"/>
+
+        <!-- Customer List -->
+        <RefreshView Grid.Row="1"
+                     x:Name="RefreshViewControl"
+                     IsRefreshing="{Binding IsRefreshing}"
+                     Refreshing="OnRefreshing">
+            <CollectionView x:Name="CustomerCollection"
+                            ItemsSource="{Binding Customers}"
+                            SelectionMode="Single"
+                            SelectionChanged="OnCustomerSelected"
+                            EmptyView="No customers found. Tap + to add one.">
+                
+                <CollectionView.ItemsLayout>
+                    <LinearItemsLayout Orientation="Vertical" ItemSpacing="8"/>
+                </CollectionView.ItemsLayout>
+
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <SwipeView>
+                            <!-- Swipe Actions -->
+                            <SwipeView.RightItems>
+                                <SwipeItems Mode="Execute">
+                                    <SwipeItem Text="Delete"
+                                               BackgroundColor="#F44336"
+                                               Invoked="OnDeleteSwipe"
+                                               BindingContext="{Binding}"/>
+                                </SwipeItems>
+                            </SwipeView.RightItems>
+                            
+                            <SwipeView.LeftItems>
+                                <SwipeItems Mode="Reveal">
+                                    <SwipeItem Text="Call"
+                                               BackgroundColor="#4CAF50"
+                                               Invoked="OnCallSwipe"
+                                               BindingContext="{Binding}"/>
+                                    <SwipeItem Text="Navigate"
+                                               BackgroundColor="#FF9800"
+                                               Invoked="OnNavigateSwipe"
+                                               BindingContext="{Binding}"/>
+                                    <SwipeItem Text="Email"
+                                               BackgroundColor="#2196F3"
+                                               Invoked="OnEmailSwipe"
+                                               BindingContext="{Binding}"/>
+                                </SwipeItems>
+                            </SwipeView.LeftItems>
+
+                            <!-- Customer Card - Using Standard Card Style -->
+                            <Border Style="{StaticResource ClickableCardStyle}"
+                                    Margin="16,4">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnCustomerTapped" CommandParameter="{Binding}"/>
+                                </Border.GestureRecognizers>
+                                
+                                <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12" RowSpacing="8">
+                                    
+                                    <!-- Avatar Circle with Status Indicator -->
+                                    <Grid Grid.Column="0" Grid.RowSpan="2" VerticalOptions="Center">
+                                        <Border WidthRequest="50" 
+                                                HeightRequest="50"
+                                                StrokeShape="RoundRectangle 25"
+                                                BackgroundColor="#1976D2"
+                                                Stroke="Transparent">
+                                            <Label Text="{Binding Name, Converter={StaticResource InitialsConverter}}"
+                                                   FontSize="18"
+                                                   FontAttributes="Bold"
+                                                   TextColor="White"
+                                                   HorizontalOptions="Center"
+                                                   VerticalOptions="Center"/>
+                                        </Border>
+                                        <!-- Status Indicator Badge -->
+                                        <Border WidthRequest="20" 
+                                                HeightRequest="20"
+                                                StrokeShape="RoundRectangle 10"
+                                                BackgroundColor="{Binding Status, Converter={StaticResource CustomerStatusColorConverter}}"
+                                                Stroke="White"
+                                                StrokeThickness="2"
+                                                HorizontalOptions="End"
+                                                VerticalOptions="End"
+                                                Margin="0,0,-4,-4">
+                                            <Label Text="{Binding Status, Converter={StaticResource CustomerStatusTextConverter}}"
+                                                   FontSize="10"
+                                                   HorizontalOptions="Center"
+                                                   VerticalOptions="Center"/>
+                                        </Border>
+                                    </Grid>
+
+                                    <!-- Customer Info -->
+                                    <VerticalStackLayout Grid.Column="1" 
+                                                         Grid.Row="0"
+                                                         VerticalOptions="Center"
+                                                         Spacing="2">
+                                        <HorizontalStackLayout Spacing="6">
+                                            <Label Text="{Binding DisplayName}"
+                                                   FontSize="16"
+                                                   FontAttributes="Bold"
+                                                   TextColor="{AppThemeBinding Light=#333333, Dark=#FFFFFF}"
+                                                   LineBreakMode="TailTruncation"
+                                                   MaxLines="1"/>
+                                            <!-- VIP Badge -->
+                                            <Border BackgroundColor="#FFD700"
+                                                    StrokeShape="RoundRectangle 8"
+                                                    Stroke="Transparent"
+                                                    Padding="4,2"
+                                                    IsVisible="{Binding IsVip, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                <Label Text="VIP"
+                                                       FontSize="8"
+                                                       FontAttributes="Bold"
+                                                       TextColor="#333"/>
+                                            </Border>
+                                        </HorizontalStackLayout>
+                                        <Label Text="{Binding Phone}"
+                                               FontSize="13"
+                                               TextColor="{AppThemeBinding Light=#757575, Dark=#B0B0B0}"
+                                               IsVisible="{Binding Phone, Converter={StaticResource StringToBoolConverter}}"/>
+                                        <Label Text="{Binding Email}"
+                                               FontSize="12"
+                                               TextColor="{AppThemeBinding Light=#9E9E9E, Dark=#808080}"
+                                               LineBreakMode="TailTruncation"
+                                               IsVisible="{Binding Email, Converter={StaticResource StringToBoolConverter}}"/>
+                                    </VerticalStackLayout>
+
+                                    <!-- Asset Count Badge -->
+                                    <VerticalStackLayout Grid.Column="2" 
+                                                         Grid.Row="0"
+                                                         VerticalOptions="Center"
+                                                         Spacing="4"
+                                                         HorizontalOptions="End">
+                                        <Border BackgroundColor="{AppThemeBinding Light=#E3F2FD, Dark=#1E3A5F}"
+                                                StrokeShape="RoundRectangle 12"
+                                                Stroke="Transparent"
+                                                Padding="8,4">
+                                            <HorizontalStackLayout Spacing="4">
+                                                <Label Text="{Binding Assets.Count, StringFormat='{0} assets'}"
+                                                       FontSize="12"
+                                                       FontAttributes="Bold"
+                                                       TextColor="{AppThemeBinding Light=#1976D2, Dark=#64B5F6}"/>
+                                            </HorizontalStackLayout>
+                                        </Border>
+                                    </VerticalStackLayout>
+
+                                    <!-- Bottom Row: Customer Type and Balance -->
+                                    <HorizontalStackLayout Grid.Column="1" 
+                                                           Grid.ColumnSpan="2"
+                                                           Grid.Row="1"
+                                                           Spacing="8">
+                                        <!-- Customer Type Badge -->
+                                        <Border BackgroundColor="{Binding CustomerType, Converter={StaticResource CustomerTypeColorConverter}}"
+                                                StrokeShape="RoundRectangle 10"
+                                                Stroke="Transparent"
+                                                Padding="8,3">
+                                            <Label Text="{Binding CustomerType, Converter={StaticResource CustomerTypeTextConverter}}"
+                                                   FontSize="10"
+                                                   TextColor="{Binding CustomerType, Converter={StaticResource CustomerTypeTextColorConverter}}"/>
+                                        </Border>
+                                        <!-- Outstanding Balance -->
+                                        <Border BackgroundColor="#FFEBEE"
+                                                StrokeShape="RoundRectangle 10"
+                                                Stroke="Transparent"
+                                                Padding="8,3"
+                                                IsVisible="{Binding HasOutstandingBalance, Converter={StaticResource BoolToVisibilityConverter}}">
+                                            <Label FontSize="10" TextColor="#C62828">
+                                                <Label.FormattedText>
+                                                    <FormattedString>
+                                                        <Span Text="Balance: "/>
+                                                        <Span Text="{Binding AccountBalance, Converter={StaticResource CurrencyConverter}}"
+                                                              FontAttributes="Bold"/>
+                                                    </FormattedString>
+                                                </Label.FormattedText>
+                                            </Label>
+                                        </Border>
+                                        <!-- Sites Count -->
+                                        <Border BackgroundColor="#F3E5F5"
+                                                StrokeShape="RoundRectangle 10"
+                                                Stroke="Transparent"
+                                                Padding="8,3"
+                                                IsVisible="{Binding Sites.Count, Converter={StaticResource NullToBoolConverter}}">
+                                            <Label Text="{Binding Sites.Count, StringFormat='{0} sites'}"
+                                                   FontSize="10"
+                                                   TextColor="#7B1FA2"/>
+                                        </Border>
+                                    </HorizontalStackLayout>
+
+                                </Grid>
+                            </Border>
+                        </SwipeView>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+
+        <!-- Floating Action Button -->
+        <Button Grid.Row="1"
+                Text="+"
+                FontSize="28"
+                WidthRequest="60"
+                HeightRequest="60"
+                CornerRadius="30"
+                BackgroundColor="#1976D2"
+                TextColor="White"
+                FontAttributes="Bold"
+                HorizontalOptions="End"
+                VerticalOptions="End"
+                Margin="20"
+                Clicked="OnAddCustomerClicked">
+            <Button.Shadow>
+                <Shadow Brush="Black" Offset="2,4" Radius="8" Opacity="0.25"/>
+            </Button.Shadow>
+        </Button>
+
+    </Grid>
+
+</ContentPage>

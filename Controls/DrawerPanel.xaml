@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl x:Class="OneManVan.Controls.DrawerPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Visibility="Collapsed"
+             Background="Transparent">
+    
+    <UserControl.Resources>
+        <TranslateTransform x:Key="DrawerTransform" X="500"/>
+    </UserControl.Resources>
+    
+    <Grid x:Name="RootGrid">
+        <Border x:Name="Overlay" Background="Black" Opacity="0" MouseDown="OnOverlayClick"/>
+        
+        <Border x:Name="DrawerBorder"
+                Background="{DynamicResource BackgroundBrush}"
+                BorderBrush="{DynamicResource SurfaceBrush}"
+                BorderThickness="2,0,0,0"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Stretch"
+                Width="500"
+                RenderTransform="{StaticResource DrawerTransform}">
+            
+            <Border.Effect>
+                <DropShadowEffect Color="Black" Direction="180" ShadowDepth="8" BlurRadius="16" Opacity="0.3"/>
+            </Border.Effect>
+            
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                
+                <Border Grid.Row="0" Background="{DynamicResource PrimaryBrush}" Padding="20,15">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock x:Name="HeaderTitle" Text="Drawer" FontSize="20" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                        <Button Grid.Column="1" Content="Close" FontSize="14" Width="70" Height="32" Background="Transparent" Foreground="White" BorderThickness="0" Cursor="Hand" Click="OnCloseClick"/>
+                    </Grid>
+                </Border>
+                
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <ContentPresenter x:Name="DrawerContent" Margin="20"/>
+                </ScrollViewer>
+                
+                <Border Grid.Row="2" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource Surface2Brush}" BorderThickness="0,1,0,0" Padding="20,15">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Button x:Name="CancelButton" Content="Cancel" Grid.Column="1" Padding="20,10" Margin="0,0,10,0" FontSize="13" Click="OnCancelClick" Background="{DynamicResource Surface2Brush}" Foreground="{DynamicResource TextBrush}"/>
+                        <Button x:Name="SaveButton" Content="Save" Grid.Column="2" Padding="20,10" FontSize="13" FontWeight="SemiBold" Click="OnSaveClick" Background="{DynamicResource PrimaryBrush}" Foreground="White"/>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

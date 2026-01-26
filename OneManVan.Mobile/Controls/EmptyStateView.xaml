@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="OneManVan.Mobile.Controls.EmptyStateView"
+             x:Name="Root">
+    
+    <VerticalStackLayout Padding="40" 
+                         Spacing="16"
+                         VerticalOptions="Center"
+                         HorizontalOptions="Center">
+        
+        <!-- Icon/Emoji -->
+        <Label Text="{Binding Icon, Source={x:Reference Root}}"
+               FontSize="64"
+               HorizontalOptions="Center"
+               Margin="0,0,0,8"/>
+        
+        <!-- Title -->
+        <Label Text="{Binding Title, Source={x:Reference Root}}"
+               FontSize="20"
+               FontAttributes="Bold"
+               TextColor="{AppThemeBinding Light=#333333, Dark=#FFFFFF}"
+               HorizontalOptions="Center"
+               HorizontalTextAlignment="Center"/>
+        
+        <!-- Message -->
+        <Label Text="{Binding Message, Source={x:Reference Root}}"
+               FontSize="14"
+               TextColor="{AppThemeBinding Light=#757575, Dark=#BDBDBD}"
+               HorizontalOptions="Center"
+               HorizontalTextAlignment="Center"
+               MaximumWidthRequest="300"/>
+        
+        <!-- Action Button -->
+        <Button Text="{Binding ButtonText, Source={x:Reference Root}}"
+                Command="{Binding ButtonCommand, Source={x:Reference Root}}"
+                BackgroundColor="#1976D2"
+                TextColor="White"
+                CornerRadius="8"
+                Padding="24,12"
+                FontSize="16"
+                FontAttributes="Bold"
+                HorizontalOptions="Center"
+                Margin="0,16,0,0"
+                IsVisible="{Binding ShowButton, Source={x:Reference Root}}"/>
+        
+    </VerticalStackLayout>
+    
+</ContentView>

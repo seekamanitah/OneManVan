@@ -1,0 +1,323 @@
+﻿<UserControl x:Class="OneManVan.Pages.JobKanbanPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d" 
+             d:DesignHeight="700" d:DesignWidth="1400"
+             Background="{DynamicResource BackgroundBrush}">
+
+    <UserControl.Resources>
+        <!-- Kanban Column Style -->
+        <Style x:Key="KanbanColumn" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="12"/>
+            <Setter Property="MinWidth" Value="280"/>
+            <Setter Property="MaxWidth" Value="350"/>
+        </Style>
+
+        <!-- Job Card Style -->
+        <Style x:Key="JobCard" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource BackgroundBrush}"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="12"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Surface2Brush}"/>
+        </Style>
+
+        <!-- Priority Badge Colors -->
+        <SolidColorBrush x:Key="PriorityLowBrush" Color="#4CAF50"/>
+        <SolidColorBrush x:Key="PriorityNormalBrush" Color="#2196F3"/>
+        <SolidColorBrush x:Key="PriorityHighBrush" Color="#FF9800"/>
+        <SolidColorBrush x:Key="PriorityUrgentBrush" Color="#F44336"/>
+        <SolidColorBrush x:Key="PriorityEmergencyBrush" Color="#9C27B0"/>
+    </UserControl.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Grid Grid.Row="0" Margin="0,0,0,20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="" FontSize="24" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <TextBlock Text="Job Kanban Board" FontSize="24" FontWeight="Bold" 
+                               Foreground="{DynamicResource TextBrush}"/>
+                </StackPanel>
+                <TextBlock x:Name="SubtitleText" Text="Drag and drop jobs between columns to update status" 
+                           FontSize="13" Foreground="{DynamicResource SubtextBrush}" Margin="34,5,0,0"/>
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Button x:Name="RefreshButton" Content="?? Refresh" Click="OnRefreshClick"
+                        Background="{DynamicResource Surface2Brush}"
+                        Foreground="{DynamicResource TextBrush}"
+                        Padding="15,8" BorderThickness="0" Cursor="Hand" Margin="0,0,10,0">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+                <Button x:Name="AddJobButton" Content="+ New Job" Click="OnAddJobClick"
+                        Background="{DynamicResource PrimaryBrush}"
+                        Foreground="White"
+                        Padding="15,8" BorderThickness="0" Cursor="Hand">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <!-- Filters Row -->
+        <Border Grid.Row="1" Background="{DynamicResource SurfaceBrush}" 
+                CornerRadius="8" Padding="15,10" Margin="0,0,0,15">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Filter:" FontSize="13" Foreground="{DynamicResource SubtextBrush}" 
+                           VerticalAlignment="Center" Margin="0,0,10,0"/>
+                
+                <ComboBox x:Name="DateFilterCombo" Width="150" Margin="0,0,15,0"
+                          SelectionChanged="OnDateFilterChanged">
+                    <ComboBoxItem Content="All Dates" IsSelected="True"/>
+                    <ComboBoxItem Content="Today"/>
+                    <ComboBoxItem Content="This Week"/>
+                    <ComboBoxItem Content="This Month"/>
+                    <ComboBoxItem Content="Overdue"/>
+                </ComboBox>
+
+                <TextBlock Text="Priority:" FontSize="13" Foreground="{DynamicResource SubtextBrush}" 
+                           VerticalAlignment="Center" Margin="0,0,10,0"/>
+                
+                <ComboBox x:Name="PriorityFilterCombo" Width="120" Margin="0,0,15,0"
+                          SelectionChanged="OnPriorityFilterChanged">
+                    <ComboBoxItem Content="All" IsSelected="True"/>
+                    <ComboBoxItem Content="?? Low"/>
+                    <ComboBoxItem Content="?? Normal"/>
+                    <ComboBoxItem Content="?? High"/>
+                    <ComboBoxItem Content="?? Urgent"/>
+                    <ComboBoxItem Content="?? Emergency"/>
+                </ComboBox>
+
+                <TextBlock Text="Search:" FontSize="13" Foreground="{DynamicResource SubtextBrush}" 
+                           VerticalAlignment="Center" Margin="0,0,10,0"/>
+                
+                <TextBox x:Name="SearchBox" Width="200" 
+                         Background="{DynamicResource BackgroundBrush}"
+                         Foreground="{DynamicResource TextBrush}"
+                         BorderBrush="{DynamicResource Surface2Brush}"
+                         Padding="8,6"
+                         TextChanged="OnSearchTextChanged"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Kanban Columns -->
+        <ScrollViewer Grid.Row="2" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+            <StackPanel x:Name="KanbanContainer" Orientation="Horizontal">
+                
+                <!-- Draft Column -->
+                <Border Style="{StaticResource KanbanColumn}" Margin="0,0,12,0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <Border Background="#9E9E9E" CornerRadius="4" Padding="8,4" Margin="0,0,8,0">
+                                <TextBlock Text="?? Draft" FontWeight="SemiBold" Foreground="White" FontSize="13"/>
+                            </Border>
+                            <TextBlock x:Name="DraftCount" Text="0" FontWeight="Bold" 
+                                       Foreground="{DynamicResource SubtextBrush}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl x:Name="DraftColumn" AllowDrop="True"
+                                          Drop="OnJobDrop" DragOver="OnJobDragOver">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+
+                <!-- Scheduled Column -->
+                <Border Style="{StaticResource KanbanColumn}" Margin="0,0,12,0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <Border Background="#2196F3" CornerRadius="4" Padding="8,4" Margin="0,0,8,0">
+                                <TextBlock Text="?? Scheduled" FontWeight="SemiBold" Foreground="White" FontSize="13"/>
+                            </Border>
+                            <TextBlock x:Name="ScheduledCount" Text="0" FontWeight="Bold" 
+                                       Foreground="{DynamicResource SubtextBrush}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl x:Name="ScheduledColumn" AllowDrop="True"
+                                          Drop="OnJobDrop" DragOver="OnJobDragOver">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+
+                <!-- En Route Column -->
+                <Border Style="{StaticResource KanbanColumn}" Margin="0,0,12,0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <Border Background="#FF9800" CornerRadius="4" Padding="8,4" Margin="0,0,8,0">
+                                <TextBlock Text="?? En Route" FontWeight="SemiBold" Foreground="White" FontSize="13"/>
+                            </Border>
+                            <TextBlock x:Name="EnRouteCount" Text="0" FontWeight="Bold" 
+                                       Foreground="{DynamicResource SubtextBrush}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl x:Name="EnRouteColumn" AllowDrop="True"
+                                          Drop="OnJobDrop" DragOver="OnJobDragOver">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+
+                <!-- In Progress Column -->
+                <Border Style="{StaticResource KanbanColumn}" Margin="0,0,12,0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <Border Background="#4CAF50" CornerRadius="4" Padding="8,4" Margin="0,0,8,0">
+                                <TextBlock Text="?? In Progress" FontWeight="SemiBold" Foreground="White" FontSize="13"/>
+                            </Border>
+                            <TextBlock x:Name="InProgressCount" Text="0" FontWeight="Bold" 
+                                       Foreground="{DynamicResource SubtextBrush}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl x:Name="InProgressColumn" AllowDrop="True"
+                                          Drop="OnJobDrop" DragOver="OnJobDragOver">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+
+                <!-- Completed Column -->
+                <Border Style="{StaticResource KanbanColumn}" Margin="0,0,12,0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <Border Background="#673AB7" CornerRadius="4" Padding="8,4" Margin="0,0,8,0">
+                                <TextBlock Text="? Completed" FontWeight="SemiBold" Foreground="White" FontSize="13"/>
+                            </Border>
+                            <TextBlock x:Name="CompletedCount" Text="0" FontWeight="Bold" 
+                                       Foreground="{DynamicResource SubtextBrush}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl x:Name="CompletedColumn" AllowDrop="True"
+                                          Drop="OnJobDrop" DragOver="OnJobDragOver">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+
+                <!-- On Hold Column -->
+                <Border Style="{StaticResource KanbanColumn}" Margin="0,0,0,0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <Border Background="#F44336" CornerRadius="4" Padding="8,4" Margin="0,0,8,0">
+                                <TextBlock Text="?? On Hold" FontWeight="SemiBold" Foreground="White" FontSize="13"/>
+                            </Border>
+                            <TextBlock x:Name="OnHoldCount" Text="0" FontWeight="Bold" 
+                                       Foreground="{DynamicResource SubtextBrush}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl x:Name="OnHoldColumn" AllowDrop="True"
+                                          Drop="OnJobDrop" DragOver="OnJobDragOver">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Loading Overlay -->
+        <Border Grid.RowSpan="3" Background="#80000000" CornerRadius="8"
+                x:Name="LoadingOverlay" Visibility="Collapsed">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <TextBlock Text="?" FontSize="32" HorizontalAlignment="Center"/>
+                <TextBlock Text="Loading jobs..." FontSize="14" Foreground="White"
+                           HorizontalAlignment="Center" Margin="0,10,0,0"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

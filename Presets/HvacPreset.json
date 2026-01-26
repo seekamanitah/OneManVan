@@ -1,0 +1,129 @@
+{
+  "presetName": "HVAC",
+  "description": "Heating, Ventilation, and Air Conditioning trade preset for residential services",
+  "version": "1.0",
+  "tables": [
+    {
+      "name": "Assets",
+      "displayName": "HVAC Equipment",
+      "fields": [
+        {
+          "name": "FuelType",
+          "displayName": "Fuel Type",
+          "type": "Enum",
+          "options": ["Unknown", "NaturalGas", "Propane", "Electric", "Oil", "DualFuel"],
+          "required": true,
+          "defaultValue": "Unknown",
+          "helpText": "Primary fuel source for the unit"
+        },
+        {
+          "name": "UnitConfig",
+          "displayName": "Unit Configuration",
+          "type": "Enum",
+          "options": ["Unknown", "Split", "Packaged", "Furnace", "Coil", "Condenser", "HeatPump", "MiniSplit", "Boiler"],
+          "required": true,
+          "defaultValue": "Unknown",
+          "helpText": "Type of HVAC system configuration"
+        },
+        {
+          "name": "BtuRating",
+          "displayName": "BTU Rating",
+          "type": "Number",
+          "required": false,
+          "validation": {
+            "min": 12000,
+            "max": 200000
+          },
+          "helpText": "Heating/cooling capacity in BTUs (typically 12,000-200,000)"
+        },
+        {
+          "name": "SeerRating",
+          "displayName": "SEER Rating",
+          "type": "Decimal",
+          "required": false,
+          "validation": {
+            "min": 8,
+            "max": 30
+          },
+          "helpText": "Seasonal Energy Efficiency Ratio (higher is more efficient)"
+        },
+        {
+          "name": "WarrantyTermYears",
+          "displayName": "Warranty Term",
+          "type": "Number",
+          "required": false,
+          "defaultValue": 10,
+          "validation": {
+            "min": 1,
+            "max": 25
+          },
+          "helpText": "Warranty duration in years"
+        }
+      ]
+    }
+  ],
+  "customFields": [
+    {
+      "entityType": "Asset",
+      "key": "RefrigerantType",
+      "displayName": "Refrigerant Type",
+      "type": "Enum",
+      "options": ["R-22", "R-410A", "R-32", "R-454B", "Other"],
+      "helpText": "Type of refrigerant used in the system"
+    },
+    {
+      "entityType": "Asset",
+      "key": "FilterSize",
+      "displayName": "Filter Size",
+      "type": "Text",
+      "helpText": "Air filter dimensions (e.g., 16x25x1)"
+    },
+    {
+      "entityType": "Customer",
+      "key": "PreferredBrand",
+      "displayName": "Preferred Equipment Brand",
+      "type": "Enum",
+      "options": ["No Preference", "Carrier", "Trane", "Lennox", "Goodman", "Rheem", "York", "Bryant", "American Standard"],
+      "helpText": "Customer's preferred HVAC equipment manufacturer"
+    },
+    {
+      "entityType": "Site",
+      "key": "SystemNotes",
+      "displayName": "System Access Notes",
+      "type": "Text",
+      "helpText": "Notes about system access (e.g., propane tank location, attic access)"
+    }
+  ],
+  "templates": {
+    "estimates": [
+      {
+        "name": "Standard Furnace Tune-Up",
+        "description": "Annual furnace maintenance and inspection",
+        "basePrice": 150,
+        "laborHours": 1.5,
+        "items": ["Filter", "Inspection"]
+      },
+      {
+        "name": "AC Repair Kit",
+        "description": "Common AC repair parts bundle",
+        "basePrice": 800,
+        "laborHours": 2,
+        "items": ["Capacitor", "Contactor", "Refrigerant"]
+      },
+      {
+        "name": "Split System Install",
+        "description": "Full split system installation",
+        "basePrice": 3500,
+        "laborHours": 8,
+        "items": ["Condenser", "Evaporator Coil", "Line Set", "Thermostat"]
+      }
+    ],
+    "durations": {
+      "Diagnostic": 1,
+      "Tune-Up": 1.5,
+      "Minor Repair": 2,
+      "Major Repair": 4,
+      "Installation": 8
+    }
+  }
+}

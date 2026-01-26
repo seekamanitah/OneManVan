@@ -1,0 +1,243 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="OneManVan.Mobile.Pages.InvoiceDetailPage"
+             Title="Invoice Details"
+             BackgroundColor="{AppThemeBinding Light={StaticResource LightBackground}, Dark={StaticResource DarkBackground}}">
+
+    <Grid RowDefinitions="*, Auto">
+        <ScrollView Grid.Row="0">
+            <VerticalStackLayout Padding="15" Spacing="0">
+                
+                <!-- Status Banner -->
+                <Border x:Name="StatusBanner" Padding="15" 
+                        StrokeShape="RoundRectangle 8" Stroke="Transparent"
+                        BackgroundColor="#FF9800"
+                        Margin="0,0,0,15">
+                    <Grid ColumnDefinitions="Auto, *, Auto">
+                        <Label x:Name="StatusIcon" Text="" FontSize="24" 
+                               VerticalOptions="Center"/>
+                        <StackLayout Grid.Column="1" Margin="10,0">
+                            <Label x:Name="StatusText" Text="Sent" 
+                                   FontSize="16" FontAttributes="Bold" TextColor="White"/>
+                            <Label x:Name="StatusSubtext" Text="Awaiting payment" 
+                                   FontSize="12" TextColor="#FFFFFFCC"/>
+                        </StackLayout>
+                        <Label x:Name="InvoiceNumberLabel" Grid.Column="2" Text="INV-0001" 
+                               FontSize="12" TextColor="White" VerticalOptions="Center"/>
+                    </Grid>
+                </Border>
+
+                <!-- Customer Info -->
+                <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" Padding="15" 
+                        StrokeShape="RoundRectangle 8" Stroke="Transparent" Margin="0,0,0,10">
+                    <Border.Shadow>
+                        <Shadow Brush="Black" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <StackLayout Spacing="8">
+                        <Grid ColumnDefinitions="Auto, *">
+                            <Label Text="" FontSize="18" VerticalOptions="Center"/>
+                            <StackLayout Grid.Column="1" Margin="10,0,0,0">
+                                <Label x:Name="CustomerName" Text="Customer Name" 
+                                       FontSize="14" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"/>
+                                <Label x:Name="CustomerEmail" Text="email@example.com" 
+                                       FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            </StackLayout>
+                        </Grid>
+                        
+                        <Grid ColumnDefinitions="*, *" ColumnSpacing="10" Margin="0,10,0,0">
+                            <Button Text="Email" Clicked="OnEmailInvoiceClicked"
+                                    BackgroundColor="{AppThemeBinding Light={StaticResource PrimarySurface}, Dark={StaticResource DarkCardBackground}}" TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"
+                                    HeightRequest="40" CornerRadius="8"/>
+                            <Button Grid.Column="1" Text="Share" Clicked="OnShareInvoiceClicked"
+                                    BackgroundColor="{AppThemeBinding Light={StaticResource SuccessSurface}, Dark=#1B3D1F}" TextColor="{AppThemeBinding Light={StaticResource SectionSuccess}, Dark={StaticResource SectionSuccessDark}}"
+                                    HeightRequest="40" CornerRadius="8"/>
+                        </Grid>
+                    </StackLayout>
+                </Border>
+
+                <!-- Invoice Details -->
+                <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" Padding="15" 
+                        StrokeShape="RoundRectangle 8" Stroke="Transparent" Margin="0,0,0,10">
+                    <Border.Shadow>
+                        <Shadow Brush="Black" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <Grid ColumnDefinitions="*, *" RowDefinitions="Auto, Auto, Auto" RowSpacing="10">
+                        <StackLayout>
+                            <Label Text="Invoice Date" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Label x:Name="InvoiceDateLabel" Text="Dec 15, 2024" 
+                                   FontSize="14" TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"/>
+                        </StackLayout>
+                        
+                        <StackLayout Grid.Column="1">
+                            <Label Text="Due Date" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Label x:Name="DueDateLabel" Text="Jan 14, 2025" 
+                                   FontSize="14" TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"/>
+                        </StackLayout>
+                        
+                        <StackLayout Grid.Row="1">
+                            <Label Text="Job Reference" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Label x:Name="JobReferenceLabel" Text="J-0001" 
+                                   FontSize="14" TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"/>
+                        </StackLayout>
+                        
+                        <StackLayout Grid.Row="1" Grid.Column="1">
+                            <Label Text="Terms" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Label x:Name="PaymentTermsLabel" Text="Net 30" 
+                                   FontSize="14" TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"/>
+                        </StackLayout>
+                    </Grid>
+                </Border>
+
+                <!-- Line Items (Summary) -->
+                <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" Padding="15" 
+                        StrokeShape="RoundRectangle 8" Stroke="Transparent" Margin="0,0,0,10">
+                    <Border.Shadow>
+                        <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <StackLayout Spacing="8">
+                        <Label Text="Invoice Summary" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}" FontAttributes="Bold"/>
+                        
+                        <Grid ColumnDefinitions="*, Auto" RowDefinitions="Auto, Auto, Auto, Auto, Auto" 
+                              RowSpacing="8">
+                            <Label Text="Labor" FontSize="14" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Label x:Name="LaborTotal" Grid.Column="1" Text="$0.00" 
+                                   FontSize="14" TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"/>
+                            
+                            <Label Grid.Row="1" Text="Parts/Materials" FontSize="14" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Label x:Name="PartsTotal" Grid.Row="1" Grid.Column="1" Text="$0.00" 
+                                   FontSize="14" TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"/>
+                            
+                            <Label Grid.Row="2" Text="Subtotal" FontSize="14" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Label x:Name="SubTotal" Grid.Row="2" Grid.Column="1" Text="$0.00" 
+                                   FontSize="14" TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"/>
+                            
+                            <Label Grid.Row="3" Text="Tax" FontSize="14" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Label x:Name="TaxTotal" Grid.Row="3" Grid.Column="1" Text="$0.00" 
+                                   FontSize="14" TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"/>
+                            
+                            <BoxView Grid.Row="4" Grid.ColumnSpan="2" HeightRequest="1" Color="{AppThemeBinding Light=#E0E0E0, Dark=#424242}"/>
+                        </Grid>
+                        
+                        <Grid ColumnDefinitions="*, Auto">
+                            <Label Text="Total Due" FontSize="16" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"/>
+                            <Label x:Name="GrandTotal" Grid.Column="1" Text="$0.00" 
+                                   FontSize="20" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource SectionSuccess}, Dark={StaticResource SectionSuccessDark}}"/>
+                        </Grid>
+                    </StackLayout>
+                </Border>
+
+                <!-- Payment History -->
+                <Border x:Name="PaymentHistoryFrame" BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" Padding="15" 
+                        StrokeShape="RoundRectangle 8" Stroke="Transparent" Margin="0,0,0,10">
+                    <Border.Shadow>
+                        <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <StackLayout Spacing="8">
+                        <Grid ColumnDefinitions="*, Auto">
+                            <Label Text="Payments" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}" FontAttributes="Bold"/>
+                            <Label x:Name="PaymentCountLabel" Grid.Column="1" Text="0 payments" 
+                                   FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                        </Grid>
+                        
+                        <CollectionView x:Name="PaymentsCollection" HeightRequest="120">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightInputBackground}, Dark={StaticResource DarkInputBackground}}" Padding="10" 
+                                            StrokeShape="RoundRectangle 6" Stroke="Transparent"
+                                            Margin="0,4">
+                                        <Grid ColumnDefinitions="*, Auto">
+                                            <StackLayout Grid.Column="0" Margin="10,0">
+                                                <Label Text="{Binding MethodDisplay}" FontSize="13" TextColor="#333"/>
+                                                <Label Text="{Binding PaymentDate, StringFormat='{0:MMM dd, yyyy}'}" 
+                                                       FontSize="11" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                                            </StackLayout>
+                                            <Label Grid.Column="1" Text="{Binding Amount, StringFormat='${0:N2}'}" 
+                                                   FontSize="14" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource SectionSuccess}, Dark={StaticResource SectionSuccessDark}}"
+                                                   VerticalOptions="Center"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                        
+                        <Label x:Name="NoPaymentsLabel" Text="No payments recorded" 
+                               FontSize="12" TextColor="#9E9E9E"
+                               HorizontalOptions="Center" Margin="0,10"/>
+                        
+                        <!-- Balance Due -->
+                        <Border BackgroundColor="#FFF3E0" StrokeShape="RoundRectangle 6" 
+                                Stroke="Transparent" Padding="10"
+                                x:Name="BalanceDueFrame">
+                            <Grid ColumnDefinitions="*, Auto">
+                                <Label Text="Balance Due" FontSize="14" FontAttributes="Bold" TextColor="#FF9800"/>
+                                <Label x:Name="BalanceDue" Grid.Column="1" Text="$0.00" 
+                                       FontSize="16" FontAttributes="Bold" TextColor="#FF9800"/>
+                            </Grid>
+                        </Border>
+                    </StackLayout>
+                </Border>
+
+                <!-- Notes -->
+                <Border x:Name="NotesFrame" BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" Padding="15" 
+                        StrokeShape="RoundRectangle 8" Stroke="Transparent" Margin="0,0,0,10" IsVisible="False">
+                    <Border.Shadow>
+                        <Shadow Brush="Black" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <StackLayout Spacing="8">
+                        <Label Text="Notes" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}" FontAttributes="Bold"/>
+                        <Label x:Name="NotesLabel" Text="" 
+                               FontSize="14" TextColor="#333" LineBreakMode="WordWrap"/>
+                    </StackLayout>
+                </Border>
+
+                <!-- Spacer for bottom actions -->
+                <BoxView HeightRequest="100"/>
+                
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- Bottom Action Bar -->
+        <Border Grid.Row="1" BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                Padding="15" StrokeShape="RoundRectangle 0" Stroke="Transparent">
+            <Border.Shadow>
+                <Shadow Brush="Black" Offset="0,-2" Radius="4" Opacity="0.1"/>
+            </Border.Shadow>
+            <StackLayout Spacing="10">
+                <!-- Record Payment -->
+                <Button x:Name="RecordPaymentButton" Text="Record Payment" 
+                        Clicked="OnRecordPaymentClicked"
+                        BackgroundColor="#4CAF50" TextColor="White"
+                        FontAttributes="Bold" HeightRequest="50" CornerRadius="8"/>
+                
+                <!-- Mark Paid (full payment) -->
+                <Button x:Name="MarkPaidButton" Text="Mark as Paid" 
+                        Clicked="OnMarkPaidClicked"
+                        BackgroundColor="#1976D2" TextColor="White"
+                        HeightRequest="44" CornerRadius="8"/>
+                
+                <!-- Void Invoice -->
+                <Button x:Name="VoidButton" Text="Void Invoice" 
+                        Clicked="OnVoidInvoiceClicked"
+                        BackgroundColor="#FFEBEE" TextColor="#D32F2F"
+                        HeightRequest="44" CornerRadius="8"/>
+            </StackLayout>
+        </Border>
+
+        <!-- Loading Overlay -->
+        <Grid x:Name="LoadingOverlay" Grid.RowSpan="2" IsVisible="False"
+              BackgroundColor="#80000000">
+            <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" StrokeShape="RoundRectangle 10" Stroke="Transparent"
+                    Padding="30" HorizontalOptions="Center" VerticalOptions="Center">
+                <Border.Shadow>
+                    <Shadow Brush="Black" Offset="0,4" Radius="8" Opacity="0.2"/>
+                </Border.Shadow>
+                <StackLayout Spacing="15">
+                    <ActivityIndicator IsRunning="True" Color="#1976D2"/>
+                    <Label x:Name="LoadingText" Text="Loading..." 
+                           HorizontalOptions="Center"/>
+                </StackLayout>
+            </Border>
+        </Grid>
+    </Grid>
+</ContentPage>

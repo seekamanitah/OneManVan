@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Shell
+    x:Class="OneManVan.Mobile.AppShell"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:local="clr-namespace:OneManVan.Mobile"
+    xmlns:pages="clr-namespace:OneManVan.Mobile.Pages"
+    Shell.FlyoutBehavior="Flyout"
+    Shell.FlyoutBackgroundColor="{DynamicResource Primary}"
+    Title="OneManVan FSM">
+
+    <Shell.FlyoutHeader>
+        <Grid HeightRequest="120" BackgroundColor="{DynamicResource Primary}" Padding="20">
+            <VerticalStackLayout VerticalOptions="Center">
+                <Label Text="OneManVan FSM" 
+                       FontSize="24" 
+                       FontAttributes="Bold"
+                       TextColor="{DynamicResource White}"/>
+                <Label Text="HVAC Field Service" 
+                       FontSize="14" 
+                       TextColor="{DynamicResource LightText}"/>
+            </VerticalStackLayout>
+        </Grid>
+    </Shell.FlyoutHeader>
+
+    <Shell.FlyoutFooter>
+        <Grid HeightRequest="60" BackgroundColor="{DynamicResource Primary}" Padding="20,0">
+            <Label Text="v1.0 - Offline Mode" 
+                   FontSize="12" 
+                   TextColor="{DynamicResource LightText}"
+                   VerticalOptions="Center"/>
+        </Grid>
+    </Shell.FlyoutFooter>
+
+    <!-- Flyout Items -->
+    <FlyoutItem Title="Home" Icon="{OnPlatform Default=home.png}">
+        <ShellContent ContentTemplate="{DataTemplate local:MainPage}" Route="Home"/>
+    </FlyoutItem>
+
+    <FlyoutItem Title="Customers" Icon="{OnPlatform Default=person.png}">
+        <ShellContent ContentTemplate="{DataTemplate pages:CustomerListPage}" Route="Customers"/>
+    </FlyoutItem>
+
+    <FlyoutItem Title="Assets" Icon="{OnPlatform Default=settings.png}">
+        <ShellContent ContentTemplate="{DataTemplate pages:AssetListPage}" Route="Assets"/>
+    </FlyoutItem>
+
+    <FlyoutItem Title="Estimates" Icon="{OnPlatform Default=document.png}">
+        <ShellContent ContentTemplate="{DataTemplate pages:EstimateListPage}" Route="Estimates"/>
+    </FlyoutItem>
+
+    <FlyoutItem Title="Jobs" Icon="{OnPlatform Default=calendar.png}">
+        <ShellContent ContentTemplate="{DataTemplate pages:JobListPage}" Route="Jobs"/>
+    </FlyoutItem>
+
+    <FlyoutItem Title="Invoices" Icon="{OnPlatform Default=dotnet_bot.png}">
+        <ShellContent ContentTemplate="{DataTemplate pages:InvoiceListPage}" Route="Invoices"/>
+    </FlyoutItem>
+
+    <FlyoutItem Title="Inventory" Icon="{OnPlatform Default=dotnet_bot.png}">
+        <ShellContent ContentTemplate="{DataTemplate pages:InventoryListPage}" Route="Inventory"/>
+    </FlyoutItem>
+
+    <FlyoutItem Title="Products" Icon="{OnPlatform Default=dotnet_bot.png}">
+        <ShellContent ContentTemplate="{DataTemplate pages:ProductListPage}" Route="Products"/>
+    </FlyoutItem>
+
+    <FlyoutItem Title="Service Agreements" Icon="{OnPlatform Default=dotnet_bot.png}">
+        <ShellContent ContentTemplate="{DataTemplate pages:ServiceAgreementListPage}" Route="Agreements"/>
+    </FlyoutItem>
+
+    <!-- Separator -->
+    <FlyoutItem FlyoutDisplayOptions="AsMultipleItems">
+        <ShellContent Title="Custom Fields" 
+                      ContentTemplate="{DataTemplate pages:SchemaEditorPage}" 
+                      Route="CustomFields"/>
+        <ShellContent Title="Settings" 
+                      ContentTemplate="{DataTemplate pages:SettingsPage}" 
+                      Route="Settings"/>
+    </FlyoutItem>
+
+    <!-- Bottom TabBar for quick access -->
+    <TabBar x:Name="MainTabBar">
+        <Tab Title="Home" Icon="{OnPlatform Default=home.png}">
+            <ShellContent ContentTemplate="{DataTemplate local:MainPage}" Route="HomeTab"/>
+        </Tab>
+        <Tab Title="Jobs" Icon="{OnPlatform Default=calendar.png}">
+            <ShellContent ContentTemplate="{DataTemplate pages:JobListPage}" Route="JobsTab"/>
+        </Tab>
+        <Tab Title="Estimates" Icon="{OnPlatform Default=document.png}">
+            <ShellContent ContentTemplate="{DataTemplate pages:EstimateListPage}" Route="EstimatesTab"/>
+        </Tab>
+        <Tab Title="Invoices" Icon="{OnPlatform Default=dotnet_bot.png}">
+            <ShellContent ContentTemplate="{DataTemplate pages:InvoiceListPage}" Route="InvoicesTab"/>
+        </Tab>
+    </TabBar>
+
+</Shell>

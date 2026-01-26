@@ -1,0 +1,552 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="OneManVan.Mobile.Pages.SchemaViewerPage"
+             Title="Custom Fields"
+             BackgroundColor="#F5F5F5">
+
+    <Grid RowDefinitions="Auto,*">
+        
+        <!-- Header Info -->
+        <Border Grid.Row="0"
+                Margin="16,16,16,8"
+                Padding="16"
+                BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}"
+                StrokeShape="RoundRectangle 12"
+                Stroke="Transparent">
+            <Border.Shadow>
+                <Shadow Brush="Black" Offset="0,2" Radius="4" Opacity="0.1"/>
+            </Border.Shadow>
+            <VerticalStackLayout Spacing="8">
+                <HorizontalStackLayout Spacing="12">
+                    <Label Text="📋" FontSize="24"/>
+                    <VerticalStackLayout>
+                        <Label Text="Custom Fields Schema"
+                               FontSize="18"
+                               FontAttributes="Bold"
+                               TextColor="#333"/>
+                        <Label Text="View-only on mobile. Edit on desktop."
+                               FontSize="12"
+                               TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                    </VerticalStackLayout>
+                </HorizontalStackLayout>
+                
+                <BoxView HeightRequest="1" Color="#E0E0E0" Margin="0,8"/>
+                
+                <Label x:Name="SyncInfoLabel"
+                       Text="Last synced: Import a backup to sync schema"
+                       FontSize="11"
+                       TextColor="#9E9E9E"/>
+            </VerticalStackLayout>
+        </Border>
+
+        <!-- Entity Type Tabs and Fields -->
+        <RefreshView Grid.Row="1"
+                     x:Name="RefreshViewControl"
+                     Refreshing="OnRefreshing">
+            <ScrollView>
+                <VerticalStackLayout Padding="16,8,16,16" Spacing="16">
+                    
+                    <!-- Customer Fields -->
+                    <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                            StrokeShape="RoundRectangle 12" 
+                            Padding="0"
+                            Stroke="Transparent">
+                        <Border.Shadow>
+                            <Shadow Brush="Black" Offset="0,2" Radius="4" Opacity="0.1"/>
+                        </Border.Shadow>
+                        <VerticalStackLayout>
+                            <Grid BackgroundColor="#E3F2FD" Padding="16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Label Text="👤" FontSize="20" VerticalOptions="Center"/>
+                                <Label Grid.Column="1" 
+                                       Text="Customer Fields"
+                                       FontSize="16"
+                                       FontAttributes="Bold"
+                                       TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"
+                                       VerticalOptions="Center"
+                                       Margin="12,0,0,0"/>
+                                <Label Grid.Column="2"
+                                       x:Name="CustomerFieldCount"
+                                       Text="0 fields"
+                                       FontSize="12"
+                                       TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"
+                                       VerticalOptions="Center"/>
+                            </Grid>
+                            <CollectionView x:Name="CustomerFieldsCollection"
+                                            EmptyView="No custom fields defined"
+                                            ItemsSource="{Binding}">
+                                <CollectionView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Padding="16,12"
+                                                StrokeThickness="0"
+                                                BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}">
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <VerticalStackLayout>
+                                                    <Label Text="{Binding DisplayLabel}"
+                                                           FontSize="14"
+                                                           FontAttributes="Bold"
+                                                           TextColor="#333"/>
+                                                    <HorizontalStackLayout Spacing="8" Margin="0,4,0,0">
+                                                        <Label Text="{Binding FieldTypeDisplay}"
+                                                               FontSize="11"
+                                                               TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"/>
+                                                        <Label Text="•" 
+                                                               FontSize="11" 
+                                                               TextColor="#BDBDBD"
+                                                               IsVisible="{Binding IsRequired}"/>
+                                                        <Label Text="Required"
+                                                               FontSize="11"
+                                                               TextColor="#FF9800"
+                                                               IsVisible="{Binding IsRequired}"/>
+                                                    </HorizontalStackLayout>
+                                                </VerticalStackLayout>
+                                                <Border Grid.Column="1"
+                                                        BackgroundColor="#E3F2FD"
+                                                        StrokeShape="RoundRectangle 8"
+                                                        Padding="8,4"
+                                                        Stroke="Transparent"
+                                                        VerticalOptions="Center">
+                                                    <Label Text="{Binding FieldName}"
+                                                           FontSize="10"
+                                                           TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"
+                                                           FontFamily="Consolas"/>
+                                                </Border>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </CollectionView.ItemTemplate>
+                            </CollectionView>
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Asset Fields -->
+                    <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                            StrokeShape="RoundRectangle 12" 
+                            Padding="0"
+                            Stroke="Transparent">
+                        <Border.Shadow>
+                            <Shadow Brush="Black" Offset="0,2" Radius="4" Opacity="0.1"/>
+                        </Border.Shadow>
+                        <VerticalStackLayout>
+                            <Grid BackgroundColor="#E8F5E9" Padding="16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Label Text="📦" FontSize="20" VerticalOptions="Center"/>
+                                <Label Grid.Column="1" 
+                                       Text="Asset Fields"
+                                       FontSize="16"
+                                       FontAttributes="Bold"
+                                       TextColor="#4CAF50"
+                                       VerticalOptions="Center"
+                                       Margin="12,0,0,0"/>
+                                <Label Grid.Column="2"
+                                       x:Name="AssetFieldCount"
+                                       Text="0 fields"
+                                       FontSize="12"
+                                       TextColor="#4CAF50"
+                                       VerticalOptions="Center"/>
+                            </Grid>
+                            <CollectionView x:Name="AssetFieldsCollection"
+                                            EmptyView="No custom fields defined">
+                                <CollectionView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Padding="16,12"
+                                                StrokeThickness="0"
+                                                BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}">
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <VerticalStackLayout>
+                                                    <Label Text="{Binding DisplayLabel}"
+                                                           FontSize="14"
+                                                           FontAttributes="Bold"
+                                                           TextColor="#333"/>
+                                                    <HorizontalStackLayout Spacing="8" Margin="0,4,0,0">
+                                                        <Label Text="{Binding FieldTypeDisplay}"
+                                                               FontSize="11"
+                                                               TextColor="#4CAF50"/>
+                                                        <Label Text="•" 
+                                                               FontSize="11" 
+                                                               TextColor="#BDBDBD"
+                                                               IsVisible="{Binding IsRequired}"/>
+                                                        <Label Text="Required"
+                                                               FontSize="11"
+                                                               TextColor="#FF9800"
+                                                               IsVisible="{Binding IsRequired}"/>
+                                                    </HorizontalStackLayout>
+                                                </VerticalStackLayout>
+                                                <Border Grid.Column="1"
+                                                        BackgroundColor="#E8F5E9"
+                                                        StrokeShape="RoundRectangle 8"
+                                                        Padding="8,4"
+                                                        Stroke="Transparent"
+                                                        VerticalOptions="Center">
+                                                    <Label Text="{Binding FieldName}"
+                                                           FontSize="10"
+                                                           TextColor="#4CAF50"
+                                                           FontFamily="Consolas"/>
+                                                </Border>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </CollectionView.ItemTemplate>
+                            </CollectionView>
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Job Fields -->
+                    <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                            StrokeShape="RoundRectangle 12" 
+                            Padding="0"
+                            Stroke="Transparent">
+                        <Border.Shadow>
+                            <Shadow Brush="Black" Offset="0,2" Radius="4" Opacity="0.1"/>
+                        </Border.Shadow>
+                        <VerticalStackLayout>
+                            <Grid BackgroundColor="#FFF3E0" Padding="16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Label Text="🔧" FontSize="20" VerticalOptions="Center"/>
+                                <Label Grid.Column="1" 
+                                       Text="Job Fields"
+                                       FontSize="16"
+                                       FontAttributes="Bold"
+                                       TextColor="#FF9800"
+                                       VerticalOptions="Center"
+                                       Margin="12,0,0,0"/>
+                                <Label Grid.Column="2"
+                                       x:Name="JobFieldCount"
+                                       Text="0 fields"
+                                       FontSize="12"
+                                       TextColor="#FF9800"
+                                       VerticalOptions="Center"/>
+                            </Grid>
+                            <CollectionView x:Name="JobFieldsCollection"
+                                            EmptyView="No custom fields defined">
+                                <CollectionView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Padding="16,12"
+                                                StrokeThickness="0"
+                                                BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}">
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <VerticalStackLayout>
+                                                    <Label Text="{Binding DisplayLabel}"
+                                                           FontSize="14"
+                                                           FontAttributes="Bold"
+                                                           TextColor="#333"/>
+                                                    <HorizontalStackLayout Spacing="8" Margin="0,4,0,0">
+                                                        <Label Text="{Binding FieldTypeDisplay}"
+                                                               FontSize="11"
+                                                               TextColor="#FF9800"/>
+                                                        <Label Text="•" 
+                                                               FontSize="11" 
+                                                               TextColor="#BDBDBD"
+                                                               IsVisible="{Binding IsRequired}"/>
+                                                        <Label Text="Required"
+                                                               FontSize="11"
+                                                               TextColor="#F44336"
+                                                               IsVisible="{Binding IsRequired}"/>
+                                                    </HorizontalStackLayout>
+                                                </VerticalStackLayout>
+                                                <Border Grid.Column="1"
+                                                        BackgroundColor="#FFF3E0"
+                                                        StrokeShape="RoundRectangle 8"
+                                                        Padding="8,4"
+                                                        Stroke="Transparent"
+                                                        VerticalOptions="Center">
+                                                    <Label Text="{Binding FieldName}"
+                                                           FontSize="10"
+                                                           TextColor="#FF9800"
+                                                           FontFamily="Consolas"/>
+                                                </Border>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </CollectionView.ItemTemplate>
+                            </CollectionView>
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Estimate Fields -->
+                    <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                            StrokeShape="RoundRectangle 12" 
+                            Padding="0"
+                            Stroke="Transparent">
+                        <Border.Shadow>
+                            <Shadow Brush="Black" Offset="0,2" Radius="4" Opacity="0.1"/>
+                        </Border.Shadow>
+                        <VerticalStackLayout>
+                            <Grid BackgroundColor="#F3E5F5" Padding="16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Label Text="📝" FontSize="20" VerticalOptions="Center"/>
+                                <Label Grid.Column="1" 
+                                       Text="Estimate Fields"
+                                       FontSize="16"
+                                       FontAttributes="Bold"
+                                       TextColor="#9C27B0"
+                                       VerticalOptions="Center"
+                                       Margin="12,0,0,0"/>
+                                <Label Grid.Column="2"
+                                       x:Name="EstimateFieldCount"
+                                       Text="0 fields"
+                                       FontSize="12"
+                                       TextColor="#9C27B0"
+                                       VerticalOptions="Center"/>
+                            </Grid>
+                            <CollectionView x:Name="EstimateFieldsCollection"
+                                            EmptyView="No custom fields defined">
+                                <CollectionView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Padding="16,12"
+                                                StrokeThickness="0"
+                                                BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}">
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <VerticalStackLayout>
+                                                    <Label Text="{Binding DisplayLabel}"
+                                                           FontSize="14"
+                                                           FontAttributes="Bold"
+                                                           TextColor="#333"/>
+                                                    <HorizontalStackLayout Spacing="8" Margin="0,4,0,0">
+                                                        <Label Text="{Binding FieldTypeDisplay}"
+                                                               FontSize="11"
+                                                               TextColor="#9C27B0"/>
+                                                        <Label Text="•" 
+                                                               FontSize="11" 
+                                                               TextColor="#BDBDBD"
+                                                               IsVisible="{Binding IsRequired}"/>
+                                                        <Label Text="Required"
+                                                               FontSize="11"
+                                                               TextColor="#F44336"
+                                                               IsVisible="{Binding IsRequired}"/>
+                                                    </HorizontalStackLayout>
+                                                </VerticalStackLayout>
+                                                <Border Grid.Column="1"
+                                                        BackgroundColor="#F3E5F5"
+                                                        StrokeShape="RoundRectangle 8"
+                                                        Padding="8,4"
+                                                        Stroke="Transparent"
+                                                        VerticalOptions="Center">
+                                                    <Label Text="{Binding FieldName}"
+                                                           FontSize="10"
+                                                           TextColor="#9C27B0"
+                                                           FontFamily="Consolas"/>
+                                                </Border>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </CollectionView.ItemTemplate>
+                            </CollectionView>
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Site Fields -->
+                    <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                            StrokeShape="RoundRectangle 12" 
+                            Padding="0"
+                            Stroke="Transparent">
+                        <Border.Shadow>
+                            <Shadow Brush="Black" Offset="0,2" Radius="4" Opacity="0.1"/>
+                        </Border.Shadow>
+                        <VerticalStackLayout>
+                            <Grid BackgroundColor="#E0F2F1" Padding="16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Label Text="📍" FontSize="20" VerticalOptions="Center"/>
+                                <Label Grid.Column="1" 
+                                       Text="Site Fields"
+                                       FontSize="16"
+                                       FontAttributes="Bold"
+                                       TextColor="#009688"
+                                       VerticalOptions="Center"
+                                       Margin="12,0,0,0"/>
+                                <Label Grid.Column="2"
+                                       x:Name="SiteFieldCount"
+                                       Text="0 fields"
+                                       FontSize="12"
+                                       TextColor="#009688"
+                                       VerticalOptions="Center"/>
+                            </Grid>
+                            <CollectionView x:Name="SiteFieldsCollection"
+                                            EmptyView="No custom fields defined">
+                                <CollectionView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Padding="16,12"
+                                                StrokeThickness="0"
+                                                BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}">
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <VerticalStackLayout>
+                                                    <Label Text="{Binding DisplayLabel}"
+                                                           FontSize="14"
+                                                           FontAttributes="Bold"
+                                                           TextColor="#333"/>
+                                                    <HorizontalStackLayout Spacing="8" Margin="0,4,0,0">
+                                                        <Label Text="{Binding FieldTypeDisplay}"
+                                                               FontSize="11"
+                                                               TextColor="#009688"/>
+                                                        <Label Text="•" 
+                                                               FontSize="11" 
+                                                               TextColor="#BDBDBD"
+                                                               IsVisible="{Binding IsRequired}"/>
+                                                        <Label Text="Required"
+                                                               FontSize="11"
+                                                               TextColor="#F44336"
+                                                               IsVisible="{Binding IsRequired}"/>
+                                                    </HorizontalStackLayout>
+                                                </VerticalStackLayout>
+                                                <Border Grid.Column="1"
+                                                        BackgroundColor="#E0F2F1"
+                                                        StrokeShape="RoundRectangle 8"
+                                                        Padding="8,4"
+                                                        Stroke="Transparent"
+                                                        VerticalOptions="Center">
+                                                    <Label Text="{Binding FieldName}"
+                                                           FontSize="10"
+                                                           TextColor="#009688"
+                                                           FontFamily="Consolas"/>
+                                                </Border>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </CollectionView.ItemTemplate>
+                            </CollectionView>
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Invoice Fields -->
+                    <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                            StrokeShape="RoundRectangle 12" 
+                            Padding="0"
+                            Stroke="Transparent">
+                        <Border.Shadow>
+                            <Shadow Brush="Black" Offset="0,2" Radius="4" Opacity="0.1"/>
+                        </Border.Shadow>
+                        <VerticalStackLayout>
+                            <Grid BackgroundColor="#FFEBEE" Padding="16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Label Text="💵" FontSize="20" VerticalOptions="Center"/>
+                                <Label Grid.Column="1" 
+                                       Text="Invoice Fields"
+                                       FontSize="16"
+                                       FontAttributes="Bold"
+                                       TextColor="#F44336"
+                                       VerticalOptions="Center"
+                                       Margin="12,0,0,0"/>
+                                <Label Grid.Column="2"
+                                       x:Name="InvoiceFieldCount"
+                                       Text="0 fields"
+                                       FontSize="12"
+                                       TextColor="#F44336"
+                                       VerticalOptions="Center"/>
+                            </Grid>
+                            <CollectionView x:Name="InvoiceFieldsCollection"
+                                            EmptyView="No custom fields defined">
+                                <CollectionView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Padding="16,12"
+                                                StrokeThickness="0"
+                                                BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}">
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <VerticalStackLayout>
+                                                    <Label Text="{Binding DisplayLabel}"
+                                                           FontSize="14"
+                                                           FontAttributes="Bold"
+                                                           TextColor="#333"/>
+                                                    <HorizontalStackLayout Spacing="8" Margin="0,4,0,0">
+                                                        <Label Text="{Binding FieldTypeDisplay}"
+                                                               FontSize="11"
+                                                               TextColor="#F44336"/>
+                                                        <Label Text="•" 
+                                                               FontSize="11" 
+                                                               TextColor="#BDBDBD"
+                                                               IsVisible="{Binding IsRequired}"/>
+                                                        <Label Text="Required"
+                                                               FontSize="11"
+                                                               TextColor="#FF9800"
+                                                               IsVisible="{Binding IsRequired}"/>
+                                                    </HorizontalStackLayout>
+                                                </VerticalStackLayout>
+                                                <Border Grid.Column="1"
+                                                        BackgroundColor="#FFEBEE"
+                                                        StrokeShape="RoundRectangle 8"
+                                                        Padding="8,4"
+                                                        Stroke="Transparent"
+                                                        VerticalOptions="Center">
+                                                    <Label Text="{Binding FieldName}"
+                                                           FontSize="10"
+                                                           TextColor="#F44336"
+                                                           FontFamily="Consolas"/>
+                                                </Border>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </CollectionView.ItemTemplate>
+                            </CollectionView>
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Future Sync Info -->
+                    <Border BackgroundColor="#E3F2FD"
+                            StrokeShape="RoundRectangle 12"
+                            Padding="16"
+                            Stroke="Transparent">
+                        <VerticalStackLayout Spacing="8">
+                            <HorizontalStackLayout Spacing="8">
+                                <Label Text="🔄" FontSize="16"/>
+                                <Label Text="Sync Information"
+                                       FontSize="14"
+                                       FontAttributes="Bold"
+                                       TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"/>
+                            </HorizontalStackLayout>
+                            <Label Text="Custom fields are managed on the desktop app. To get the latest schema on mobile:"
+                                   FontSize="12"
+                                   TextColor="#333"/>
+                            <Label Text="1. Export a backup from desktop"
+                                   FontSize="12"
+                                   TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"
+                                   Margin="16,0,0,0"/>
+                            <Label Text="2. Transfer to mobile (share, cloud, USB)"
+                                   FontSize="12"
+                                   TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"
+                                   Margin="16,0,0,0"/>
+                            <Label Text="3. Import backup in Settings → Data Backup"
+                                   FontSize="12"
+                                   TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"
+                                   Margin="16,0,0,0"/>
+                            <Label Text="💡 Future: Docker sync will enable real-time schema updates!"
+                                   FontSize="11"
+                                   TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"
+                                   FontAttributes="Italic"
+                                   Margin="0,8,0,0"/>
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Spacer -->
+                    <BoxView HeightRequest="20"/>
+                    
+                </VerticalStackLayout>
+            </ScrollView>
+        </RefreshView>
+
+    </Grid>
+
+</ContentPage>

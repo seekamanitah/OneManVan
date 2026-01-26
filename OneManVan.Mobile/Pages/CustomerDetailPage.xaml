@@ -1,0 +1,555 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="OneManVan.Mobile.Pages.CustomerDetailPage"
+             Title="{Binding PageTitle}"
+             BackgroundColor="{AppThemeBinding Light={StaticResource LightBackground}, Dark={StaticResource DarkBackground}}">
+
+    <Grid RowDefinitions="*, Auto">
+        <ScrollView Grid.Row="0">
+            <VerticalStackLayout Padding="16" Spacing="16">
+
+                <!-- Basic Info Section -->
+                <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                        StrokeShape="RoundRectangle 12" 
+                        Stroke="Transparent"
+                        Padding="16">
+                    <Border.Shadow>
+                        <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="Basic Information" 
+                               FontSize="18" 
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"/>
+
+                        <!-- Customer Type -->
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                            <VerticalStackLayout Spacing="4">
+                                <Label Text="Customer Type" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}" FontAttributes="Bold"/>
+                                <Picker x:Name="CustomerTypePicker" Title="Select Type">
+                                    <Picker.ItemsSource>
+                                        <x:Array Type="{x:Type x:String}">
+                                            <x:String>Residential</x:String>
+                                            <x:String>Commercial</x:String>
+                                            <x:String>Property Manager</x:String>
+                                            <x:String>Government</x:String>
+                                        </x:Array>
+                                    </Picker.ItemsSource>
+                                </Picker>
+                            </VerticalStackLayout>
+                            <VerticalStackLayout Grid.Column="1" Spacing="4">
+                                <Label Text="Status" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                                <Picker x:Name="StatusPicker" Title="Select Status">
+                                    <Picker.ItemsSource>
+                                        <x:Array Type="{x:Type x:String}">
+                                            <x:String>Active</x:String>
+                                            <x:String>Lead</x:String>
+                                            <x:String>VIP</x:String>
+                                            <x:String>Inactive</x:String>
+                                            <x:String>Do Not Service</x:String>
+                                        </x:Array>
+                                    </Picker.ItemsSource>
+                                </Picker>
+                            </VerticalStackLayout>
+                        </Grid>
+
+                        <!-- Name -->
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Name *" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}" FontAttributes="Bold"/>
+                            <Entry x:Name="NameEntry"
+                                   Placeholder="Customer name (required)"
+                                   Text="{Binding Customer.Name}"
+                                   FontSize="16"/>
+                        </VerticalStackLayout>
+
+                        <!-- Company Name (for Commercial) -->
+                        <VerticalStackLayout x:Name="CompanySection" Spacing="4">
+                            <Label Text="Company Name" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Entry x:Name="CompanyEntry"
+                                   Placeholder="Company / Business name"
+                                   Text="{Binding Customer.CompanyName}"
+                                   FontSize="16"/>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Contact Info Section -->
+                <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                        StrokeShape="RoundRectangle 12" 
+                        Stroke="Transparent"
+                        Padding="16">
+                    <Border.Shadow>
+                        <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="Contact Information" 
+                               FontSize="18" 
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"/>
+
+                        <!-- Primary Phone -->
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                            <VerticalStackLayout Spacing="4">
+                                <Label Text="Primary Phone" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                                <Entry x:Name="PhoneEntry"
+                                       Placeholder="(555) 123-4567"
+                                       Text="{Binding Customer.Phone}"
+                                       Keyboard="Telephone"
+                                       FontSize="16"/>
+                            </VerticalStackLayout>
+                            <VerticalStackLayout Grid.Column="1" Spacing="4">
+                                <Label Text="Secondary Phone" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                                <Entry x:Name="SecondaryPhoneEntry"
+                                       Placeholder="Spouse/Alt number"
+                                       Text="{Binding Customer.SecondaryPhone}"
+                                       Keyboard="Telephone"
+                                       FontSize="16"/>
+                            </VerticalStackLayout>
+                        </Grid>
+
+                        <!-- Email -->
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Email" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Entry x:Name="EmailEntry"
+                                   Placeholder="customer@email.com"
+                                   Text="{Binding Customer.Email}"
+                                   Keyboard="Email"
+                                   FontSize="16"/>
+                        </VerticalStackLayout>
+
+                        <!-- Preferred Contact -->
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Preferred Contact Method" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Picker x:Name="PreferredContactPicker" Title="Any">
+                                <Picker.ItemsSource>
+                                    <x:Array Type="{x:Type x:String}">
+                                        <x:String>Any</x:String>
+                                        <x:String>Phone</x:String>
+                                        <x:String>Email</x:String>
+                                        <x:String>Text</x:String>
+                                    </x:Array>
+                                </Picker.ItemsSource>
+                            </Picker>
+                        </VerticalStackLayout>
+
+                        <!-- Emergency Contact -->
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                            <VerticalStackLayout Spacing="4">
+                                <Label Text="Emergency Contact" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                                <Entry x:Name="EmergencyContactEntry"
+                                       Placeholder="Name"
+                                       Text="{Binding Customer.EmergencyContact}"
+                                       FontSize="16"/>
+                            </VerticalStackLayout>
+                            <VerticalStackLayout Grid.Column="1" Spacing="4">
+                                <Label Text="Emergency Phone" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                                <Entry x:Name="EmergencyPhoneEntry"
+                                       Placeholder="Phone"
+                                       Text="{Binding Customer.EmergencyPhone}"
+                                       Keyboard="Telephone"
+                                       FontSize="16"/>
+                            </VerticalStackLayout>
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Billing Section -->
+                <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                        StrokeShape="RoundRectangle 12" 
+                        Stroke="Transparent"
+                        Padding="16">
+                    <Border.Shadow>
+                        <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="Billing" 
+                               FontSize="18" 
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"/>
+
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                            <VerticalStackLayout Spacing="4">
+                                <Label Text="Payment Terms" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                                <Picker x:Name="PaymentTermsPicker" Title="Select">
+                                    <Picker.ItemsSource>
+                                        <x:Array Type="{x:Type x:String}">
+                                            <x:String>Due on Receipt</x:String>
+                                            <x:String>COD</x:String>
+                                            <x:String>Net 15</x:String>
+                                            <x:String>Net 30</x:String>
+                                            <x:String>Net 45</x:String>
+                                        </x:Array>
+                                    </Picker.ItemsSource>
+                                </Picker>
+                            </VerticalStackLayout>
+                            <VerticalStackLayout Grid.Column="1" Spacing="4">
+                                <HorizontalStackLayout Spacing="8">
+                                    <Label Text="Tax Exempt" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}" VerticalOptions="Center"/>
+                                    <Switch x:Name="TaxExemptSwitch" IsToggled="{Binding Customer.TaxExempt}"/>
+                                </HorizontalStackLayout>
+                                <Entry x:Name="TaxExemptIdEntry"
+                                       Placeholder="Tax Exempt ID"
+                                       Text="{Binding Customer.TaxExemptId}"
+                                       FontSize="14"
+                                       IsVisible="{Binding Source={x:Reference TaxExemptSwitch}, Path=IsToggled}"/>
+                            </VerticalStackLayout>
+                        </Grid>
+
+                        <!-- Billing Email -->
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Billing Email (if different)" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Entry x:Name="BillingEmailEntry"
+                                   Placeholder="billing@company.com"
+                                   Text="{Binding Customer.BillingEmail}"
+                                   Keyboard="Email"
+                                   FontSize="16"/>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Service Notes Section -->
+                <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                        StrokeShape="RoundRectangle 12" 
+                        Stroke="Transparent"
+                        Padding="16">
+                    <Border.Shadow>
+                        <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="Service Notes" 
+                               FontSize="18" 
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"/>
+
+                        <!-- Preferred Service Window -->
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Preferred Service Window" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Entry x:Name="ServiceWindowEntry"
+                                   Placeholder="e.g., Mornings only, After 3pm, Weekends"
+                                   Text="{Binding Customer.PreferredServiceWindow}"
+                                   FontSize="16"/>
+                        </VerticalStackLayout>
+
+                        <!-- Referral Source -->
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="How did they find us?" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Picker x:Name="ReferralSourcePicker" Title="Select">
+                                <Picker.ItemsSource>
+                                    <x:Array Type="{x:Type x:String}">
+                                        <x:String></x:String>
+                                        <x:String>Google Search</x:String>
+                                        <x:String>Referral</x:String>
+                                        <x:String>Yard Sign</x:String>
+                                        <x:String>Facebook</x:String>
+                                        <x:String>Nextdoor</x:String>
+                                        <x:String>Home Advisor</x:String>
+                                        <x:String>Yelp</x:String>
+                                        <x:String>Repeat Customer</x:String>
+                                        <x:String>Other</x:String>
+                                    </x:Array>
+                                </Picker.ItemsSource>
+                            </Picker>
+                        </VerticalStackLayout>
+
+                        <!-- General Notes -->
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Service Notes" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Editor x:Name="ServiceNotesEditor"
+                                    Placeholder="Special instructions, access notes, parking, etc."
+                                    Text="{Binding Customer.ServiceNotes}"
+                                    HeightRequest="80"
+                                    FontSize="14"/>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Primary Address Section (Always visible) -->
+                <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                        StrokeShape="RoundRectangle 12" 
+                        Stroke="Transparent"
+                        Padding="16">
+                    <Border.Shadow>
+                        <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <VerticalStackLayout Spacing="12">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Label Text="Primary Address" 
+                                   FontSize="18" 
+                                   FontAttributes="Bold"
+                                   TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"/>
+                            <Button x:Name="NavigateButton"
+                                    Grid.Column="1"
+                                    Text="Navigate"
+                                    BackgroundColor="#E8F5E9"
+                                    TextColor="#388E3C"
+                                    FontSize="12"
+                                    HeightRequest="32"
+                                    CornerRadius="16"
+                                    Padding="12,0"
+                                    Clicked="OnNavigateClicked"
+                                    IsVisible="{Binding IsExisting}"/>
+                        </Grid>
+
+                        <!-- Street Address -->
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Street Address" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Entry x:Name="AddressEntry"
+                                   Placeholder="123 Main Street"
+                                   FontSize="16"/>
+                        </VerticalStackLayout>
+
+                        <!-- City, State, Zip -->
+                        <Grid ColumnDefinitions="2*,*,*" ColumnSpacing="12">
+                            <VerticalStackLayout Spacing="4">
+                                <Label Text="City" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                                <Entry x:Name="CityEntry"
+                                       Placeholder="City"
+                                       FontSize="16"/>
+                            </VerticalStackLayout>
+                            <VerticalStackLayout Grid.Column="1" Spacing="4">
+                                <Label Text="State" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                                <Entry x:Name="StateEntry"
+                                       Placeholder="TX"
+                                       FontSize="16"
+                                       MaxLength="2"/>
+                            </VerticalStackLayout>
+                            <VerticalStackLayout Grid.Column="2" Spacing="4">
+                                <Label Text="ZIP" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                                <Entry x:Name="ZipEntry"
+                                       Placeholder="75001"
+                                       Keyboard="Numeric"
+                                       FontSize="16"
+                                       MaxLength="10"/>
+                            </VerticalStackLayout>
+                        </Grid>
+
+                        <!-- Access Info -->
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                            <VerticalStackLayout Spacing="4">
+                                <Label Text="Gate Code" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                                <Entry x:Name="GateCodeEntry"
+                                       Placeholder="Optional"
+                                       FontSize="16"/>
+                            </VerticalStackLayout>
+                            <VerticalStackLayout Grid.Column="1" Spacing="4">
+                                <HorizontalStackLayout Spacing="8">
+                                    <Label Text="Has Dog" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}" VerticalOptions="Center"/>
+                                    <Switch x:Name="HasDogSwitch" OnColor="#FF9800"/>
+                                </HorizontalStackLayout>
+                            </VerticalStackLayout>
+                        </Grid>
+
+                        <!-- Access Notes -->
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Access Notes" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Entry x:Name="AccessNotesEntry"
+                                   Placeholder="e.g., Equipment in backyard, use side gate"
+                                   FontSize="14"/>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Sites Section (Only show for existing customers) -->
+                <Border BackgroundColor="White" 
+                        StrokeShape="RoundRectangle 12" 
+                        Stroke="Transparent"
+                        Padding="16"
+                        IsVisible="{Binding IsExisting}">
+                    <Border.Shadow>
+                        <Shadow Brush="Black" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <VerticalStackLayout Spacing="12">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Label Text="Service Sites" 
+                                   FontSize="18" 
+                                   FontAttributes="Bold"
+                                   TextColor="#1976D2"/>
+                            <Button Grid.Column="1"
+                                    Text="+ Add Site"
+                                    BackgroundColor="#E3F2FD"
+                                    TextColor="#1976D2"
+                                    FontSize="12"
+                                    HeightRequest="32"
+                                    CornerRadius="16"
+                                    Padding="12,0"
+                                    Clicked="OnAddSiteClicked"/>
+                        </Grid>
+
+                        <CollectionView x:Name="SitesCollection"
+                                        ItemsSource="{Binding Customer.Sites}"
+                                        EmptyView="No sites added yet. Tap + Add Site to add one.">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Margin="0,4" 
+                                            Padding="12"
+                                            BackgroundColor="#FAFAFA"
+                                            StrokeShape="RoundRectangle 8"
+                                            Stroke="#E0E0E0">
+                                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
+                                            <VerticalStackLayout>
+                                                <Label Text="{Binding Address}"
+                                                       FontSize="14"
+                                                       FontAttributes="Bold"/>
+                                                <Label FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}">
+                                                    <Label.FormattedText>
+                                                        <FormattedString>
+                                                            <Span Text="{Binding City}"/>
+                                                            <Span Text=", "/>
+                                                            <Span Text="{Binding State}"/>
+                                                            <Span Text=" "/>
+                                                            <Span Text="{Binding ZipCode}"/>
+                                                        </FormattedString>
+                                                    </Label.FormattedText>
+                                                </Label>
+                                            </VerticalStackLayout>
+                                            
+                                            <Button Grid.Column="1"
+                                                    Text="X"
+                                                    BackgroundColor="Transparent"
+                                                    TextColor="#F44336"
+                                                    FontSize="14"
+                                                    WidthRequest="36"
+                                                    HeightRequest="36"
+                                                    VerticalOptions="Start"
+                                                    Clicked="OnRemoveSiteClicked"/>
+
+                                            <!-- Access Info Row -->
+                                            <HorizontalStackLayout Grid.Row="1" Grid.ColumnSpan="2" Spacing="12" Margin="0,4,0,0">
+                                                <Label Text="Primary"
+                                                       FontSize="10"
+                                                       TextColor="White"
+                                                       BackgroundColor="#4CAF50"
+                                                       Padding="6,2"
+                                                       IsVisible="{Binding IsPrimary}"/>
+                                                <Label FontSize="10" TextColor="#FF9800" IsVisible="{Binding GateCode, Converter={StaticResource StringNotEmptyConverter}}">
+                                                    <Label.FormattedText>
+                                                        <FormattedString>
+                                                            <Span Text="Gate: "/>
+                                                            <Span Text="{Binding GateCode}"/>
+                                                        </FormattedString>
+                                                    </Label.FormattedText>
+                                                </Label>
+                                                <Label Text="Dog" FontSize="10" TextColor="#F44336" IsVisible="{Binding HasDog}"/>
+                                            </HorizontalStackLayout>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Assets Section (Only show for existing customers) -->
+                <Border BackgroundColor="White" 
+                        StrokeShape="RoundRectangle 12" 
+                        Stroke="Transparent"
+                        Padding="16"
+                        IsVisible="{Binding IsExisting}">
+                    <Border.Shadow>
+                        <Shadow Brush="Black" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <VerticalStackLayout Spacing="12">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Label Text="Equipment" 
+                                   FontSize="18" 
+                                   FontAttributes="Bold"
+                                   TextColor="#1976D2"/>
+                            <Button Grid.Column="1"
+                                    Text="+ Add Asset"
+                                    BackgroundColor="#E3F2FD"
+                                    TextColor="#1976D2"
+                                    FontSize="12"
+                                    HeightRequest="32"
+                                    CornerRadius="16"
+                                    Padding="12,0"
+                                    Clicked="OnAddAssetClicked"/>
+                        </Grid>
+
+                        <CollectionView x:Name="AssetsCollection"
+                                        ItemsSource="{Binding Customer.Assets}"
+                                        SelectionMode="Single"
+                                        SelectionChanged="OnAssetSelected"
+                                        EmptyView="No equipment added yet.">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Margin="0,4" 
+                                            Padding="12"
+                                            BackgroundColor="#FAFAFA"
+                                            StrokeShape="RoundRectangle 8"
+                                            Stroke="#E0E0E0">
+                                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                            <VerticalStackLayout>
+                                                <Label Text="{Binding Nickname}" 
+                                                       FontSize="12" 
+                                                       TextColor="#1976D2"
+                                                       IsVisible="{Binding Nickname, Converter={StaticResource StringNotEmptyConverter}}"/>
+                                                <Label FontSize="14" FontAttributes="Bold">
+                                                    <Label.FormattedText>
+                                                        <FormattedString>
+                                                            <Span Text="{Binding Brand}"/>
+                                                            <Span Text=" "/>
+                                                            <Span Text="{Binding Model}"/>
+                                                        </FormattedString>
+                                                    </Label.FormattedText>
+                                                </Label>
+                                                <Label Text="{Binding Serial}"
+                                                       FontSize="12"
+                                                        TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                                            </VerticalStackLayout>
+
+                                            <!-- Warranty Badge -->
+                                            <Border Grid.Column="1"
+                                                    BackgroundColor="{Binding IsWarrantyExpired, Converter={StaticResource WarrantyBadgeColorConverter}}"
+                                                    StrokeShape="RoundRectangle 12"
+                                                    Stroke="Transparent"
+                                                    Padding="8,4"
+                                                    VerticalOptions="Center">
+                                                <Label Text="{Binding WarrantyStatusDisplay}"
+                                                       FontSize="10"
+                                                       TextColor="White"/>
+                                            </Border>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Spacer for bottom buttons -->
+                <BoxView HeightRequest="16"/>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- Fixed Bottom Action Buttons -->
+        <Border Grid.Row="1" 
+                BackgroundColor="White" 
+                Padding="16"
+                StrokeShape="RoundRectangle 0"
+                Stroke="Transparent">
+            <Border.Shadow>
+                <Shadow Brush="Black" Offset="0,-2" Radius="4" Opacity="0.1"/>
+            </Border.Shadow>
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                <Button Grid.Column="0"
+                        Text="Cancel"
+                        BackgroundColor="#E0E0E0"
+                        TextColor="#333"
+                        CornerRadius="8"
+                        HeightRequest="50"
+                        Clicked="OnCancelClicked"/>
+                <Button Grid.Column="1"
+                        Text="Save Customer"
+                        BackgroundColor="#1976D2"
+                        TextColor="White"
+                        FontAttributes="Bold"
+                        CornerRadius="8"
+                        HeightRequest="50"
+                        Clicked="OnSaveClicked"/>
+            </Grid>
+        </Border>
+    </Grid>
+
+</ContentPage>

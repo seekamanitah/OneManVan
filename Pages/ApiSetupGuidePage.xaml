@@ -1,0 +1,414 @@
+<UserControl x:Class="OneManVan.Pages.ApiSetupGuidePage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d" 
+             d:DesignHeight="800" d:DesignWidth="900"
+             Background="{DynamicResource BackgroundBrush}">
+
+    <UserControl.Resources>
+        <Style x:Key="SectionCard" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="20"/>
+            <Setter Property="Margin" Value="0,0,0,20"/>
+        </Style>
+
+        <Style x:Key="StepNumber" TargetType="Border">
+            <Setter Property="Width" Value="28"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="CornerRadius" Value="14"/>
+            <Setter Property="Background" Value="{DynamicResource PrimaryBrush}"/>
+            <Setter Property="Margin" Value="0,0,12,0"/>
+        </Style>
+
+        <Style x:Key="CodeBlock" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource BackgroundBrush}"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="15,10"/>
+            <Setter Property="Margin" Value="0,8,0,0"/>
+        </Style>
+
+        <Style x:Key="LinkButton" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource PrimaryBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource BackgroundBrush}"/>
+            <Setter Property="Padding" Value="15,8"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="6" 
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Opacity" Value="0.85"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="30">
+        <StackPanel MaxWidth="800">
+            <!-- Header -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,25">
+                
+                <StackPanel>
+                    <TextBlock Text="API Setup Guide" FontSize="28" FontWeight="Bold" 
+                               Foreground="{DynamicResource TextBrush}"/>
+                    <TextBlock Text="Configure Square payments and Google Calendar sync" 
+                               FontSize="14" Foreground="{DynamicResource SubtextBrush}"/>
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Square Setup Section -->
+            <Border Style="{StaticResource SectionCard}">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                        
+                        <TextBlock Text="Square Payment Integration" FontSize="20" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <TextBlock Text="Accept credit card payments directly in the app using Square's secure payment processing."
+                               Foreground="{DynamicResource SubtextBrush}" TextWrapping="Wrap" Margin="0,0,0,20"/>
+
+                    <!-- Step 1 -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                        <Border Style="{StaticResource StepNumber}">
+                            <TextBlock Text="1" FontWeight="Bold" FontSize="14"
+                                       Foreground="{DynamicResource BackgroundBrush}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Create a Square Developer Account" FontSize="15" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <TextBlock Text="Visit the Square Developer Dashboard and sign in with your Square account (or create one if you don't have one)."
+                               Foreground="{DynamicResource SubtextBrush}" TextWrapping="Wrap" Margin="40,0,0,8"/>
+                    <Button Content="Open Square Developer Dashboard" Click="OpenSquareDashboard_Click"
+                            Style="{StaticResource LinkButton}" HorizontalAlignment="Left" Margin="40,0,0,15"/>
+
+                    <!-- Step 2 -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                        <Border Style="{StaticResource StepNumber}">
+                            <TextBlock Text="2" FontWeight="Bold" FontSize="14"
+                                       Foreground="{DynamicResource BackgroundBrush}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Create an Application" FontSize="15" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <TextBlock Foreground="{DynamicResource SubtextBrush}" TextWrapping="Wrap" Margin="40,0,0,0">
+                        <Run Text="Click"/>
+                        <Run Text="'Create Your First Application'" FontWeight="SemiBold"/>
+                        <Run Text="or"/>
+                        <Run Text="'Add'" FontWeight="SemiBold"/>
+                        <Run Text="if you already have apps. Give it a name like 'OneManVan'."/>
+                    </TextBlock>
+                    <Border Style="{StaticResource CodeBlock}" Margin="40,8,0,15">
+                        <TextBlock Text="Application Name: OneManVan" FontFamily="Consolas" FontSize="12"
+                                   Foreground="{DynamicResource TextBrush}"/>
+                    </Border>
+
+                    <!-- Step 3 -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                        <Border Style="{StaticResource StepNumber}">
+                            <TextBlock Text="3" FontWeight="Bold" FontSize="14"
+                                       Foreground="{DynamicResource BackgroundBrush}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Get Your Credentials" FontSize="15" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <TextBlock Text="In your application, go to the Credentials tab. You'll need:"
+                               Foreground="{DynamicResource SubtextBrush}" TextWrapping="Wrap" Margin="40,0,0,8"/>
+                    <Border Style="{StaticResource CodeBlock}" Margin="40,0,0,0">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                                <TextBlock Text="&#x2022; Application ID: " FontFamily="Consolas" FontSize="12"
+                                           Foreground="{DynamicResource SubtextBrush}"/>
+                                <TextBlock Text="sq0idp-XXXXXXXXXXXX" FontFamily="Consolas" FontSize="12"
+                                           Foreground="{DynamicResource PrimaryBrush}"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                                <TextBlock Text="&#x2022; Access Token: " FontFamily="Consolas" FontSize="12"
+                                           Foreground="{DynamicResource SubtextBrush}"/>
+                                <TextBlock Text="EAAA... (Sandbox) or EAAEa... (Production)" FontFamily="Consolas" FontSize="12"
+                                           Foreground="{DynamicResource PrimaryBrush}"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#x2022; Location ID: " FontFamily="Consolas" FontSize="12"
+                                           Foreground="{DynamicResource SubtextBrush}"/>
+                                <TextBlock Text="LXXXXXXXXX (from Locations section)" FontFamily="Consolas" FontSize="12"
+                                           Foreground="{DynamicResource PrimaryBrush}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Tip -->
+                    <Border Background="{DynamicResource Surface2Brush}" CornerRadius="6" 
+                            Padding="15" Margin="40,15,0,15">
+                        <StackPanel Orientation="Horizontal">
+                            
+                            <TextBlock Foreground="{DynamicResource TextBrush}" TextWrapping="Wrap">
+                                <Run Text="Tip:" FontWeight="SemiBold"/>
+                                <Run Text="Start with Sandbox credentials for testing. Switch to Production when you're ready to accept real payments."/>
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Step 4 -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                        <Border Style="{StaticResource StepNumber}">
+                            <TextBlock Text="4" FontWeight="Bold" FontSize="14"
+                                       Foreground="{DynamicResource BackgroundBrush}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Configure in OneManVan" FontSize="15" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <TextBlock Text="Go to Settings ? Square Payments and enter your credentials. Click 'Test Connection' to verify."
+                               Foreground="{DynamicResource SubtextBrush}" TextWrapping="Wrap" Margin="40,0,0,8"/>
+                    <Button Content="Open Settings" Click="OpenSettings_Click"
+                            Style="{StaticResource LinkButton}" HorizontalAlignment="Left" Margin="40,0,0,0"/>
+
+                    <!-- Test Cards -->
+                    <TextBlock Text="Test Card Numbers (Sandbox Only)" FontSize="14" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextBrush}" Margin="0,20,0,10"/>
+                    <Border Style="{StaticResource CodeBlock}" Margin="0,0,0,0">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Visa:" FontFamily="Consolas" FontSize="12"
+                                           Foreground="{DynamicResource SubtextBrush}"/>
+                                <TextBlock Grid.Column="1" Text="4532 0123 4567 8901" FontFamily="Consolas" FontSize="12"
+                                           Foreground="{DynamicResource SecondaryBrush}"/>
+                            </Grid>
+                            <Grid Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Mastercard:" FontFamily="Consolas" FontSize="12"
+                                           Foreground="{DynamicResource SubtextBrush}"/>
+                                <TextBlock Grid.Column="1" Text="5500 0000 0000 0004" FontFamily="Consolas" FontSize="12"
+                                           Foreground="{DynamicResource SecondaryBrush}"/>
+                            </Grid>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Declined:" FontFamily="Consolas" FontSize="12"
+                                           Foreground="{DynamicResource SubtextBrush}"/>
+                                <TextBlock Grid.Column="1" Text="4000 0000 0000 0002" FontFamily="Consolas" FontSize="12"
+                                           Foreground="{DynamicResource ErrorBrush}"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <!-- Google Calendar Section -->
+            <Border Style="{StaticResource SectionCard}">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                        
+                        <TextBlock Text="Google Calendar Integration" FontSize="20" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <TextBlock Text="Sync your jobs automatically to Google Calendar for scheduling and reminders."
+                               Foreground="{DynamicResource SubtextBrush}" TextWrapping="Wrap" Margin="0,0,0,20"/>
+
+                    <!-- Step 1 -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                        <Border Style="{StaticResource StepNumber}">
+                            <TextBlock Text="1" FontWeight="Bold" FontSize="14"
+                                       Foreground="{DynamicResource BackgroundBrush}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Create a Google Cloud Project" FontSize="15" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <TextBlock Text="Go to the Google Cloud Console and create a new project (or select an existing one)."
+                               Foreground="{DynamicResource SubtextBrush}" TextWrapping="Wrap" Margin="40,0,0,8"/>
+                    <Button Content="Open Google Cloud Console" Click="OpenGoogleCloud_Click"
+                            Style="{StaticResource LinkButton}" HorizontalAlignment="Left" Margin="40,0,0,15"/>
+
+                    <!-- Step 2 -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                        <Border Style="{StaticResource StepNumber}">
+                            <TextBlock Text="2" FontWeight="Bold" FontSize="14"
+                                       Foreground="{DynamicResource BackgroundBrush}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Enable the Google Calendar API" FontSize="15" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <TextBlock Foreground="{DynamicResource SubtextBrush}" TextWrapping="Wrap" Margin="40,0,0,0">
+                        <Run Text="In your project, go to"/>
+                        <Run Text="APIs &amp; Services ? Library" FontWeight="SemiBold"/>
+                        <Run Text="and search for 'Google Calendar API'. Click"/>
+                        <Run Text="Enable" FontWeight="SemiBold"/>
+                        <Run Text="."/>
+                    </TextBlock>
+                    <Button Content="Open API Library" Click="OpenApiLibrary_Click"
+                            Style="{StaticResource LinkButton}" HorizontalAlignment="Left" Margin="40,8,0,15"/>
+
+                    <!-- Step 3 -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                        <Border Style="{StaticResource StepNumber}">
+                            <TextBlock Text="3" FontWeight="Bold" FontSize="14"
+                                       Foreground="{DynamicResource BackgroundBrush}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Configure OAuth Consent Screen" FontSize="15" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <TextBlock Foreground="{DynamicResource SubtextBrush}" TextWrapping="Wrap" Margin="40,0,0,0">
+                        <Run Text="Go to"/>
+                        <Run Text="APIs &amp; Services ? OAuth consent screen" FontWeight="SemiBold"/>
+                        <Run Text=". Select 'External' user type and fill in the required fields:"/>
+                    </TextBlock>
+                    <Border Style="{StaticResource CodeBlock}" Margin="40,8,0,15">
+                        <StackPanel>
+                            <TextBlock Text="App name: OneManVan" FontFamily="Consolas" FontSize="12"
+                                       Foreground="{DynamicResource TextBrush}" Margin="0,0,0,3"/>
+                            <TextBlock Text="User support email: your-email@example.com" FontFamily="Consolas" FontSize="12"
+                                       Foreground="{DynamicResource TextBrush}" Margin="0,0,0,3"/>
+                            <TextBlock Text="Developer contact: your-email@example.com" FontFamily="Consolas" FontSize="12"
+                                       Foreground="{DynamicResource TextBrush}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Step 4 -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                        <Border Style="{StaticResource StepNumber}">
+                            <TextBlock Text="4" FontWeight="Bold" FontSize="14"
+                                       Foreground="{DynamicResource BackgroundBrush}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Create OAuth Credentials" FontSize="15" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <TextBlock Foreground="{DynamicResource SubtextBrush}" TextWrapping="Wrap" Margin="40,0,0,0">
+                        <Run Text="Go to"/>
+                        <Run Text="APIs &amp; Services ? Credentials" FontWeight="SemiBold"/>
+                        <Run Text=", click"/>
+                        <Run Text="Create Credentials ? OAuth client ID" FontWeight="SemiBold"/>
+                        <Run Text=":"/>
+                    </TextBlock>
+                    <Border Style="{StaticResource CodeBlock}" Margin="40,8,0,0">
+                        <StackPanel>
+                            <TextBlock Text="Application type: Desktop app" FontFamily="Consolas" FontSize="12"
+                                       Foreground="{DynamicResource TextBrush}" Margin="0,0,0,3"/>
+                            <TextBlock Text="Name: OneManVan Desktop" FontFamily="Consolas" FontSize="12"
+                                       Foreground="{DynamicResource TextBrush}"/>
+                        </StackPanel>
+                    </Border>
+                    <TextBlock Text="After creating, you'll get your Client ID and Client Secret."
+                               Foreground="{DynamicResource SubtextBrush}" TextWrapping="Wrap" Margin="40,8,0,15"/>
+
+                    <!-- Important Note -->
+                    <Border Background="#2ef38ba8" CornerRadius="6" Padding="15" Margin="0,0,0,15">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="?" FontSize="16" Margin="0,0,10,0"/>
+                            <TextBlock Foreground="{DynamicResource TextBrush}" TextWrapping="Wrap">
+                                <Run Text="Important:" FontWeight="SemiBold"/>
+                                <Run Text="For personal use, you can stay in 'Testing' mode and add your email as a test user. For production, you'll need to verify your app."/>
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Step 5 -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                        <Border Style="{StaticResource StepNumber}">
+                            <TextBlock Text="5" FontWeight="Bold" FontSize="14"
+                                       Foreground="{DynamicResource BackgroundBrush}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Add Test Users (If in Testing Mode)" FontSize="15" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <TextBlock Foreground="{DynamicResource SubtextBrush}" TextWrapping="Wrap" Margin="40,0,0,0">
+                        <Run Text="Go to"/>
+                        <Run Text="OAuth consent screen ? Test users" FontWeight="SemiBold"/>
+                        <Run Text="and add your Google email address."/>
+                    </TextBlock>
+
+                    <!-- Step 6 -->
+                    <StackPanel Orientation="Horizontal" Margin="0,15,0,12">
+                        <Border Style="{StaticResource StepNumber}">
+                            <TextBlock Text="6" FontWeight="Bold" FontSize="14"
+                                       Foreground="{DynamicResource BackgroundBrush}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="Configure in OneManVan" FontSize="15" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <TextBlock Text="Go to Settings ? Google Calendar and enter your Client ID and Client Secret. Click 'Connect' to authorize."
+                               Foreground="{DynamicResource SubtextBrush}" TextWrapping="Wrap" Margin="40,0,0,8"/>
+                    <Button Content="Open Settings" Click="OpenSettings_Click"
+                            Style="{StaticResource LinkButton}" HorizontalAlignment="Left" Margin="40,0,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Troubleshooting Section -->
+            <Border Style="{StaticResource SectionCard}">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                        
+                        <TextBlock Text="Troubleshooting" FontSize="20" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Common Issues -->
+                    <TextBlock Text="Square Issues" FontSize="14" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextBrush}" Margin="0,0,0,8"/>
+                    <StackPanel Margin="0,0,0,15">
+                        <TextBlock Foreground="{DynamicResource SubtextBrush}" TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="- 'Invalid credentials':" FontWeight="SemiBold"/>
+                            <Run Text="Make sure you're using the correct environment (Sandbox vs Production) matching your credentials."/>
+                        </TextBlock>
+                        <TextBlock Foreground="{DynamicResource SubtextBrush}" TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="- 'Location not found':" FontWeight="SemiBold"/>
+                            <Run Text="Use the 'Fetch' button to get your Location ID, or copy it from the Square Dashboard."/>
+                        </TextBlock>
+                    </StackPanel>
+
+                    <TextBlock Text="Google Calendar Issues" FontSize="14" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextBrush}" Margin="0,0,0,8"/>
+                    <StackPanel>
+                        <TextBlock Foreground="{DynamicResource SubtextBrush}" TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="- 'Access denied':" FontWeight="SemiBold"/>
+                            <Run Text="Add your email as a test user in the OAuth consent screen if your app is in Testing mode."/>
+                        </TextBlock>
+                        <TextBlock Foreground="{DynamicResource SubtextBrush}" TextWrapping="Wrap" Margin="0,0,0,5">
+                            <Run Text="- 'App not verified':" FontWeight="SemiBold"/>
+                            <Run Text="For personal use, click 'Advanced' then 'Go to OneManVan (unsafe)' during authorization."/>
+                        </TextBlock>
+                        <TextBlock Foreground="{DynamicResource SubtextBrush}" TextWrapping="Wrap">
+                            <Run Text="- 'Calendar API not enabled':" FontWeight="SemiBold"/>
+                            <Run Text="Make sure you enabled the Google Calendar API in your project's API Library."/>
+                        </TextBlock>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Footer -->
+            <TextBlock Text="Need more help? Check the Square and Google documentation for detailed API guides."
+                       Foreground="{DynamicResource SubtextBrush}" FontSize="12"
+                       HorizontalAlignment="Center" Margin="0,0,0,20"/>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

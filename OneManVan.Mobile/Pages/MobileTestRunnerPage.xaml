@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="OneManVan.Mobile.Pages.MobileTestRunnerPage"
+             Title="Test Runner"
+             BackgroundColor="#F5F5F5">
+
+    <Grid RowDefinitions="Auto, Auto, *">
+        
+        <!-- Header -->
+        <Border Grid.Row="0" 
+                BackgroundColor="White" 
+                Padding="16"
+                StrokeShape="RoundRectangle 0"
+                Stroke="Transparent">
+            <Border.Shadow>
+                <Shadow Brush="Black" Offset="0,2" Radius="4" Opacity="0.1"/>
+            </Border.Shadow>
+            <VerticalStackLayout Spacing="8">
+                <Label Text="Mobile Test Runner" 
+                       FontSize="24" 
+                       FontAttributes="Bold"
+                       TextColor="#1976D2"/>
+                <Label Text="Run database and CRUD tests on device"
+                       FontSize="14"
+                       TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+            </VerticalStackLayout>
+        </Border>
+
+        <!-- Stats and Run Button -->
+        <Border Grid.Row="1" 
+                BackgroundColor="White" 
+                Margin="16,8"
+                Padding="16"
+                StrokeShape="RoundRectangle 12"
+                Stroke="Transparent">
+            <Border.Shadow>
+                <Shadow Brush="Black" Offset="0,2" Radius="4" Opacity="0.1"/>
+            </Border.Shadow>
+            <VerticalStackLayout Spacing="16">
+                
+                <!-- Stats Row -->
+                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="16" IsVisible="{Binding HasRun}">
+                    <VerticalStackLayout HorizontalOptions="Center">
+                        <Label x:Name="PassedLabel"
+                               Text="0"
+                               FontSize="28"
+                               FontAttributes="Bold"
+                               TextColor="#4CAF50"
+                               HorizontalTextAlignment="Center"/>
+                        <Label Text="Passed"
+                               FontSize="12"
+                               TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"
+                               HorizontalTextAlignment="Center"/>
+                    </VerticalStackLayout>
+                    <VerticalStackLayout Grid.Column="1" HorizontalOptions="Center">
+                        <Label x:Name="FailedLabel"
+                               Text="0"
+                               FontSize="28"
+                               FontAttributes="Bold"
+                               TextColor="#F44336"
+                               HorizontalTextAlignment="Center"/>
+                        <Label Text="Failed"
+                               FontSize="12"
+                               TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"
+                               HorizontalTextAlignment="Center"/>
+                    </VerticalStackLayout>
+                    <VerticalStackLayout Grid.Column="2" HorizontalOptions="Center">
+                        <Label x:Name="PassRateLabel"
+                               Text="0%"
+                               FontSize="28"
+                               FontAttributes="Bold"
+                               TextColor="#1976D2"
+                               HorizontalTextAlignment="Center"/>
+                        <Label Text="Pass Rate"
+                               FontSize="12"
+                               TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"
+                               HorizontalTextAlignment="Center"/>
+                    </VerticalStackLayout>
+                </Grid>
+
+                <!-- Run Button -->
+                <Button x:Name="RunButton"
+                        Text="Run All Tests"
+                        BackgroundColor="#1976D2"
+                        TextColor="White"
+                        FontAttributes="Bold"
+                        FontSize="16"
+                        HeightRequest="50"
+                        CornerRadius="8"
+                        Clicked="OnRunTestsClicked"/>
+                
+                <!-- Activity Indicator -->
+                <ActivityIndicator x:Name="LoadingIndicator"
+                                   IsRunning="False"
+                                   IsVisible="False"
+                                   Color="#1976D2"
+                                   HeightRequest="30"/>
+                
+                <Label x:Name="StatusLabel"
+                       Text="Ready to run tests"
+                       FontSize="14"
+                       TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"
+                       HorizontalTextAlignment="Center"/>
+            </VerticalStackLayout>
+        </Border>
+
+        <!-- Test Report -->
+        <Border Grid.Row="2" 
+                BackgroundColor="White" 
+                Margin="16,0,16,16"
+                Padding="16"
+                StrokeShape="RoundRectangle 12"
+                Stroke="Transparent">
+            <Border.Shadow>
+                <Shadow Brush="Black" Offset="0,2" Radius="4" Opacity="0.1"/>
+            </Border.Shadow>
+            <ScrollView>
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Test Report"
+                           FontSize="18"
+                           FontAttributes="Bold"
+                           TextColor="#333"/>
+                    <Editor x:Name="ReportEditor"
+                            IsReadOnly="True"
+                            FontSize="12"
+                            FontFamily="Consolas"
+                            BackgroundColor="#FAFAFA"
+                            MinimumHeightRequest="400"
+                            AutoSize="TextChanges"/>
+                </VerticalStackLayout>
+            </ScrollView>
+        </Border>
+
+    </Grid>
+
+</ContentPage>

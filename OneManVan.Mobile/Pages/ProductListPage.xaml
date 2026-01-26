@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="OneManVan.Mobile.Pages.ProductListPage"
+             Title="Products"
+             BackgroundColor="{AppThemeBinding Light={StaticResource LightBackground}, Dark={StaticResource DarkBackground}}">
+
+    <Grid RowDefinitions="Auto,Auto,*">
+
+        <!-- Search Bar -->
+        <Border Grid.Row="0" 
+                BackgroundColor="{AppThemeBinding Light=White, Dark=#2D2D2D}" 
+                Padding="16,8"
+                StrokeShape="RoundRectangle 0"
+                Stroke="Transparent">
+            <SearchBar x:Name="SearchBar"
+                       Placeholder="Search products..."
+                       BackgroundColor="{AppThemeBinding Light=#F5F5F5, Dark=#3D3D3D}"
+                       TextChanged="OnSearchTextChanged"/>
+        </Border>
+
+        <!-- Filter Chips -->
+        <ScrollView Grid.Row="1" Orientation="Horizontal" Margin="0,8,0,8">
+            <HorizontalStackLayout Spacing="8" Padding="16,0">
+                <Button x:Name="AllFilter" 
+                        Text="All"
+                        BackgroundColor="#1976D2"
+                        TextColor="White"
+                        FontSize="12"
+                        HeightRequest="32"
+                        CornerRadius="16"
+                        Padding="16,0"
+                        Clicked="OnFilterClicked"/>
+                <Button x:Name="AcFilter" 
+                        Text="AC"
+                        BackgroundColor="#E3F2FD"
+                        TextColor="#1976D2"
+                        FontSize="12"
+                        HeightRequest="32"
+                        CornerRadius="16"
+                        Padding="16,0"
+                        Clicked="OnFilterClicked"/>
+                <Button x:Name="FurnaceFilter" 
+                        Text="Furnace"
+                        BackgroundColor="#FFF3E0"
+                        TextColor="#FF9800"
+                        FontSize="12"
+                        HeightRequest="32"
+                        CornerRadius="16"
+                        Padding="16,0"
+                        Clicked="OnFilterClicked"/>
+                <Button x:Name="HeatPumpFilter" 
+                        Text="Heat Pump"
+                        BackgroundColor="#E8F5E9"
+                        TextColor="#4CAF50"
+                        FontSize="12"
+                        HeightRequest="32"
+                        CornerRadius="16"
+                        Padding="16,0"
+                        Clicked="OnFilterClicked"/>
+                <Button x:Name="MiniSplitFilter" 
+                        Text="Mini Split"
+                        BackgroundColor="#F3E5F5"
+                        TextColor="#9C27B0"
+                        FontSize="12"
+                        HeightRequest="32"
+                        CornerRadius="16"
+                        Padding="16,0"
+                        Clicked="OnFilterClicked"/>
+            </HorizontalStackLayout>
+        </ScrollView>
+
+        <!-- Product List -->
+        <RefreshView Grid.Row="2" 
+                     x:Name="RefreshViewControl"
+                     Refreshing="OnRefreshing">
+            <CollectionView x:Name="ProductCollection"
+                            SelectionMode="Single"
+                            SelectionChanged="OnProductSelected">
+                <CollectionView.EmptyView>
+                    <VerticalStackLayout VerticalOptions="Center" HorizontalOptions="Center" Padding="32">
+                        <Label Text="ðŸ“¦" FontSize="48" HorizontalOptions="Center"/>
+                        <Label Text="No products yet" 
+                               FontSize="18" 
+                               TextColor="#9E9E9E"
+                               HorizontalTextAlignment="Center"/>
+                        <Label Text="Tap + to add your first product"
+                               FontSize="14"
+                               TextColor="#BDBDBD"
+                               HorizontalTextAlignment="Center"
+                               Margin="0,8,0,0"/>
+                    </VerticalStackLayout>
+                </CollectionView.EmptyView>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <!-- Product Card - Using Standard Card Style -->
+                        <Border Style="{StaticResource CardStyle}"
+                                Margin="16,4">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnProductTapped" CommandParameter="{Binding}"/>
+                            </Border.GestureRecognizers>
+                            
+                            <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="12">
+                                <!-- Category Icon -->
+                                <Border WidthRequest="48" 
+                                        HeightRequest="48"
+                                        StrokeShape="RoundRectangle 8"
+                                        BackgroundColor="{Binding CategoryColor}"
+                                        Stroke="Transparent"
+                                        VerticalOptions="Center">
+                                    <Label Text="{Binding CategoryIcon}"
+                                           FontSize="20"
+                                           HorizontalOptions="Center"
+                                           VerticalOptions="Center"/>
+                                </Border>
+
+                                <!-- Details -->
+                                <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+                                    <Label Text="{Binding Manufacturer}"
+                                           FontSize="12"
+                                           TextColor="#1976D2"/>
+                                    <Label Text="{Binding ModelNumber}"
+                                           FontSize="16"
+                                           FontAttributes="Bold"
+                                           TextColor="#333"
+                                           LineBreakMode="TailTruncation"/>
+                                    <HorizontalStackLayout Spacing="8">
+                                        <Label Text="{Binding CapacityDisplay}"
+                                               FontSize="12"
+                                               TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                                        <Label Text="|" FontSize="12" TextColor="#E0E0E0" IsVisible="{Binding HasEfficiency}"/>
+                                        <Label Text="{Binding EfficiencyDisplay}"
+                                               FontSize="12"
+                                               TextColor="#4CAF50"
+                                               IsVisible="{Binding HasEfficiency}"/>
+                                    </HorizontalStackLayout>
+                                </VerticalStackLayout>
+
+                                <!-- Price -->
+                                <VerticalStackLayout Grid.Column="2" VerticalOptions="Center" HorizontalOptions="End">
+                                    <Label Text="{Binding SuggestedSellPrice, StringFormat='${0:N0}'}"
+                                           FontSize="16"
+                                           FontAttributes="Bold"
+                                           TextColor="#4CAF50"
+                                           HorizontalTextAlignment="End"
+                                           IsVisible="{Binding HasPrice}"/>
+                                    <Label Text="{Binding RefrigerantDisplay}"
+                                           FontSize="11"
+                                           TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"
+                                           HorizontalTextAlignment="End"/>
+                                </VerticalStackLayout>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+
+        <!-- FAB Add Button -->
+        <Button Grid.Row="2"
+                Text="+"
+                FontSize="28"
+                TextColor="White"
+                BackgroundColor="#1976D2"
+                WidthRequest="60"
+                HeightRequest="60"
+                CornerRadius="30"
+                HorizontalOptions="End"
+                VerticalOptions="End"
+                Margin="0,0,20,20"
+                Shadow="{Shadow Brush=Black, Offset='0,4', Radius=8, Opacity=0.3}"
+                Clicked="OnAddProductClicked"/>
+
+    </Grid>
+
+</ContentPage>

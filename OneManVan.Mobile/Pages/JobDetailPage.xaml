@@ -1,0 +1,391 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:OneManVan.Mobile.Controls"
+             x:Class="OneManVan.Mobile.Pages.JobDetailPage"
+             Title="Job Details"
+             BackgroundColor="{AppThemeBinding Light={StaticResource LightBackground}, Dark={StaticResource DarkBackground}}">
+
+    <Grid RowDefinitions="*, Auto">
+        <ScrollView Grid.Row="0">
+            <VerticalStackLayout Padding="15" Spacing="0">
+                
+                <!-- Status Banner - Now Tappable for Quick Status Change -->
+                <Border x:Name="StatusBanner" Padding="15" 
+                        BackgroundColor="#3B82F6"
+                        StrokeShape="RoundRectangle 8"
+                        Stroke="Transparent"
+                        Margin="0,0,0,15">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnStatusBannerTapped"/>
+                    </Border.GestureRecognizers>
+                    <Grid ColumnDefinitions="*, Auto">
+                        <StackLayout>
+                            <Label x:Name="StatusText" Text="Scheduled" 
+                                   FontSize="16" FontAttributes="Bold" TextColor="White"/>
+                            <Label x:Name="StatusSubtext" Text="Tap to change status" 
+                                   FontSize="12" TextColor="#FFFFFFCC"/>
+                        </StackLayout>
+                        <StackLayout Grid.Column="1" VerticalOptions="Center">
+                            <Label x:Name="JobNumberLabel" Text="J-0001" 
+                                   FontSize="12" TextColor="White"/>
+                            <Label Text="Change" FontSize="10" TextColor="#FFFFFFAA"
+                                   HorizontalOptions="End"/>
+                        </StackLayout>
+                    </Grid>
+                </Border>
+
+                <!-- Customer and Site Info -->
+                <Border BackgroundColor="White" Padding="15" 
+                        StrokeShape="RoundRectangle 8" Stroke="Transparent"
+                        Margin="0,0,0,10">
+                    <Border.Shadow>
+                        <Shadow Brush="Black" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <StackLayout Spacing="8">
+                        <StackLayout>
+                            <Label x:Name="CustomerName" Text="Customer Name" 
+                                   FontSize="14" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"/>
+                            <Label x:Name="CustomerPhone" Text="(555) 123-4567" 
+                                   FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                        </StackLayout>
+                        
+                        <BoxView HeightRequest="1" Color="{AppThemeBinding Light=#E0E0E0, Dark=#424242}" Margin="0,5"/>
+                        
+                        <StackLayout>
+                            <Label x:Name="SiteAddress" Text="123 Main Street" 
+                                   FontSize="14" TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"/>
+                            <Label x:Name="SiteCityState" Text="Anytown, ST 12345" 
+                                   FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                        </StackLayout>
+                        
+                        <Grid ColumnDefinitions="*, *" ColumnSpacing="10" Margin="0,10,0,0">
+                            <Button Text="Call" Clicked="OnCallCustomerClicked"
+                                    BackgroundColor="{AppThemeBinding Light={StaticResource PrimarySurface}, Dark={StaticResource DarkCardBackground}}" TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"
+                                    HeightRequest="40" CornerRadius="8"/>
+                            <Button Grid.Column="1" Text="Navigate" Clicked="OnNavigateClicked"
+                                    BackgroundColor="{AppThemeBinding Light={StaticResource SuccessSurface}, Dark={StaticResource DarkCardBackground}}" TextColor="{AppThemeBinding Light={StaticResource SectionSuccess}, Dark={StaticResource SectionSuccessDark}}"
+                                    HeightRequest="40" CornerRadius="8"/>
+                        </Grid>
+                    </StackLayout>
+                </Border>
+
+                <!-- Schedule Info -->
+                <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" Padding="15" 
+                        StrokeShape="RoundRectangle 8" Stroke="Transparent"
+                        Margin="0,0,0,10">
+                    <Border.Shadow>
+                        <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <Grid ColumnDefinitions="*, *" RowDefinitions="Auto, Auto" RowSpacing="10">
+                        <StackLayout>
+                            <Label Text="Scheduled" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Label x:Name="ScheduledDate" Text="Dec 15, 2024" 
+                                   FontSize="14" TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"/>
+                            <Label x:Name="ScheduledTime" Text="9:00 AM" 
+                                   FontSize="14" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"/>
+                        </StackLayout>
+                        
+                        <StackLayout Grid.Column="1">
+                            <Label Text="Est. Duration" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Label x:Name="EstimatedHours" Text="2 hours" 
+                                   FontSize="14" TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"/>
+                        </StackLayout>
+                        
+                        <StackLayout Grid.Row="1">
+                            <Label Text="Priority" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Label x:Name="PriorityLabel" Text="Normal" 
+                                   FontSize="14" TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"/>
+                        </StackLayout>
+                        
+                        <StackLayout Grid.Row="1" Grid.Column="1">
+                            <Label Text="Job Type" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Label x:Name="JobTypeLabel" Text="Service Call" 
+                                   FontSize="14" TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"/>
+                        </StackLayout>
+                    </Grid>
+                </Border>
+
+                <!-- Job Description -->
+                <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" Padding="15" 
+                        StrokeShape="RoundRectangle 8" Stroke="Transparent"
+                        Margin="0,0,0,10">
+                    <Border.Shadow>
+                        <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <StackLayout Spacing="8">
+                        <Label Text="Job Description" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}" FontAttributes="Bold"/>
+                        <Label x:Name="JobTitle" Text="AC Not Cooling" 
+                               FontSize="16" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"/>
+                        <Label x:Name="JobDescription" Text="Customer reports AC running but not cooling." 
+                               FontSize="14" TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}" LineBreakMode="WordWrap"/>
+                    </StackLayout>
+                </Border>
+
+                <!-- Asset Info -->
+                <Border x:Name="AssetFrame" BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" Padding="15" 
+                        StrokeShape="RoundRectangle 8" Stroke="Transparent"
+                        Margin="0,0,0,10" IsVisible="False">
+                    <Border.Shadow>
+                        <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <StackLayout Spacing="8">
+                        <Label Text="Equipment" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}" FontAttributes="Bold"/>
+                        <StackLayout>
+                            <Label x:Name="AssetName" Text="Carrier 24ACC636" 
+                                   FontSize="14" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"/>
+                            <Label x:Name="AssetSerial" Text="Serial: ABC123456" 
+                                   FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Label x:Name="AssetSpecs" Text="3 Ton, 16 SEER, R-410A" 
+                                   FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                        </StackLayout>
+                    </StackLayout>
+                </Border>
+
+                <!-- Time Tracking - Always visible but shows N/A if skipped -->
+                <Border x:Name="TimeTrackingFrame" BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" Padding="15" 
+                        StrokeShape="RoundRectangle 8" Stroke="Transparent"
+                        Margin="0,0,0,10" IsVisible="False">
+                    <Border.Shadow>
+                        <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <StackLayout Spacing="8">
+                        <Label Text="Time Tracking" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}" FontAttributes="Bold"/>
+                        <Grid ColumnDefinitions="*, *, *" RowDefinitions="Auto, Auto" RowSpacing="5">
+                            <StackLayout>
+                                <Label Text="En Route" FontSize="11" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                                <Label x:Name="EnRouteTime" Text="--:--" FontSize="14" TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"/>
+                            </StackLayout>
+                            <StackLayout Grid.Column="1">
+                                <Label Text="Arrived" FontSize="11" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                                <Label x:Name="ArrivedTime" Text="--:--" FontSize="14" TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"/>
+                            </StackLayout>
+                            <StackLayout Grid.Column="2">
+                                <Label Text="Completed" FontSize="11" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                                <Label x:Name="CompletedTime" Text="--:--" FontSize="14" TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"/>
+                            </StackLayout>
+                            
+                            <StackLayout Grid.Row="1" Grid.ColumnSpan="2">
+                                <Label Text="Total Time" FontSize="11" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                                <Label x:Name="TotalTime" Text="0h 0m" 
+                                       FontSize="16" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"/>
+                            </StackLayout>
+                        </Grid>
+                    </StackLayout>
+                </Border>
+
+                <!-- Work Notes - Always available for editing -->
+                <Border x:Name="WorkNotesFrame" BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" Padding="15" 
+                        StrokeShape="RoundRectangle 8" Stroke="Transparent"
+                        Margin="0,0,0,10" IsVisible="True">
+                    <Border.Shadow>
+                        <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <StackLayout Spacing="8">
+                        <Label Text="Work Performed" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}" FontAttributes="Bold"/>
+                        <Editor x:Name="WorkPerformedEditor" Placeholder="Describe work performed..."
+                                HeightRequest="100" BackgroundColor="{AppThemeBinding Light={StaticResource LightInputBackground}, Dark={StaticResource DarkInputBackground}}"/>
+                        
+                        <Label Text="Diagnosis" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}" Margin="0,10,0,0"/>
+                        <Editor x:Name="DiagnosisEditor" Placeholder="Enter diagnosis..."
+                                HeightRequest="80" BackgroundColor="{AppThemeBinding Light={StaticResource LightInputBackground}, Dark={StaticResource DarkInputBackground}}"/>
+                    </StackLayout>
+                </Border>
+
+                <!-- Photos Section - Always available -->
+                <Border x:Name="PhotosFrame" BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" Padding="15" 
+                        StrokeShape="RoundRectangle 8" Stroke="Transparent"
+                        Margin="0,0,0,10" IsVisible="True">
+                    <Border.Shadow>
+                        <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <StackLayout Spacing="8">
+                        <Grid ColumnDefinitions="*, Auto">
+                            <Label Text="Photos" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}" FontAttributes="Bold"/>
+                            <Button Grid.Column="1" Text="Add Photo" Clicked="OnAddPhotoClicked"
+                                    BackgroundColor="{AppThemeBinding Light={StaticResource PrimarySurface}, Dark={StaticResource DarkCardBackground}}" TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"
+                                    HeightRequest="36" WidthRequest="100" CornerRadius="8"/>
+                        </Grid>
+                        
+                        <!-- Photo Type Selection -->
+                        <Grid x:Name="PhotoTypeGrid" ColumnDefinitions="*, *, *" ColumnSpacing="5" 
+                              Margin="0,5" IsVisible="False">
+                            <Button Text="Before" Clicked="OnPhotoTypeSelected" 
+                                    BackgroundColor="{AppThemeBinding Light={StaticResource WarningSurface}, Dark=#3D2D1F}" TextColor="{AppThemeBinding Light={StaticResource SectionWarning}, Dark={StaticResource SectionWarningDark}}"
+                                    HeightRequest="32" CornerRadius="5"/>
+                            <Button Grid.Column="1" Text="After" Clicked="OnPhotoTypeSelected"
+                                    BackgroundColor="{AppThemeBinding Light={StaticResource SuccessSurface}, Dark=#1B3D1F}" TextColor="{AppThemeBinding Light={StaticResource SectionSuccess}, Dark={StaticResource SectionSuccessDark}}"
+                                    HeightRequest="32" CornerRadius="5"/>
+                            <Button Grid.Column="2" Text="Issue" Clicked="OnPhotoTypeSelected"
+                                    BackgroundColor="{AppThemeBinding Light={StaticResource ErrorSurface}, Dark=#3D1F1F}" TextColor="{AppThemeBinding Light={StaticResource Error}, Dark=#EF9A9A}"
+                                    HeightRequest="32" CornerRadius="5"/>
+                        </Grid>
+                        
+                        <!-- Photo Gallery -->
+                        <CollectionView x:Name="PhotosCollection" HeightRequest="120" IsVisible="False">
+                            <CollectionView.ItemsLayout>
+                                <LinearItemsLayout Orientation="Horizontal" ItemSpacing="8"/>
+                            </CollectionView.ItemsLayout>
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Padding="0" StrokeShape="RoundRectangle 8" Stroke="Transparent"
+                                            WidthRequest="100" HeightRequest="100">
+                                        <Grid>
+                                            <Image Source="{Binding FilePath}" Aspect="AspectFill"/>
+                                            <Border BackgroundColor="#80000000" Padding="3"
+                                                    VerticalOptions="End" StrokeShape="RoundRectangle 0"
+                                                    Stroke="Transparent">
+                                                <Label Text="{Binding PhotoType}" TextColor="White"
+                                                       FontSize="9" HorizontalOptions="Center"/>
+                                            </Border>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                        
+                        <Label x:Name="PhotosPlaceholder" Text="No photos yet" 
+                               FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextTertiary}, Dark={StaticResource DarkTextTertiary}}"
+                               HorizontalOptions="Center" Margin="0,20"/>
+                    </StackLayout>
+                </Border>
+
+                <!-- Pricing Summary - Always available -->
+                <Border x:Name="PricingFrame" BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" Padding="15" 
+                        StrokeShape="RoundRectangle 8" Stroke="Transparent"
+                        Margin="0,0,0,10" IsVisible="True">
+                    <Border.Shadow>
+                        <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <StackLayout Spacing="8">
+                        <Label Text="Pricing" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}" FontAttributes="Bold"/>
+                        <Grid ColumnDefinitions="*, Auto" RowDefinitions="Auto, Auto, Auto, Auto, Auto" 
+                              RowSpacing="8">
+                            <Label Text="Labor" FontSize="14" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Label x:Name="LaborTotal" Grid.Column="1" Text="$0.00" 
+                                   FontSize="14" TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"/>
+                            
+                            <Label Grid.Row="1" Text="Parts/Materials" FontSize="14" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Label x:Name="PartsTotal" Grid.Row="1" Grid.Column="1" Text="$0.00" 
+                                   FontSize="14" TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"/>
+                            
+                            <Label Grid.Row="2" Text="Tax" FontSize="14" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Label x:Name="TaxTotal" Grid.Row="2" Grid.Column="1" Text="$0.00" 
+                                   FontSize="14" TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"/>
+                            
+                            <BoxView Grid.Row="3" Grid.ColumnSpan="2" HeightRequest="1" Color="{AppThemeBinding Light=#E0E0E0, Dark=#424242}"/>
+                            
+                            <Label Grid.Row="4" Text="Total" FontSize="16" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"/>
+                            <Label x:Name="GrandTotal" Grid.Row="4" Grid.Column="1" Text="$0.00" 
+                                   FontSize="18" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource SectionSuccess}, Dark={StaticResource SectionSuccessDark}}"/>
+                        </Grid>
+                        
+                        <!-- Quick Price Entry -->
+                        <Grid ColumnDefinitions="*, *" ColumnSpacing="10" Margin="0,10,0,0">
+                            <Button Text="Set Labor" Clicked="OnSetLaborClicked"
+                                    BackgroundColor="{AppThemeBinding Light={StaticResource PrimarySurface}, Dark={StaticResource DarkCardBackground}}" TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"
+                                    HeightRequest="40" CornerRadius="8"/>
+                            <Button Grid.Column="1" Text="Add Parts" Clicked="OnAddPartsClicked"
+                                    BackgroundColor="{AppThemeBinding Light={StaticResource PrimarySurface}, Dark={StaticResource DarkCardBackground}}" TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"
+                                    HeightRequest="40" CornerRadius="8"/>
+                        </Grid>
+                    </StackLayout>
+                </Border>
+
+                <!-- Signature Section -->
+                <Border x:Name="SignatureFrame" BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" Padding="15" 
+                        StrokeShape="RoundRectangle 8" Stroke="Transparent"
+                        Margin="0,0,0,10" IsVisible="False">
+                    <Border.Shadow>
+                        <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <StackLayout Spacing="8">
+                        <Label Text="Customer Signature" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}" FontAttributes="Bold"/>
+                        
+                        <!-- Signature Pad -->
+                        <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightInputBackground}, Dark={StaticResource DarkInputBackground}}" HeightRequest="150" 
+                                Padding="0" StrokeShape="RoundRectangle 8" Stroke="Transparent">
+                            <Grid>
+                                <controls:SignaturePad x:Name="SignaturePadControl" 
+                                                       StrokeColor="Black" StrokeWidth="3"
+                                                       SignatureChanged="OnSignatureChanged"/>
+                                <Label x:Name="SignaturePlaceholder" Text="Sign above" 
+                                       HorizontalOptions="Center" VerticalOptions="End"
+                                       TextColor="{AppThemeBinding Light={StaticResource LightTextTertiary}, Dark={StaticResource DarkTextTertiary}}" Margin="0,0,0,5"/>
+                            </Grid>
+                        </Border>
+                        
+                        <Entry x:Name="SignedByEntry" Placeholder="Customer name (printed)"
+                               BackgroundColor="{AppThemeBinding Light={StaticResource LightInputBackground}, Dark={StaticResource DarkInputBackground}}"/>
+                        
+                        <Grid ColumnDefinitions="*, *" ColumnSpacing="10">
+                            <Button Text="Clear" Clicked="OnClearSignatureClicked"
+                                    BackgroundColor="{AppThemeBinding Light={StaticResource ErrorSurface}, Dark=#3D1F1F}" TextColor="{AppThemeBinding Light=#D32F2F, Dark=#EF9A9A}"
+                                    HeightRequest="40" CornerRadius="8"/>
+                            <Button Grid.Column="1" Text="Accept" 
+                                    Clicked="OnAcceptSignatureClicked"
+                                    BackgroundColor="{AppThemeBinding Light={StaticResource SuccessSurface}, Dark=#1B3D1F}" TextColor="{AppThemeBinding Light={StaticResource SectionSuccess}, Dark={StaticResource SectionSuccessDark}}"
+                                    HeightRequest="40" CornerRadius="8"/>
+                        </Grid>
+                    </StackLayout>
+                </Border>
+
+                <!-- Spacer for bottom actions -->
+                <BoxView HeightRequest="120"/>
+                
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- Bottom Action Bar - Flexible Actions -->
+        <Border Grid.Row="1" BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                Padding="15" StrokeShape="RoundRectangle 0" Stroke="Transparent">
+            <Border.Shadow>
+                <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,-2" Radius="4" Opacity="0.1"/>
+            </Border.Shadow>
+            <Grid RowDefinitions="Auto, Auto" RowSpacing="10">
+                <!-- Primary Action - Context Sensitive -->
+                <Button x:Name="PrimaryActionButton" Text="Start Job" 
+                        Clicked="OnPrimaryActionClicked"
+                        BackgroundColor="#1976D2" TextColor="White"
+                        FontAttributes="Bold" HeightRequest="50" CornerRadius="8"/>
+                
+                <!-- Secondary Actions Row -->
+                <Grid Grid.Row="1" ColumnDefinitions="*, *, *" ColumnSpacing="8">
+                    <!-- Quick Complete -->
+                    <Button x:Name="QuickCompleteButton" Text="Quick Complete" 
+                            Clicked="OnQuickCompleteClicked"
+                            BackgroundColor="#4CAF50" TextColor="White"
+                            HeightRequest="40" CornerRadius="8" FontSize="11"/>
+                    
+                    <!-- Create Invoice -->
+                    <Button x:Name="QuickInvoiceButton" Text="Invoice" 
+                            Clicked="OnQuickInvoiceClicked"
+                            BackgroundColor="#FF9800" TextColor="White"
+                            HeightRequest="40" CornerRadius="8" FontSize="11"/>
+                    
+                    <!-- More Options -->
+                    <Button x:Name="MoreOptionsButton" Text="More" 
+                            Clicked="OnMoreOptionsClicked"
+                            BackgroundColor="{AppThemeBinding Light=#E0E0E0, Dark={StaticResource Gray600}}" TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"
+                            HeightRequest="40" CornerRadius="8" FontSize="11"/>
+                </Grid>
+            </Grid>
+        </Border>
+
+        <!-- Loading Overlay -->
+        <Grid x:Name="LoadingOverlay" Grid.RowSpan="2" IsVisible="False"
+              BackgroundColor="#80000000">
+            <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" StrokeShape="RoundRectangle 10" Stroke="Transparent"
+                    Padding="30" HorizontalOptions="Center" VerticalOptions="Center">
+                <Border.Shadow>
+                    <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,4" Radius="8" Opacity="0.2"/>
+                </Border.Shadow>
+                <StackLayout Spacing="15">
+                    <ActivityIndicator IsRunning="True" Color="#1976D2"/>
+                    <Label x:Name="LoadingText" Text="Loading..." 
+                           HorizontalOptions="Center"/>
+                </StackLayout>
+            </Border>
+        </Grid>
+    </Grid>
+</ContentPage>

@@ -1,0 +1,107 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="OneManVan.Mobile.Pages.InventoryDetailPage"
+             Title="Inventory Item">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="16">
+
+            <ActivityIndicator x:Name="LoadingIndicator" IsRunning="False" IsVisible="False"/>
+
+            <!-- Header -->
+            <Frame>
+                <VerticalStackLayout Spacing="8">
+                    <Label x:Name="NameLabel" FontSize="20" FontAttributes="Bold"/>
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                        <Label Text="SKU:" Grid.Column="0" TextColor="Gray"/>
+                        <Label x:Name="SkuLabel" Grid.Column="1"/>
+                        <Label x:Name="CategoryLabel" Grid.Column="2" FontSize="12" 
+                               BackgroundColor="{DynamicResource PrimarySurface}" 
+                               Padding="8,4"/>
+                    </Grid>
+                    <Label x:Name="DescriptionLabel" TextColor="Gray" FontSize="13"/>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Stock Warning -->
+            <Frame x:Name="LowStockWarning" BackgroundColor="{DynamicResource WarningSurface}" IsVisible="False">
+                <Label Text="Low Stock - Below reorder point" TextColor="{DynamicResource Warning}"/>
+            </Frame>
+
+            <Frame x:Name="OutOfStockWarning" BackgroundColor="{DynamicResource ErrorSurface}" IsVisible="False">
+                <Label Text="Out of Stock" TextColor="{DynamicResource Error}"/>
+            </Frame>
+
+            <!-- Stock & Pricing -->
+            <Frame>
+                <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="*,*" RowSpacing="12" ColumnSpacing="12">
+                    <Label Text="Quantity" Grid.Row="0" Grid.Column="0" FontAttributes="Bold"/>
+                    <Label x:Name="QuantityLabel" Grid.Row="1" Grid.Column="0" FontSize="18" FontAttributes="Bold"/>
+                    
+                    <Label Text="Cost" Grid.Row="0" Grid.Column="1" FontAttributes="Bold"/>
+                    <Label x:Name="CostLabel" Grid.Row="1" Grid.Column="1" FontSize="18"/>
+                    
+                    <Label Text="Price" Grid.Row="2" Grid.Column="0" FontAttributes="Bold"/>
+                    <Label x:Name="PriceLabel" Grid.Row="3" Grid.Column="0" FontSize="18" TextColor="{DynamicResource Success}"/>
+                    
+                    <Label Text="Margin" Grid.Row="2" Grid.Column="1" FontAttributes="Bold"/>
+                    <Label x:Name="MarginLabel" Grid.Row="3" Grid.Column="1" FontSize="18"/>
+                </Grid>
+            </Frame>
+
+            <!-- Location & Supplier -->
+            <Frame>
+                <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="*,*" RowSpacing="8" ColumnSpacing="12">
+                    <Label Text="Location" Grid.Row="0" Grid.Column="0" TextColor="Gray" FontSize="12"/>
+                    <Label x:Name="LocationLabel" Grid.Row="1" Grid.Column="0"/>
+                    
+                    <Label Text="Supplier" Grid.Row="0" Grid.Column="1" TextColor="Gray" FontSize="12"/>
+                    <Label x:Name="SupplierLabel" Grid.Row="1" Grid.Column="1"/>
+                    
+                    <Label Text="Last Restocked" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" TextColor="Gray" FontSize="12"/>
+                    <Label x:Name="LastRestockedLabel" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"/>
+                </Grid>
+            </Frame>
+
+            <!-- Recent Activity -->
+            <Frame>
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Recent Activity" FontAttributes="Bold" FontSize="16"/>
+                    <CollectionView x:Name="LogsCollection">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Padding="0,8" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                                    <Label Grid.Column="0" 
+                                           Text="{Binding Timestamp, StringFormat='{0:MMM dd}'}" 
+                                           FontSize="11" TextColor="Gray"/>
+                                    <VerticalStackLayout Grid.Column="1">
+                                        <Label Text="{Binding ChangeType}" FontSize="12"/>
+                                        <Label Text="{Binding Reason}" FontSize="11" TextColor="Gray"/>
+                                    </VerticalStackLayout>
+                                    <Label Grid.Column="2" 
+                                           Text="{Binding QuantityChange, StringFormat='{0:+0;-0}'}" 
+                                           FontSize="12" FontAttributes="Bold"/>
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Action Buttons -->
+            <Button Text="Adjust Stock" 
+                    Clicked="OnAdjustStockClicked"
+                    BackgroundColor="{DynamicResource Primary}"/>
+
+            <Button Text="Edit Item" 
+                    Clicked="OnEditClicked"
+                    BackgroundColor="{DynamicResource Secondary}"/>
+
+            <Button Text="Delete Item" 
+                    Clicked="OnDeleteClicked"
+                    BackgroundColor="{DynamicResource Error}"/>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

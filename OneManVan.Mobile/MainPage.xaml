@@ -1,0 +1,576 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:OneManVan.Mobile.Controls"
+             x:Class="OneManVan.Mobile.MainPage"
+             Title="Dashboard"
+             BackgroundColor="{AppThemeBinding Light={StaticResource LightBackground}, Dark={StaticResource DarkBackground}}">
+
+    <!-- Toolbar with Dashboard Toggle -->
+    <ContentPage.ToolbarItems>
+        <ToolbarItem x:Name="DashboardToggle"
+                     Text="Week"
+                     Order="Primary"
+                     Clicked="OnDashboardToggleClicked"/>
+    </ContentPage.ToolbarItems>
+
+    <Grid>
+        <!-- Dashboard 1: Schedule-First View (Default) -->
+        <ScrollView x:Name="Dashboard1" IsVisible="True">
+            <VerticalStackLayout Padding="16" Spacing="12">
+                
+                <!-- Today's Date Header -->
+                <Grid ColumnDefinitions="*,Auto">
+                    <VerticalStackLayout>
+                        <Label x:Name="TodayDayLabel"
+                               Text="Today" 
+                               FontSize="28" 
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light=#2196F3, Dark=#64B5F6}"/>
+                        <Label x:Name="TodayDateLabel"
+                               Text="December 14, 2024"
+                               FontSize="14"
+                               TextColor="{AppThemeBinding Light=#757575, Dark=#B0B0B0}"/>
+                    </VerticalStackLayout>
+                    <VerticalStackLayout Grid.Column="1" HorizontalOptions="End">
+                        <Label x:Name="TodayTimeLabel"
+                               Text="9:30 AM"
+                               FontSize="20"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light=#333, Dark=#FFF}"
+                               HorizontalTextAlignment="End"/>
+                    </VerticalStackLayout>
+                </Grid>
+
+                <!-- Quick Stats Row -->
+                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+                    <Border BackgroundColor="{AppThemeBinding Light=#E3F2FD, Dark=#1E3A5F}"
+                            StrokeShape="RoundRectangle 8"
+                            Stroke="Transparent"
+                            Padding="12">
+                        <VerticalStackLayout HorizontalOptions="Center">
+                            <Label x:Name="TodayJobCountLabel"
+                                   Text="0"
+                                   FontSize="24"
+                                   FontAttributes="Bold"
+                                   TextColor="{AppThemeBinding Light=#2196F3, Dark=#64B5F6}"
+                                   HorizontalTextAlignment="Center"/>
+                            <Label Text="Today"
+                                   FontSize="10"
+                                   TextColor="{AppThemeBinding Light=#1976D2, Dark=#64B5F6}"
+                                   HorizontalTextAlignment="Center"/>
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border BackgroundColor="{AppThemeBinding Light=#FFF3E0, Dark=#3D2D1F}"
+                            StrokeShape="RoundRectangle 8"
+                            Stroke="Transparent"
+                            Padding="12">
+                        <VerticalStackLayout HorizontalOptions="Center">
+                            <Label x:Name="WeekJobCountLabel"
+                                   Text="0"
+                                   FontSize="24"
+                                   FontAttributes="Bold"
+                                   TextColor="{AppThemeBinding Light=#FF9800, Dark=#FFB74D}"
+                                   HorizontalTextAlignment="Center"/>
+                            <Label Text="This Week"
+                                   FontSize="10"
+                                   TextColor="{AppThemeBinding Light=#E65100, Dark=#FFB74D}"
+                                   HorizontalTextAlignment="Center"/>
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border BackgroundColor="{AppThemeBinding Light=#FFEBEE, Dark=#3D1F1F}"
+                            StrokeShape="RoundRectangle 8"
+                            Stroke="Transparent"
+                            Padding="12">
+                        <VerticalStackLayout HorizontalOptions="Center">
+                            <Label x:Name="OverdueCountLabel"
+                                   Text="0"
+                                   FontSize="24"
+                                   FontAttributes="Bold"
+                                   TextColor="{AppThemeBinding Light=#F44336, Dark=#EF9A9A}"
+                                   HorizontalTextAlignment="Center"/>
+                            <Label Text="Overdue"
+                                   FontSize="10"
+                                   TextColor="{AppThemeBinding Light=#C62828, Dark=#EF9A9A}"
+                                   HorizontalTextAlignment="Center"/>
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+
+                <!-- Next Up Section -->
+                <Label Text="Next Up"
+                       FontSize="18"
+                       FontAttributes="Bold"
+                       TextColor="{AppThemeBinding Light=#333, Dark=#FFF}"
+                       Margin="0,8,0,0"/>
+
+                <!-- Next Job Card (Large) -->
+                <Border x:Name="NextJobCard"
+                        BackgroundColor="{AppThemeBinding Light=White, Dark=#2D2D2D}"
+                        StrokeShape="RoundRectangle 12"
+                        Stroke="Transparent"
+                        Padding="0"
+                        IsVisible="True">
+                    <Border.Shadow>
+                        <Shadow Brush="Black" Offset="0,2" Radius="6" Opacity="0.15"/>
+                    </Border.Shadow>
+                    <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="4,*">
+                        <!-- Status Bar -->
+                        <BoxView x:Name="NextJobStatusBar"
+                                 Grid.RowSpan="4"
+                                 WidthRequest="4"
+                                 Color="#2196F3"
+                                 VerticalOptions="Fill"/>
+                        
+                        <!-- Time and Status -->
+                        <Grid Grid.Column="1" ColumnDefinitions="Auto,*,Auto" Padding="16,16,16,8">
+                            <Border BackgroundColor="{AppThemeBinding Light=#E3F2FD, Dark=#1E3A5F}"
+                                    StrokeShape="RoundRectangle 12"
+                                    Stroke="Transparent"
+                                    Padding="10,6">
+                                <Label x:Name="NextJobTimeLabel"
+                                       Text="9:00 AM"
+                                       FontSize="14"
+                                       FontAttributes="Bold"
+                                       TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"/>
+                            </Border>
+                            <Border Grid.Column="2"
+                                    x:Name="NextJobStatusBadge"
+                                    BackgroundColor="#2196F3"
+                                    StrokeShape="RoundRectangle 12"
+                                    Stroke="Transparent"
+                                    Padding="10,6">
+                                <Label x:Name="NextJobStatusLabel"
+                                       Text="Scheduled"
+                                       FontSize="11"
+                                       FontAttributes="Bold"
+                                       TextColor="White"/>
+                            </Border>
+                        </Grid>
+
+                        <!-- Job Title and Customer -->
+                        <VerticalStackLayout Grid.Row="1" Grid.Column="1" Padding="16,0,16,8" Spacing="4">
+                            <Label x:Name="NextJobTitleLabel"
+                                   Text="AC Not Cooling"
+                                   FontSize="18"
+                                   FontAttributes="Bold"
+                                   TextColor="{AppThemeBinding Light=#333, Dark=#FFF}"
+                                   LineBreakMode="TailTruncation"/>
+                            <Label x:Name="NextJobCustomerLabel"
+                                   Text="John Smith"
+                                   FontSize="14"
+                                   TextColor="{AppThemeBinding Light=#616161, Dark=#B0B0B0}"/>
+                        </VerticalStackLayout>
+
+                        <!-- Address -->
+                        <HorizontalStackLayout Grid.Row="2" Grid.Column="1" Padding="16,0,16,8" Spacing="8">
+                            <Label Text="Location:" FontSize="12" TextColor="{AppThemeBinding Light=#757575, Dark=#9E9E9E}"/>
+                            <Label x:Name="NextJobAddressLabel"
+                                   Text="123 Main Street, Anytown"
+                                   FontSize="13"
+                                   TextColor="{AppThemeBinding Light=#757575, Dark=#9E9E9E}"
+                                   LineBreakMode="TailTruncation"
+                                   VerticalOptions="Center"/>
+                        </HorizontalStackLayout>
+
+                        <!-- Action Buttons -->
+                        <Grid Grid.Row="3" Grid.Column="1" ColumnDefinitions="*,*" ColumnSpacing="12" Padding="16,8,16,16">
+                            <Button x:Name="NavigateNextJobButton"
+                                    Text="Navigate"
+                                    BackgroundColor="{AppThemeBinding Light=#E8F5E9, Dark=#1B3D1F}"
+                                    TextColor="{AppThemeBinding Light=#388E3C, Dark=#81C784}"
+                                    FontSize="14"
+                                    FontAttributes="Bold"
+                                    HeightRequest="44"
+                                    CornerRadius="8"
+                                    Clicked="OnNavigateNextJobClicked"/>
+                            <Button x:Name="StartNextJobButton"
+                                    Grid.Column="1"
+                                    Text="Start Job"
+                                    BackgroundColor="#2196F3"
+                                    TextColor="White"
+                                    FontSize="14"
+                                    FontAttributes="Bold"
+                                    HeightRequest="44"
+                                    CornerRadius="8"
+                                    Clicked="OnStartNextJobClicked"/>
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <!-- No Jobs Card (Empty State) -->
+                <Border x:Name="NoJobsCard"
+                        BackgroundColor="{AppThemeBinding Light=White, Dark=#2D2D2D}"
+                        StrokeShape="RoundRectangle 12"
+                        Stroke="Transparent"
+                        Padding="24"
+                        IsVisible="False">
+                    <VerticalStackLayout HorizontalOptions="Center" Spacing="8">
+                        <Label Text="No jobs scheduled for today"
+                               FontSize="16"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light=#4CAF50, Dark=#81C784}"
+                               HorizontalTextAlignment="Center"/>
+                        <Label Text="Enjoy your day off!"
+                               FontSize="13"
+                               TextColor="{AppThemeBinding Light=#757575, Dark=#B0B0B0}"
+                               HorizontalTextAlignment="Center"/>
+                        <Button Text="View All Jobs"
+                                BackgroundColor="{AppThemeBinding Light=#E3F2FD, Dark=#1E3A5F}"
+                                TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"
+                                FontSize="13"
+                                HeightRequest="36"
+                                CornerRadius="18"
+                                Padding="16,0"
+                                Margin="0,8,0,0"
+                                Clicked="OnViewAllJobsClicked"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Today's Schedule -->
+                <Grid ColumnDefinitions="*,Auto" Margin="0,8,0,0">
+                    <Label Text="Today's Schedule"
+                           FontSize="18"
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light=#333, Dark=#FFF}"/>
+                    <Button Grid.Column="1"
+                            Text="View All"
+                            BackgroundColor="Transparent"
+                            TextColor="{AppThemeBinding Light=#2196F3, Dark=#64B5F6}"
+                            FontSize="13"
+                            Padding="0"
+                            Clicked="OnViewAllJobsClicked"/>
+                </Grid>
+
+                <!-- Today's Jobs List -->
+                <VerticalStackLayout x:Name="TodayJobsList" Spacing="8">
+                    <!-- Populated dynamically -->
+                </VerticalStackLayout>
+
+                <!-- Quick Actions Section -->
+                <Label Text="Quick Actions" 
+                       FontSize="18" 
+                       FontAttributes="Bold"
+                       TextColor="{AppThemeBinding Light=#333, Dark=#FFF}"
+                       Margin="0,12,0,0"/>
+
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                    <Button Text="+ New Estimate"
+                            BackgroundColor="#2196F3"
+                            TextColor="White"
+                            FontAttributes="Bold"
+                            CornerRadius="8"
+                            HeightRequest="50"
+                            Clicked="OnNewEstimateClicked"/>
+                    <Button Grid.Column="1"
+                            Text="+ Add Customer"
+                            BackgroundColor="#4CAF50"
+                            TextColor="White"
+                            FontAttributes="Bold"
+                            CornerRadius="8"
+                            HeightRequest="50"
+                            Clicked="OnAddCustomerClicked"/>
+                </Grid>
+
+                <Button x:Name="SearchAssetsButton"
+                        Text="Search Assets"
+                        BackgroundColor="#FF9800"
+                        TextColor="White"
+                        FontAttributes="Bold"
+                        CornerRadius="8"
+                        HeightRequest="50"
+                        Clicked="OnSearchAssetsClicked"/>
+
+                <!-- Sync Status -->
+                <Border BackgroundColor="{AppThemeBinding Light=#E3F2FD, Dark=#1E3A5F}" 
+                        StrokeShape="RoundRectangle 8"
+                        Stroke="Transparent"
+                        Padding="12"
+                        Margin="0,8,0,0">
+                    <HorizontalStackLayout Spacing="8">
+                        <Label Text="Offline Mode - Data saved locally" 
+                               FontSize="12" 
+                               TextColor="{AppThemeBinding Light=#1976D2, Dark=#64B5F6}"
+                               VerticalOptions="Center"/>
+                    </HorizontalStackLayout>
+                </Border>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- Dashboard 2: Week Overview (unchanged) -->
+        <ScrollView x:Name="Dashboard2" IsVisible="False">
+            <VerticalStackLayout Padding="16" Spacing="12">
+                
+                <!-- Week Header -->
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                    <Button Grid.Column="0"
+                            Text="&lt;"
+                            BackgroundColor="Transparent"
+                            TextColor="#2196F3"
+                            FontSize="20"
+                            WidthRequest="44"
+                            Clicked="OnPreviousWeekClicked"/>
+                    <VerticalStackLayout Grid.Column="1" HorizontalOptions="Center">
+                        <Label x:Name="WeekRangeLabel"
+                               Text="Dec 9 - Dec 15"
+                               FontSize="18"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light=#333, Dark=#FFF}"
+                               HorizontalTextAlignment="Center"/>
+                        <Label x:Name="WeekYearLabel"
+                               Text="2024"
+                               FontSize="12"
+                               TextColor="{AppThemeBinding Light=#757575, Dark=#B0B0B0}"
+                               HorizontalTextAlignment="Center"/>
+                    </VerticalStackLayout>
+                    <Button Grid.Column="2"
+                            Text="&gt;"
+                            BackgroundColor="Transparent"
+                            TextColor="#2196F3"
+                            FontSize="20"
+                            WidthRequest="44"
+                            Clicked="OnNextWeekClicked"/>
+                </Grid>
+
+                <!-- Week Calendar Strip -->
+                <Border BackgroundColor="{AppThemeBinding Light=White, Dark=#2D2D2D}"
+                        StrokeShape="RoundRectangle 12"
+                        Stroke="Transparent"
+                        Padding="8">
+                    <Border.Shadow>
+                        <Shadow Brush="Black" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <Grid x:Name="WeekCalendarGrid" ColumnDefinitions="*,*,*,*,*,*,*" ColumnSpacing="4">
+                        <!-- Day columns generated in code-behind -->
+                    </Grid>
+                </Border>
+
+                <!-- Week Summary Stats -->
+                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+                    <Border BackgroundColor="{AppThemeBinding Light=#E3F2FD, Dark=#1E3A5F}"
+                            StrokeShape="RoundRectangle 8"
+                            Stroke="Transparent"
+                            Padding="12">
+                        <VerticalStackLayout HorizontalOptions="Center">
+                            <Label x:Name="WeekJobsLabel"
+                                   Text="0"
+                                   FontSize="24"
+                                   FontAttributes="Bold"
+                                   TextColor="#2196F3"
+                                   HorizontalTextAlignment="Center"/>
+                            <Label Text="Jobs"
+                                   FontSize="10"
+                                   TextColor="{AppThemeBinding Light=#1976D2, Dark=#64B5F6}"
+                                   HorizontalTextAlignment="Center"/>
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border BackgroundColor="{AppThemeBinding Light=#E8F5E9, Dark=#1B3D1F}"
+                            StrokeShape="RoundRectangle 8"
+                            Stroke="Transparent"
+                            Padding="12">
+                        <VerticalStackLayout HorizontalOptions="Center">
+                            <Label x:Name="WeekCompletedLabel"
+                                   Text="0"
+                                   FontSize="24"
+                                   FontAttributes="Bold"
+                                   TextColor="#4CAF50"
+                                   HorizontalTextAlignment="Center"/>
+                            <Label Text="Done"
+                                   FontSize="10"
+                                   TextColor="{AppThemeBinding Light=#388E3C, Dark=#81C784}"
+                                   HorizontalTextAlignment="Center"/>
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border BackgroundColor="{AppThemeBinding Light=#FFF3E0, Dark=#3D2D1F}"
+                            StrokeShape="RoundRectangle 8"
+                            Stroke="Transparent"
+                            Padding="12">
+                        <VerticalStackLayout HorizontalOptions="Center">
+                            <Label x:Name="WeekRevenueLabel"
+                                   Text="$0"
+                                   FontSize="24"
+                                   FontAttributes="Bold"
+                                   TextColor="#FF9800"
+                                   HorizontalTextAlignment="Center"/>
+                            <Label Text="Revenue"
+                                   FontSize="10"
+                                   TextColor="{AppThemeBinding Light=#E65100, Dark=#FFB74D}"
+                                   HorizontalTextAlignment="Center"/>
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+
+                <!-- Need To Do Section -->
+                <Label Text="Need To Do"
+                       FontSize="18"
+                       FontAttributes="Bold"
+                       TextColor="{AppThemeBinding Light=#333, Dark=#FFF}"
+                       Margin="0,8,0,0"/>
+
+                <VerticalStackLayout x:Name="ToDoList" Spacing="8">
+                </VerticalStackLayout>
+
+                <Border x:Name="ToDoEmptyState"
+                        BackgroundColor="{AppThemeBinding Light=#F5F5F5, Dark=#2D2D2D}"
+                        StrokeShape="RoundRectangle 8"
+                        Stroke="Transparent"
+                        Padding="24"
+                        IsVisible="False">
+                    <VerticalStackLayout HorizontalOptions="Center" Spacing="8">
+                        <Label Text="All caught up!"
+                               FontSize="16"
+                               FontAttributes="Bold"
+                               TextColor="#4CAF50"
+                               HorizontalTextAlignment="Center"/>
+                        <Label Text="No pending tasks this week"
+                               FontSize="12"
+                               TextColor="{AppThemeBinding Light=#757575, Dark=#B0B0B0}"
+                               HorizontalTextAlignment="Center"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <Label x:Name="OverdueHeader"
+                       Text="Overdue"
+                       FontSize="18"
+                       FontAttributes="Bold"
+                       TextColor="#F44336"
+                       Margin="0,8,0,0"
+                       IsVisible="False"/>
+                
+                <VerticalStackLayout x:Name="OverdueList" Spacing="8">
+                </VerticalStackLayout>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- Dashboard 3: Month Calendar View -->
+        <ScrollView x:Name="Dashboard3" IsVisible="False">
+            <VerticalStackLayout Padding="16" Spacing="12">
+                
+                <!-- Month Calendar Control -->
+                <controls:MonthCalendarControl x:Name="MonthCalendar"
+                                                DayTapped="OnMonthCalendarDayTapped"
+                                                MonthChanged="OnMonthCalendarMonthChanged"/>
+
+                <!-- Selected Day Jobs Section -->
+                <Grid ColumnDefinitions="*,Auto" Margin="0,8,0,0">
+                    <VerticalStackLayout>
+                        <Label x:Name="SelectedDayLabel"
+                               Text="Today"
+                               FontSize="18"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light=#333, Dark=#FFF}"/>
+                        <Label x:Name="SelectedDayDateLabel"
+                               Text="December 14, 2024"
+                               FontSize="12"
+                               TextColor="{AppThemeBinding Light=#757575, Dark=#B0B0B0}"/>
+                    </VerticalStackLayout>
+                    <Button Grid.Column="1"
+                            Text="+ Schedule"
+                            BackgroundColor="#2196F3"
+                            TextColor="White"
+                            FontSize="13"
+                            FontAttributes="Bold"
+                            HeightRequest="36"
+                            CornerRadius="18"
+                            Padding="16,0"
+                            Clicked="OnQuickScheduleClicked"/>
+                </Grid>
+
+                <!-- Jobs for Selected Day -->
+                <VerticalStackLayout x:Name="SelectedDayJobsList" Spacing="8">
+                    <!-- Populated dynamically -->
+                </VerticalStackLayout>
+
+                <!-- Empty State for Selected Day -->
+                <Border x:Name="SelectedDayEmptyState"
+                        BackgroundColor="{AppThemeBinding Light=#F5F5F5, Dark=#2D2D2D}"
+                        StrokeShape="RoundRectangle 8"
+                        Stroke="Transparent"
+                        Padding="24"
+                        IsVisible="False">
+                    <VerticalStackLayout HorizontalOptions="Center" Spacing="8">
+                        <Label Text="📅"
+                               FontSize="32"
+                               HorizontalTextAlignment="Center"/>
+                        <Label Text="No jobs scheduled"
+                               FontSize="16"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light=#757575, Dark=#B0B0B0}"
+                               HorizontalTextAlignment="Center"/>
+                        <Label Text="Tap + Schedule to add a job"
+                               FontSize="12"
+                               TextColor="{AppThemeBinding Light=#9E9E9E, Dark=#757575}"
+                               HorizontalTextAlignment="Center"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Month Stats -->
+                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8" Margin="0,8,0,0">
+                    <Border BackgroundColor="{AppThemeBinding Light=#E3F2FD, Dark=#1E3A5F}"
+                            StrokeShape="RoundRectangle 8"
+                            Stroke="Transparent"
+                            Padding="12">
+                        <VerticalStackLayout HorizontalOptions="Center">
+                            <Label x:Name="MonthJobsLabel"
+                                   Text="0"
+                                   FontSize="24"
+                                   FontAttributes="Bold"
+                                   TextColor="#2196F3"
+                                   HorizontalTextAlignment="Center"/>
+                            <Label Text="This Month"
+                                   FontSize="10"
+                                   TextColor="{AppThemeBinding Light=#1976D2, Dark=#64B5F6}"
+                                   HorizontalTextAlignment="Center"/>
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border BackgroundColor="{AppThemeBinding Light=#E8F5E9, Dark=#1B3D1F}"
+                            StrokeShape="RoundRectangle 8"
+                            Stroke="Transparent"
+                            Padding="12">
+                        <VerticalStackLayout HorizontalOptions="Center">
+                            <Label x:Name="MonthCompletedLabel"
+                                   Text="0"
+                                   FontSize="24"
+                                   FontAttributes="Bold"
+                                   TextColor="#4CAF50"
+                                   HorizontalTextAlignment="Center"/>
+                            <Label Text="Completed"
+                                   FontSize="10"
+                                   TextColor="{AppThemeBinding Light=#388E3C, Dark=#81C784}"
+                                   HorizontalTextAlignment="Center"/>
+                        </VerticalStackLayout>
+                    </Border>
+                    <Border BackgroundColor="{AppThemeBinding Light=#FFF3E0, Dark=#3D2D1F}"
+                            StrokeShape="RoundRectangle 8"
+                            Stroke="Transparent"
+                            Padding="12">
+                        <VerticalStackLayout HorizontalOptions="Center">
+                            <Label x:Name="MonthRevenueLabel"
+                                   Text="$0"
+                                   FontSize="24"
+                                   FontAttributes="Bold"
+                                   TextColor="#FF9800"
+                                   HorizontalTextAlignment="Center"/>
+                            <Label Text="Revenue"
+                                   FontSize="10"
+                                   TextColor="{AppThemeBinding Light=#E65100, Dark=#FFB74D}"
+                                   HorizontalTextAlignment="Center"/>
+                        </VerticalStackLayout>
+                    </Border>
+                </Grid>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- Quick Schedule Popup Overlay -->
+        <controls:QuickSchedulePopup x:Name="QuickSchedulePopup"
+                                      IsVisible="False"
+                                      NewJobRequested="OnQuickScheduleNewJob"
+                                      NewEstimateRequested="OnQuickScheduleNewEstimate"
+                                      RescheduleRequested="OnQuickScheduleReschedule"
+                                      Closed="OnQuickSchedulePopupClosed"/>
+    </Grid>
+
+</ContentPage>

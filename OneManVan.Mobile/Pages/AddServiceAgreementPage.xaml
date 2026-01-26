@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="OneManVan.Mobile.Pages.AddServiceAgreementPage"
+             Title="Add Service Agreement"
+             BackgroundColor="{AppThemeBinding Light={StaticResource LightBackground}, Dark={StaticResource DarkBackground}}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="16">
+
+            <!-- Customer Selection -->
+            <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                    StrokeShape="RoundRectangle 12" 
+                    Padding="16"
+                    Stroke="Transparent">
+                <Border.Shadow>
+                    <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,2" Radius="4" Opacity="0.1"/>
+                </Border.Shadow>
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Customer" 
+                           FontSize="18" 
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"/>
+
+                    <Border x:Name="CustomerFrame"
+                            BackgroundColor="{AppThemeBinding Light={StaticResource LightInputBackground}, Dark={StaticResource DarkInputBackground}}"
+                            StrokeShape="RoundRectangle 8"
+                            Padding="12"
+                            Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <VerticalStackLayout>
+                                <Label x:Name="CustomerNameLabel" 
+                                       Text="Select a customer"
+                                       FontSize="16"
+                                       TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                                <Label x:Name="CustomerDetailLabel"
+                                       Text="Tap to select"
+                                       FontSize="12"
+                                       TextColor="{AppThemeBinding Light={StaticResource LightTextTertiary}, Dark={StaticResource DarkTextTertiary}}"/>
+                            </VerticalStackLayout>
+                            <Button Grid.Column="1"
+                                    Text="Select"
+                                    BackgroundColor="{StaticResource Primary}"
+                                    TextColor="White"
+                                    CornerRadius="16"
+                                    HeightRequest="32"
+                                    FontSize="12"
+                                    Padding="12,0"
+                                    Clicked="OnSelectCustomerClicked"/>
+                        </Grid>
+                    </Border>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Agreement Details -->
+            <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                    StrokeShape="RoundRectangle 12" 
+                    Padding="16"
+                    Stroke="Transparent">
+                <Border.Shadow>
+                    <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,2" Radius="4" Opacity="0.1"/>
+                </Border.Shadow>
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Agreement Details" 
+                           FontSize="18" 
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light={StaticResource SectionSuccess}, Dark={StaticResource SectionSuccessDark}}"/>
+
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Agreement Name *" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                        <Entry x:Name="NameEntry"
+                               Placeholder="e.g., Annual Maintenance Plan"
+                               BackgroundColor="{AppThemeBinding Light={StaticResource LightInputBackground}, Dark={StaticResource DarkInputBackground}}"/>
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Agreement Type" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                        <Picker x:Name="TypePicker"
+                                Title="Select Type"
+                                BackgroundColor="{AppThemeBinding Light={StaticResource LightInputBackground}, Dark={StaticResource DarkInputBackground}}">
+                            <Picker.ItemsSource>
+                                <x:Array Type="{x:Type x:String}">
+                                    <x:String>Basic</x:String>
+                                    <x:String>Standard</x:String>
+                                    <x:String>Premium</x:String>
+                                    <x:String>Commercial</x:String>
+                                    <x:String>Custom</x:String>
+                                </x:Array>
+                            </Picker.ItemsSource>
+                        </Picker>
+                    </VerticalStackLayout>
+
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12" RowSpacing="12">
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Start Date *" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <DatePicker x:Name="StartDatePicker"
+                                        BackgroundColor="{AppThemeBinding Light={StaticResource LightInputBackground}, Dark={StaticResource DarkInputBackground}}"/>
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Column="1" Spacing="4">
+                            <Label Text="End Date *" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <DatePicker x:Name="EndDatePicker"
+                                        BackgroundColor="{AppThemeBinding Light={StaticResource LightInputBackground}, Dark={StaticResource DarkInputBackground}}"/>
+                        </VerticalStackLayout>
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Pricing -->
+            <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                    StrokeShape="RoundRectangle 12" 
+                    Padding="16"
+                    Stroke="Transparent">
+                <Border.Shadow>
+                    <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,2" Radius="4" Opacity="0.1"/>
+                </Border.Shadow>
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Pricing" 
+                           FontSize="18" 
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light={StaticResource SectionWarning}, Dark={StaticResource SectionWarningDark}}"/>
+
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12" RowSpacing="12">
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Annual Price *" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Entry x:Name="AnnualPriceEntry"
+                                   Placeholder="$199.00"
+                                   Keyboard="Numeric"
+                                   BackgroundColor="{AppThemeBinding Light={StaticResource LightInputBackground}, Dark={StaticResource DarkInputBackground}}"/>
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Column="1" Spacing="4">
+                            <Label Text="Discount %" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Entry x:Name="DiscountEntry"
+                                   Placeholder="15"
+                                   Keyboard="Numeric"
+                                   BackgroundColor="{AppThemeBinding Light={StaticResource LightInputBackground}, Dark={StaticResource DarkInputBackground}}"/>
+                        </VerticalStackLayout>
+                    </Grid>
+
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Included Visits Per Year" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                        <Entry x:Name="VisitsEntry"
+                               Placeholder="2"
+                               Keyboard="Numeric"
+                               BackgroundColor="{AppThemeBinding Light={StaticResource LightInputBackground}, Dark={StaticResource DarkInputBackground}}"/>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Included Services -->
+            <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                    StrokeShape="RoundRectangle 12" 
+                    Padding="16"
+                    Stroke="Transparent">
+                <Border.Shadow>
+                    <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,2" Radius="4" Opacity="0.1"/>
+                </Border.Shadow>
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Included Services" 
+                           FontSize="18" 
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"/>
+
+                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="8">
+                        <Label Text="AC Tune-Up" TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}" VerticalOptions="Center"/>
+                        <Switch x:Name="AcTuneUpSwitch" Grid.Column="1" OnColor="{StaticResource Primary}" IsToggled="True"/>
+
+                        <Label Grid.Row="1" Text="Heating Tune-Up" TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}" VerticalOptions="Center"/>
+                        <Switch x:Name="HeatingTuneUpSwitch" Grid.Row="1" Grid.Column="1" OnColor="{StaticResource Primary}" IsToggled="True"/>
+
+                        <Label Grid.Row="2" Text="Filter Replacement" TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}" VerticalOptions="Center"/>
+                        <Switch x:Name="FilterSwitch" Grid.Row="2" Grid.Column="1" OnColor="{StaticResource Primary}"/>
+
+                        <Label Grid.Row="3" Text="Priority Service" TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}" VerticalOptions="Center"/>
+                        <Switch x:Name="PrioritySwitch" Grid.Row="3" Grid.Column="1" OnColor="{StaticResource Primary}"/>
+
+                        <Label Grid.Row="4" Text="Waive Trip Charge" TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}" VerticalOptions="Center"/>
+                        <Switch x:Name="NoOvertimeSwitch" Grid.Row="4" Grid.Column="1" OnColor="{StaticResource Primary}"/>
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Next Maintenance -->
+            <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                    StrokeShape="RoundRectangle 12" 
+                    Padding="16"
+                    Stroke="Transparent">
+                <Border.Shadow>
+                    <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,2" Radius="4" Opacity="0.1"/>
+                </Border.Shadow>
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Scheduling" 
+                           FontSize="18" 
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light={StaticResource SectionPurple}, Dark={StaticResource SectionPurpleDark}}"/>
+
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Next Maintenance Due" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                        <DatePicker x:Name="NextMaintenancePicker"
+                                    BackgroundColor="{AppThemeBinding Light={StaticResource LightInputBackground}, Dark={StaticResource DarkInputBackground}}"/>
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Notes" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                        <Editor x:Name="NotesEditor"
+                                Placeholder="Special instructions, reminders, etc."
+                                HeightRequest="80"
+                                BackgroundColor="{AppThemeBinding Light={StaticResource LightInputBackground}, Dark={StaticResource DarkInputBackground}}"/>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Save Button -->
+            <Button x:Name="SaveButton"
+                    Text="Create Agreement"
+                    BackgroundColor="{StaticResource Success}"
+                    TextColor="White"
+                    FontSize="18"
+                    FontAttributes="Bold"
+                    CornerRadius="12"
+                    HeightRequest="56"
+                    Clicked="OnSaveClicked"/>
+
+            <BoxView HeightRequest="20"/>
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

@@ -1,0 +1,976 @@
+<UserControl x:Class="OneManVan.Pages.SettingsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d" 
+             d:DesignHeight="650" d:DesignWidth="900"
+             Background="{DynamicResource BackgroundBrush}">
+
+    <UserControl.Resources>
+        <Style x:Key="ActionButton" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource PrimaryBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource BackgroundBrush}"/>
+            <Setter Property="Padding" Value="15,8"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                CornerRadius="6" 
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Opacity" Value="0.85"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.5"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource ActionButton}">
+            <Setter Property="Background" Value="{DynamicResource Surface2Brush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+        </Style>
+
+        <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource ActionButton}">
+            <Setter Property="Background" Value="{DynamicResource ErrorBrush}"/>
+        </Style>
+
+        <Style x:Key="SettingCard" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="20,15"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
+        </Style>
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="30">
+        <StackPanel MaxWidth="700">
+            <!-- Header -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,25">
+                <TextBlock Text="Settings" FontSize="28" FontWeight="Bold" 
+                           Foreground="{DynamicResource TextBrush}"/>
+            </StackPanel>
+
+            <!-- Application Info -->
+            <Border Style="{StaticResource SettingCard}">
+                <StackPanel>
+                    <TextBlock Text="Application" FontSize="16" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextBrush}" Margin="0,0,0,10"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="150"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Version:" 
+                                   Foreground="{DynamicResource SubtextBrush}"/>
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="1.0.0" 
+                                   Foreground="{DynamicResource TextBrush}"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Preset:" 
+                                   Foreground="{DynamicResource SubtextBrush}" Margin="0,5,0,0"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="HVAC" 
+                                   Foreground="{DynamicResource PrimaryBrush}" Margin="0,5,0,0"/>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Database:" 
+                                   Foreground="{DynamicResource SubtextBrush}" Margin="0,5,0,0"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="Local SQLite" 
+                                   Foreground="{DynamicResource TextBrush}" Margin="0,5,0,0"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Trade Configuration -->
+            <Border Style="{StaticResource SettingCard}">
+                <StackPanel>
+                    <TextBlock Text="Trade Configuration" FontSize="16" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextBrush}" Margin="0,0,0,15"/>
+
+                    <Grid Margin="0,0,0,15">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel>
+                            <TextBlock Text="Current Trade" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextBrush}"/>
+                            <TextBlock x:Name="CurrentTradeDisplay" Text="HVAC"
+                                       Foreground="{DynamicResource PrimaryBrush}" FontSize="12" Margin="0,2,0,0"/>
+                        </StackPanel>
+
+                        <Button Grid.Column="1" Content="Change Trade" 
+                                Style="{StaticResource SecondaryButton}"
+                                Click="ChangeTrade_Click"/>
+                    </Grid>
+
+                    <TextBlock Text="Switch between different trade types (HVAC, Plumbing, Electrical, etc.). Your data will be preserved."
+                               Foreground="{DynamicResource SubtextBrush}" FontSize="12" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Appearance -->
+            <Border Style="{StaticResource SettingCard}">
+                <StackPanel>
+                    <TextBlock Text="Appearance" FontSize="16" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextBrush}" Margin="0,0,0,15"/>
+
+                    <!-- Theme Toggle -->
+                    <Grid Margin="0,0,0,20">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel>
+                            <TextBlock Text="Theme" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextBrush}"/>
+                            <TextBlock Text="Switch between dark and light mode"
+                                       Foreground="{DynamicResource SubtextBrush}" FontSize="12"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="&#x1F319;" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                            <ToggleButton x:Name="ThemeToggle" 
+                                          Click="ThemeToggle_Click"
+                                          Width="50" Height="26"
+                                          Cursor="Hand">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Border x:Name="Track" Background="{DynamicResource Surface2Brush}" CornerRadius="13" 
+                                                Width="50" Height="26">
+                                            <Ellipse x:Name="Thumb" Width="22" Height="22" 
+                                                     Fill="White" HorizontalAlignment="Left"
+                                                     Margin="2,0,0,0"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsChecked" Value="True">
+                                                <Setter TargetName="Track" Property="Background" Value="{DynamicResource PrimaryBrush}"/>
+                                                <Setter TargetName="Thumb" Property="HorizontalAlignment" Value="Right"/>
+                                                <Setter TargetName="Thumb" Property="Margin" Value="0,0,2,0"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
+                            <TextBlock Text="Light" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" 
+                                       Foreground="{DynamicResource SubtextBrush}"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- UI Scale Slider -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel>
+                            <TextBlock Text="UI Scale" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextBrush}"/>
+                            <TextBlock Text="Adjust interface size for better readability"
+                                       Foreground="{DynamicResource SubtextBrush}" FontSize="12"/>
+                            
+                            <Grid Margin="0,12,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Text="A" FontSize="11" Foreground="{DynamicResource SubtextBrush}" 
+                                           VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                
+                                <Slider x:Name="UiScaleSlider" 
+                                        Grid.Column="1"
+                                        Minimum="0.8" Maximum="1.5" 
+                                        TickFrequency="0.05"
+                                        IsSnapToTickEnabled="True"
+                                        Width="200"
+                                        ValueChanged="UiScaleSlider_ValueChanged"/>
+                                
+                                <TextBlock Text="A" FontSize="18" FontWeight="Bold" 
+                                           Foreground="{DynamicResource SubtextBrush}" 
+                                           VerticalAlignment="Center" Margin="10,0,0,0" Grid.Column="2"/>
+                            </Grid>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
+                            <TextBlock x:Name="UiScalePercentText" Text="100%" 
+                                       FontSize="14" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource PrimaryBrush}"
+                                       VerticalAlignment="Center" Margin="0,0,10,0"
+                                       MinWidth="50" TextAlignment="Right"/>
+                            <Button Content="Reset" 
+                                    Style="{StaticResource SecondaryButton}"
+                                    Padding="10,5"
+                                    Click="ResetUiScale_Click"/>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Keyboard Shortcuts -->
+            <Border Style="{StaticResource SettingCard}">
+                <StackPanel>
+                    <TextBlock Text="Keyboard Shortcuts" FontSize="16" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextBrush}" Margin="0,0,0,15"/>
+
+                    <ItemsControl x:Name="ShortcutsItemsControl">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding Action}" 
+                                               Foreground="{DynamicResource TextBrush}"/>
+                                    <Border Grid.Column="1" Background="{DynamicResource Surface2Brush}" 
+                                            CornerRadius="4" Padding="8,4">
+                                        <TextBlock Text="{Binding Keys}" 
+                                                   Foreground="{DynamicResource PrimaryBrush}"
+                                                   FontFamily="Consolas" FontSize="12"/>
+                                    </Border>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <!-- Business Settings -->
+            <Border Style="{StaticResource SettingCard}">
+                <StackPanel>
+                    <TextBlock Text="Business Profile" FontSize="16" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextBrush}" Margin="0,0,0,15"/>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="10"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Company Name -->
+                        <StackPanel Grid.Row="0" Grid.Column="0">
+                            <TextBlock Text="Company Name" Foreground="{DynamicResource SubtextBrush}" FontSize="12" Margin="0,0,0,5"/>
+                            <TextBox x:Name="CompanyNameText" 
+                                     Background="{DynamicResource SurfaceBrush}"
+                                     Foreground="{DynamicResource TextBrush}"
+                                     BorderBrush="{DynamicResource Surface2Brush}"
+                                     Padding="8,6"/>
+                        </StackPanel>
+
+                        <!-- Phone -->
+                        <StackPanel Grid.Row="0" Grid.Column="2">
+                            <TextBlock Text="Phone" Foreground="{DynamicResource SubtextBrush}" FontSize="12" Margin="0,0,0,5"/>
+                            <TextBox x:Name="CompanyPhoneText" 
+                                     Background="{DynamicResource SurfaceBrush}"
+                                     Foreground="{DynamicResource TextBrush}"
+                                     BorderBrush="{DynamicResource Surface2Brush}"
+                                     Padding="8,6"/>
+                        </StackPanel>
+
+                        <!-- Email -->
+                        <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3">
+                            <TextBlock Text="Email" Foreground="{DynamicResource SubtextBrush}" FontSize="12" Margin="0,0,0,5"/>
+                            <TextBox x:Name="CompanyEmailText" 
+                                     Background="{DynamicResource SurfaceBrush}"
+                                     Foreground="{DynamicResource TextBrush}"
+                                     BorderBrush="{DynamicResource Surface2Brush}"
+                                     Padding="8,6"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <Button Content="Save Business Profile" Style="{StaticResource ActionButton}"
+                            Click="SaveBusinessProfile_Click" HorizontalAlignment="Left"
+                            Margin="0,15,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Invoice PDF Settings -->
+            <Border Style="{StaticResource SettingCard}">
+                <StackPanel>
+                    <TextBlock Text="Invoice PDF Customization" FontSize="16" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextBrush}" Margin="0,0,0,15"/>
+
+                    <TextBlock Text="Customize how your invoice PDFs look with your company branding"
+                               Foreground="{DynamicResource SubtextBrush}" FontSize="12" Margin="0,0,0,15" TextWrapping="Wrap"/>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="10"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="10"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Company Logo -->
+                        <StackPanel Grid.Row="0" Grid.Column="0">
+                            <TextBlock Text="Company Logo" Foreground="{DynamicResource SubtextBrush}" FontSize="12" Margin="0,0,0,5"/>
+                            <Button x:Name="LogoUploadButton" Content="Upload Logo" 
+                                    Style="{StaticResource SecondaryButton}"
+                                    Click="UploadLogo_Click"/>
+                            <TextBlock x:Name="LogoPathText" Text="No logo selected" 
+                                       FontSize="9" Foreground="{DynamicResource SubtextBrush}" Margin="0,5,0,0"/>
+                        </StackPanel>
+
+                        <!-- Primary Color -->
+                        <StackPanel Grid.Row="0" Grid.Column="2">
+                            <TextBlock Text="Primary Color (hex)" Foreground="{DynamicResource SubtextBrush}" FontSize="12" Margin="0,0,0,5"/>
+                            <TextBox x:Name="PrimaryColorText" Text="#2196F3"
+                                     Background="{DynamicResource SurfaceBrush}"
+                                     Foreground="{DynamicResource TextBrush}"
+                                     BorderBrush="{DynamicResource Surface2Brush}"
+                                     Padding="8,6"/>
+                        </StackPanel>
+
+                        <!-- Payment Terms -->
+                        <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3">
+                            <TextBlock Text="Payment Terms" Foreground="{DynamicResource SubtextBrush}" FontSize="12" Margin="0,0,0,5"/>
+                            <TextBox x:Name="PaymentTermsText" 
+                                     Text="Payment is due within 30 days of invoice date."
+                                     Background="{DynamicResource SurfaceBrush}"
+                                     Foreground="{DynamicResource TextBrush}"
+                                     BorderBrush="{DynamicResource Surface2Brush}"
+                                     Padding="8,6"
+                                     TextWrapping="Wrap"
+                                     AcceptsReturn="True"
+                                     Height="60"/>
+                        </StackPanel>
+
+                        <!-- Footer Message -->
+                        <StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3">
+                            <TextBlock Text="Footer Message" Foreground="{DynamicResource SubtextBrush}" FontSize="12" Margin="0,0,0,5"/>
+                            <TextBox x:Name="FooterMessageText" 
+                                     Text="Thank you for your business!"
+                                     Background="{DynamicResource SurfaceBrush}"
+                                     Foreground="{DynamicResource TextBrush}"
+                                     BorderBrush="{DynamicResource Surface2Brush}"
+                                     Padding="8,6"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,15,0,0">
+                        <Button Content="Save PDF Settings" Style="{StaticResource ActionButton}"
+                                Click="SavePdfSettings_Click" Margin="0,0,10,0"/>
+                        <Button Content="Preview Sample Invoice" Style="{StaticResource SecondaryButton}"
+                                Click="PreviewSampleInvoice_Click"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Pricing Defaults -->
+            <Border Style="{StaticResource SettingCard}">
+                <StackPanel>
+                    <TextBlock Text="Pricing Defaults" FontSize="16" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextBrush}" Margin="0,0,0,15"/>
+
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="150"/>
+                            <ColumnDefinition Width="100"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Labor Rate ($/hr):" 
+                                   Foreground="{DynamicResource SubtextBrush}" VerticalAlignment="Center"/>
+                        <TextBox Grid.Column="1" Text="{Binding LaborRate}"
+                                 Background="{DynamicResource BackgroundBrush}"
+                                 Foreground="{DynamicResource TextBrush}"
+                                 Padding="8,6"/>
+                    </Grid>
+
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="150"/>
+                            <ColumnDefinition Width="100"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Tax Rate (%):" 
+                                   Foreground="{DynamicResource SubtextBrush}" VerticalAlignment="Center"/>
+                        <TextBox Grid.Column="1" Text="{Binding TaxRate}"
+                                 Background="{DynamicResource BackgroundBrush}"
+                                 Foreground="{DynamicResource TextBrush}"
+                                 Padding="8,6"/>
+                    </Grid>
+
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="150"/>
+                            <ColumnDefinition Width="100"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Invoice Due (days):" 
+                                   Foreground="{DynamicResource SubtextBrush}" VerticalAlignment="Center"/>
+                        <TextBox Grid.Column="1" Text="{Binding InvoiceDueDays}"
+                                 Background="{DynamicResource BackgroundBrush}"
+                                 Foreground="{DynamicResource TextBrush}"
+                                 Padding="8,6"/>
+                    </Grid>
+
+                    <Button Content="Save Defaults" Style="{StaticResource ActionButton}"
+                            Click="SaveDefaults_Click" HorizontalAlignment="Left"
+                            Margin="0,10,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- CSV Export/Import -->
+            <Border Style="{StaticResource SettingCard}">
+                <StackPanel>
+                    <TextBlock Text="CSV Export/Import" FontSize="16" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextBrush}" Margin="0,0,0,15"/>
+
+                    <TextBlock Text="Export your data to CSV files for Excel, or import edited CSV files back into the database."
+                               Foreground="{DynamicResource SubtextBrush}" FontSize="12" Margin="0,0,0,15" TextWrapping="Wrap"/>
+
+                    <!-- Export Buttons -->
+                    <TextBlock Text="Export" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,8"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                        <Button Content="Export Customers" Style="{StaticResource SecondaryButton}"
+                                Click="ExportCustomersCsv_Click" Margin="0,0,10,0"/>
+                        <Button Content="Export Inventory" Style="{StaticResource SecondaryButton}"
+                                Click="ExportInventoryCsv_Click" Margin="0,0,10,0"/>
+                        <Button Content="Export Assets" Style="{StaticResource SecondaryButton}"
+                                Click="ExportAssetsCsv_Click"/>
+                    </StackPanel>
+
+                    <!-- Import Buttons -->
+                    <TextBlock Text="Import" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,8"/>
+                    <TextBlock Text="Select a CSV file to import. Merge mode updates existing records; Replace mode overwrites all data."
+                               Foreground="{DynamicResource SubtextBrush}" FontSize="11" Margin="0,0,0,8" TextWrapping="Wrap"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                        <Button Content="Import Customers" Style="{StaticResource SecondaryButton}"
+                                Click="ImportCustomersCsv_Click" Margin="0,0,10,0"/>
+                        <Button Content="Import Inventory" Style="{StaticResource SecondaryButton}"
+                                Click="ImportInventoryCsv_Click"/>
+                    </StackPanel>
+
+                    <Button Content="Open Export Folder" Style="{StaticResource ActionButton}"
+                            Click="OpenCsvFolder_Click" HorizontalAlignment="Left"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Square Payment Integration -->
+            <Border Style="{StaticResource SettingCard}">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                        
+                        <TextBlock Text="Square Payments" FontSize="16" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Enable Toggle -->
+                    <Grid Margin="0,0,0,15">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel>
+                            <TextBlock Text="Enable Square Integration" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextBrush}"/>
+                            <TextBlock Text="Accept card payments through Square"
+                                       Foreground="{DynamicResource SubtextBrush}" FontSize="12"/>
+                        </StackPanel>
+
+                        <ToggleButton x:Name="SquareEnabledToggle" 
+                                      Click="SquareEnabledToggle_Click"
+                                      Grid.Column="1" Width="50" Height="26" Cursor="Hand">
+                            <ToggleButton.Template>
+                                <ControlTemplate TargetType="ToggleButton">
+                                    <Border x:Name="Track" Background="{DynamicResource Surface2Brush}" CornerRadius="13" 
+                                            Width="50" Height="26">
+                                        <Ellipse x:Name="Thumb" Width="22" Height="22" 
+                                                 Fill="White" HorizontalAlignment="Left"
+                                                 Margin="2,0,0,0"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsChecked" Value="True">
+                                            <Setter TargetName="Track" Property="Background" Value="{DynamicResource SecondaryBrush}"/>
+                                            <Setter TargetName="Thumb" Property="HorizontalAlignment" Value="Right"/>
+                                            <Setter TargetName="Thumb" Property="Margin" Value="0,0,2,0"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </ToggleButton.Template>
+                        </ToggleButton>
+                    </Grid>
+
+                    <!-- Square Settings Panel -->
+                    <StackPanel x:Name="SquareSettingsPanel">
+                        <!-- Environment -->
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="150"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Environment:" 
+                                       Foreground="{DynamicResource SubtextBrush}" VerticalAlignment="Center"/>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                <RadioButton x:Name="SquareSandboxRadio" Content="Sandbox (Test)" 
+                                             Foreground="{DynamicResource TextBrush}" IsChecked="True"
+                                             GroupName="SquareEnv" Margin="0,0,20,0"
+                                             Checked="SquareEnvironment_Changed"/>
+                                <RadioButton x:Name="SquareProductionRadio" Content="Production (Live)" 
+                                             Foreground="{DynamicResource TextBrush}"
+                                             GroupName="SquareEnv"
+                                             Checked="SquareEnvironment_Changed"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Application ID -->
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="150"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Application ID:" 
+                                       Foreground="{DynamicResource SubtextBrush}" VerticalAlignment="Center"/>
+                            <TextBox x:Name="SquareAppIdText" Grid.Column="1"
+                                     Background="{DynamicResource BackgroundBrush}"
+                                     Foreground="{DynamicResource TextBrush}"
+                                     Padding="8,6"
+                                     TextChanged="SquareSettings_Changed"/>
+                        </Grid>
+
+                        <!-- Access Token -->
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="150"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Access Token:" 
+                                       Foreground="{DynamicResource SubtextBrush}" VerticalAlignment="Center"/>
+                            <PasswordBox x:Name="SquareAccessTokenText" Grid.Column="1"
+                                         Background="{DynamicResource BackgroundBrush}"
+                                         Foreground="{DynamicResource TextBrush}"
+                                         Padding="8,6"
+                                         PasswordChanged="SquareSettings_Changed"/>
+                        </Grid>
+
+                        <!-- Location ID -->
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="150"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Location ID:" 
+                                       Foreground="{DynamicResource SubtextBrush}" VerticalAlignment="Center"/>
+                            <Grid Grid.Column="1">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="SquareLocationIdText"
+                                         Background="{DynamicResource BackgroundBrush}"
+                                         Foreground="{DynamicResource TextBrush}"
+                                         Padding="8,6"
+                                         TextChanged="SquareSettings_Changed"/>
+                                <Button Grid.Column="1" Content="Fetch" 
+                                        Style="{StaticResource SecondaryButton}"
+                                        Click="FetchSquareLocations_Click"
+                                        Margin="10,0,0,0" Padding="12,6"/>
+                            </Grid>
+                        </Grid>
+
+                        <!-- Connection Status -->
+                        <Border Background="{DynamicResource BackgroundBrush}" CornerRadius="6" 
+                                Padding="12,10" Margin="0,10,0,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="Connection Status:" FontSize="12"
+                                               Foreground="{DynamicResource SubtextBrush}"/>
+                                    <TextBlock x:Name="SquareStatusText" Text="Not configured" 
+                                               Foreground="{DynamicResource WarningBrush}" FontWeight="SemiBold"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                    <Button Content="Test Connection" 
+                                            Style="{StaticResource SecondaryButton}"
+                                            Click="TestSquareConnection_Click"
+                                            Margin="0,0,10,0"/>
+                                    <Button Content="Save" 
+                                            Style="{StaticResource ActionButton}"
+                                            Click="SaveSquareSettings_Click"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Help Text -->
+                        <TextBlock Text="Get your Square credentials from https://developer.squareup.com/apps"
+                                   Foreground="{DynamicResource SubtextBrush}" FontSize="11"
+                                   Margin="0,10,0,0" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Google Calendar Integration -->
+            <Border Style="{StaticResource SettingCard}">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                        
+                        <TextBlock Text="Google Calendar" FontSize="16" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Enable Toggle -->
+                    <Grid Margin="0,0,0,15">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel>
+                            <TextBlock Text="Enable Calendar Sync" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextBrush}"/>
+                            <TextBlock Text="Sync jobs to your Google Calendar"
+                                       Foreground="{DynamicResource SubtextBrush}" FontSize="12"/>
+                        </StackPanel>
+
+                        <ToggleButton x:Name="GoogleCalendarEnabledToggle" 
+                                      Click="GoogleCalendarEnabledToggle_Click"
+                                      Grid.Column="1" Width="50" Height="26" Cursor="Hand">
+                            <ToggleButton.Template>
+                                <ControlTemplate TargetType="ToggleButton">
+                                    <Border x:Name="Track" Background="{DynamicResource Surface2Brush}" CornerRadius="13" 
+                                            Width="50" Height="26">
+                                        <Ellipse x:Name="Thumb" Width="22" Height="22" 
+                                                 Fill="White" HorizontalAlignment="Left"
+                                                 Margin="2,0,0,0"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsChecked" Value="True">
+                                            <Setter TargetName="Track" Property="Background" Value="{DynamicResource SecondaryBrush}"/>
+                                            <Setter TargetName="Thumb" Property="HorizontalAlignment" Value="Right"/>
+                                            <Setter TargetName="Thumb" Property="Margin" Value="0,0,2,0"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </ToggleButton.Template>
+                        </ToggleButton>
+                    </Grid>
+
+                    <!-- Google Calendar Settings Panel -->
+                    <StackPanel x:Name="GoogleCalendarSettingsPanel">
+                        <!-- Client ID -->
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="150"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Client ID:" 
+                                       Foreground="{DynamicResource SubtextBrush}" VerticalAlignment="Center"/>
+                            <TextBox x:Name="GoogleClientIdText" Grid.Column="1"
+                                     Background="{DynamicResource BackgroundBrush}"
+                                     Foreground="{DynamicResource TextBrush}"
+                                     Padding="8,6"/>
+                        </Grid>
+
+                        <!-- Client Secret -->
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="150"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Client Secret:" 
+                                       Foreground="{DynamicResource SubtextBrush}" VerticalAlignment="Center"/>
+                            <PasswordBox x:Name="GoogleClientSecretText" Grid.Column="1"
+                                         Background="{DynamicResource BackgroundBrush}"
+                                         Foreground="{DynamicResource TextBrush}"
+                                         Padding="8,6"/>
+                        </Grid>
+
+                        <!-- Sync Options -->
+                        <StackPanel Margin="0,5,0,10">
+                            <CheckBox x:Name="GoogleSyncJobsCheck" Content="Sync jobs to calendar" 
+                                      IsChecked="True" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,5"/>
+                            <CheckBox x:Name="GoogleAddRemindersCheck" Content="Add reminders (30 min before)" 
+                                      IsChecked="True" Foreground="{DynamicResource TextBrush}"/>
+                        </StackPanel>
+
+                        <!-- Connection Status -->
+                        <Border Background="{DynamicResource BackgroundBrush}" CornerRadius="6" 
+                                Padding="12,10" Margin="0,10,0,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="Connection Status:" FontSize="12"
+                                               Foreground="{DynamicResource SubtextBrush}"/>
+                                    <TextBlock x:Name="GoogleStatusText" Text="Not connected" 
+                                               Foreground="{DynamicResource WarningBrush}" FontWeight="SemiBold"/>
+                                    <TextBlock x:Name="GoogleEmailText" Text="" FontSize="11"
+                                               Foreground="{DynamicResource SubtextBrush}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                    <Button x:Name="GoogleConnectButton" Content="Connect" 
+                                            Style="{StaticResource ActionButton}"
+                                            Click="ConnectGoogleCalendar_Click"
+                                            Margin="0,0,10,0"/>
+                                    <Button x:Name="GoogleDisconnectButton" Content="Disconnect" 
+                                            Style="{StaticResource SecondaryButton}"
+                                            Click="DisconnectGoogleCalendar_Click"
+                                            Visibility="Collapsed"/>
+                                    <Button Content="Save" 
+                                            Style="{StaticResource ActionButton}"
+                                            Click="SaveGoogleSettings_Click"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Help Text -->
+                        <TextBlock Text="Get your Google API credentials from console.cloud.google.com"
+                                   Foreground="{DynamicResource SubtextBrush}" FontSize="11"
+                                   Margin="0,10,0,0" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- API Setup Guide Link -->
+            <Border Style="{StaticResource SettingCard}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                            
+                            <TextBlock Text="API Setup Guide" FontSize="16" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBlock Text="Step-by-step instructions for setting up Square and Google Calendar"
+                                   Foreground="{DynamicResource SubtextBrush}" FontSize="12"/>
+                    </StackPanel>
+                    <Button Grid.Column="1" Content="Open Guide" 
+                            Style="{StaticResource ActionButton}"
+                            Click="OpenApiSetupGuide_Click"
+                            VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+
+            <!-- Data Management -->
+            <Border Style="{StaticResource SettingCard}">
+                <StackPanel>
+                    <TextBlock Text="Data Management" FontSize="16" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextBrush}" Margin="0,0,0,15"/>
+
+                    <TextBlock Text="Database Location:" 
+                               Foreground="{DynamicResource SubtextBrush}" Margin="0,0,0,5"/>
+                    <TextBlock x:Name="DbPathText" Text="Loading..." 
+                               Foreground="{DynamicResource TextBrush}" 
+                               TextWrapping="Wrap" Margin="0,0,0,15"/>
+
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="Export Backup" Style="{StaticResource ActionButton}"
+                                Click="ExportBackup_Click" Margin="0,0,10,0"/>
+                        <Button Content="Import Backup" Style="{StaticResource SecondaryButton}"
+                                Click="ImportBackup_Click" Margin="0,0,10,0"/>
+                        <Button Content="Open Data Folder" Style="{StaticResource SecondaryButton}"
+                                Click="OpenDataFolder_Click"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Scheduled Backups -->
+            <Border Style="{StaticResource SettingCard}">
+                <StackPanel>
+                    <TextBlock Text="Scheduled Backups" FontSize="16" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextBrush}" Margin="0,0,0,15"/>
+
+                    <!-- Enable Toggle -->
+                    <Grid Margin="0,0,0,15">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel>
+                            <TextBlock Text="Automatic Backups" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextBrush}"/>
+                            <TextBlock Text="Automatically backup your data on schedule"
+                                       Foreground="{DynamicResource SubtextBrush}" FontSize="12"/>
+                        </StackPanel>
+
+                        <ToggleButton x:Name="ScheduledBackupToggle" 
+                                      Click="ScheduledBackupToggle_Click"
+                                      Grid.Column="1" Width="50" Height="26" Cursor="Hand">
+                            <ToggleButton.Template>
+                                <ControlTemplate TargetType="ToggleButton">
+                                    <Border x:Name="Track" Background="{DynamicResource Surface2Brush}" CornerRadius="13" 
+                                            Width="50" Height="26">
+                                        <Ellipse x:Name="Thumb" Width="22" Height="22" 
+                                                 Fill="White" HorizontalAlignment="Left"
+                                                 Margin="2,0,0,0"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsChecked" Value="True">
+                                            <Setter TargetName="Track" Property="Background" Value="{DynamicResource SecondaryBrush}"/>
+                                            <Setter TargetName="Thumb" Property="HorizontalAlignment" Value="Right"/>
+                                            <Setter TargetName="Thumb" Property="Margin" Value="0,0,2,0"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </ToggleButton.Template>
+                        </ToggleButton>
+                    </Grid>
+
+                    <!-- Schedule Options -->
+                    <Grid x:Name="BackupOptionsPanel" Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="150"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Text="Frequency:" 
+                                   Foreground="{DynamicResource SubtextBrush}" VerticalAlignment="Center"/>
+                        <ComboBox x:Name="BackupFrequencyCombo" Grid.Row="0" Grid.Column="1" 
+                                  Width="120" HorizontalAlignment="Left"
+                                  Background="{DynamicResource BackgroundBrush}"
+                                  SelectionChanged="BackupFrequencyCombo_SelectionChanged">
+                            <ComboBoxItem Content="Daily" IsSelected="True"/>
+                            <ComboBoxItem Content="Weekly"/>
+                            <ComboBoxItem Content="Monthly"/>
+                        </ComboBox>
+
+                        <TextBlock Grid.Row="1" Text="Keep Backups:" 
+                                   Foreground="{DynamicResource SubtextBrush}" 
+                                   VerticalAlignment="Center" Margin="0,10,0,0"/>
+                        <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Margin="0,10,0,0">
+                            <TextBox x:Name="MaxBackupsText" Text="10" Width="50"
+                                     Background="{DynamicResource BackgroundBrush}"
+                                     Foreground="{DynamicResource TextBrush}"
+                                     Padding="8,6" TextChanged="MaxBackupsText_TextChanged"/>
+                            <TextBlock Text="most recent" Foreground="{DynamicResource SubtextBrush}"
+                                       VerticalAlignment="Center" Margin="8,0,0,0"/>
+                        </StackPanel>
+
+                        <TextBlock Grid.Row="2" Text="Compression:" 
+                                   Foreground="{DynamicResource SubtextBrush}" 
+                                   VerticalAlignment="Center" Margin="0,10,0,0"/>
+                        <CheckBox x:Name="UseCompressionCheck" Grid.Row="2" Grid.Column="1" 
+                                  Content="Use ZIP compression" IsChecked="True"
+                                  Foreground="{DynamicResource TextBrush}" Margin="0,10,0,0"
+                                  Click="UseCompressionCheck_Click"/>
+                    </Grid>
+
+                    <!-- Last Backup Info -->
+                    <Border Background="{DynamicResource BackgroundBrush}" CornerRadius="6" 
+                            Padding="12,10" Margin="0,10,0,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="Last Automatic Backup:" FontSize="12"
+                                           Foreground="{DynamicResource SubtextBrush}"/>
+                                <TextBlock x:Name="LastBackupText" Text="Never" 
+                                           Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold"/>
+                            </StackPanel>
+                            <Button Grid.Column="1" Content="Backup Now" 
+                                    Style="{StaticResource SecondaryButton}"
+                                    Click="BackupNow_Click"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Existing Backups -->
+                    <TextBlock Text="Recent Backups:" Foreground="{DynamicResource SubtextBrush}" 
+                               Margin="0,15,0,5" FontSize="12"/>
+                    <ListBox x:Name="BackupsList" MaxHeight="120" 
+                             Background="{DynamicResource BackgroundBrush}"
+                             Foreground="{DynamicResource TextBrush}"
+                             BorderThickness="0">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding FileName}" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding SizeDisplay}" 
+                                               Foreground="{DynamicResource SubtextBrush}"
+                                               Margin="10,0" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="2" Text="{Binding CreatedAt, StringFormat='{}{0:MMM dd, HH:mm}'}"
+                                               Foreground="{DynamicResource SubtextBrush}"
+                                               VerticalAlignment="Center"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </StackPanel>
+            </Border>
+
+            <!-- Danger Zone -->
+            <Border Style="{StaticResource SettingCard}" BorderBrush="{DynamicResource ErrorBrush}" 
+                    BorderThickness="1">
+                <StackPanel>
+                    <TextBlock Text="Danger Zone" FontSize="16" FontWeight="SemiBold"
+                               Foreground="{DynamicResource ErrorBrush}" Margin="0,0,0,10"/>
+                    <TextBlock Text="These actions cannot be undone. Make sure you have a backup first."
+                               Foreground="{DynamicResource SubtextBrush}" Margin="0,0,0,15"
+                               TextWrapping="Wrap"/>
+
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="Load Sample Data" Style="{StaticResource SecondaryButton}"
+                                Click="LoadSampleData_Click" Margin="0,0,10,0"/>
+                        <Button Content="Reset All Data" Style="{StaticResource DangerButton}"
+                                Click="ResetData_Click"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- About -->
+            <Border Style="{StaticResource SettingCard}">
+                <StackPanel>
+                    <TextBlock Text="About OneManVan" FontSize="16" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextBrush}" Margin="0,0,0,10"/>
+                    <TextBlock Foreground="{DynamicResource SubtextBrush}" TextWrapping="Wrap">
+                        <Run Text="OneManVan is a personal HVAC job estimator and field service management application by MtnManApps."/>
+                        <LineBreak/><LineBreak/>
+                        <Run Text="Built with .NET 10, WPF, and Entity Framework Core."/>
+                        <LineBreak/>
+                        <Run Text="Your data stays local and under your control."/>
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

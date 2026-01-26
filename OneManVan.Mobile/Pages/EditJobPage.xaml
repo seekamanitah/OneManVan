@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="OneManVan.Mobile.Pages.EditJobPage"
+             Title="Edit Job">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="12">
+            <ActivityIndicator x:Name="LoadingIndicator" 
+                             IsVisible="False" 
+                             IsRunning="False"
+                             Color="{DynamicResource Primary}"
+                             Margin="0,8"/>
+            <Entry x:Name="TitleEntry" Placeholder="Job Title*"/>
+            <Editor x:Name="DescriptionEditor" Placeholder="Description" HeightRequest="100"/>
+            <DatePicker x:Name="ScheduledDatePicker"/>
+            <Entry x:Name="EstimatedHoursEntry" Placeholder="Estimated Hours" Keyboard="Numeric"/>
+            
+            <Picker x:Name="PriorityPicker" Title="Priority">
+                <Picker.Items>
+                    <x:String>Low</x:String>
+                    <x:String>Normal</x:String>
+                    <x:String>High</x:String>
+                    <x:String>Urgent</x:String>
+                    <x:String>Emergency</x:String>
+                </Picker.Items>
+            </Picker>
+
+            <Picker x:Name="StatusPicker" Title="Status">
+                <Picker.Items>
+                    <x:String>Draft</x:String>
+                    <x:String>Scheduled</x:String>
+                    <x:String>EnRoute</x:String>
+                    <x:String>InProgress</x:String>
+                    <x:String>Completed</x:String>
+                    <x:String>Closed</x:String>
+                    <x:String>Cancelled</x:String>
+                    <x:String>OnHold</x:String>
+                </Picker.Items>
+            </Picker>
+
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="12" Margin="0,16,0,0">
+                <Button Text="Cancel" Grid.Column="0" Clicked="OnCancelClicked" BackgroundColor="Gray"/>
+                <Button Text="Save" Grid.Column="1" Clicked="OnSaveClicked" BackgroundColor="{DynamicResource Primary}"/>
+            </Grid>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

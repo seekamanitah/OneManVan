@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="OneManVan.Mobile.Pages.ServiceAgreementListPage"
+             Title="Service Agreements"
+             BackgroundColor="{AppThemeBinding Light={StaticResource LightBackground}, Dark={StaticResource DarkBackground}}">
+
+    <Grid RowDefinitions="Auto,Auto,*">
+
+        <!-- Stats Cards -->
+        <ScrollView Grid.Row="0" Orientation="Horizontal" Margin="0,8,0,0">
+            <HorizontalStackLayout Spacing="12" Padding="16,0">
+                <Border BackgroundColor="White" 
+                        StrokeShape="RoundRectangle 12" 
+                        Stroke="Transparent"
+                        Padding="16"
+                        WidthRequest="100">
+                    <Border.Shadow>
+                        <Shadow Brush="Black" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <VerticalStackLayout HorizontalOptions="Center">
+                        <Label x:Name="ActiveCountLabel" Text="0" FontSize="24" FontAttributes="Bold" TextColor="#4CAF50" HorizontalTextAlignment="Center"/>
+                        <Label Text="Active" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}" HorizontalTextAlignment="Center"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border BackgroundColor="White" 
+                        StrokeShape="RoundRectangle 12" 
+                        Stroke="Transparent"
+                        Padding="16"
+                        WidthRequest="100">
+                    <Border.Shadow>
+                        <Shadow Brush="Black" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <VerticalStackLayout HorizontalOptions="Center">
+                        <Label x:Name="ExpiringCountLabel" Text="0" FontSize="24" FontAttributes="Bold" TextColor="#FF9800" HorizontalTextAlignment="Center"/>
+                        <Label Text="Expiring" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}" HorizontalTextAlignment="Center"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border BackgroundColor="White" 
+                        StrokeShape="RoundRectangle 12" 
+                        Stroke="Transparent"
+                        Padding="16"
+                        WidthRequest="120">
+                    <Border.Shadow>
+                        <Shadow Brush="Black" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <VerticalStackLayout HorizontalOptions="Center">
+                        <Label x:Name="RevenueLabel" Text="$0" FontSize="24" FontAttributes="Bold" TextColor="#1976D2" HorizontalTextAlignment="Center"/>
+                        <Label Text="Annual Rev" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}" HorizontalTextAlignment="Center"/>
+                    </VerticalStackLayout>
+                </Border>
+            </HorizontalStackLayout>
+        </ScrollView>
+
+        <!-- Filter Chips -->
+        <ScrollView Grid.Row="1" Orientation="Horizontal" Margin="0,12,0,8">
+            <HorizontalStackLayout Spacing="8" Padding="16,0">
+                <Button x:Name="AllFilter" 
+                        Text="All"
+                        BackgroundColor="#1976D2"
+                        TextColor="White"
+                        FontSize="12"
+                        HeightRequest="32"
+                        CornerRadius="16"
+                        Padding="16,0"
+                        Clicked="OnFilterClicked"/>
+                <Button x:Name="ActiveFilter" 
+                        Text="Active"
+                        BackgroundColor="#E8F5E9"
+                        TextColor="#4CAF50"
+                        FontSize="12"
+                        HeightRequest="32"
+                        CornerRadius="16"
+                        Padding="16,0"
+                        Clicked="OnFilterClicked"/>
+                <Button x:Name="ExpiringFilter" 
+                        Text="Expiring Soon"
+                        BackgroundColor="#FFF3E0"
+                        TextColor="#FF9800"
+                        FontSize="12"
+                        HeightRequest="32"
+                        CornerRadius="16"
+                        Padding="16,0"
+                        Clicked="OnFilterClicked"/>
+                <Button x:Name="DueFilter" 
+                        Text="Due for Service"
+                        BackgroundColor="#E3F2FD"
+                        TextColor="#1976D2"
+                        FontSize="12"
+                        HeightRequest="32"
+                        CornerRadius="16"
+                        Padding="16,0"
+                        Clicked="OnFilterClicked"/>
+            </HorizontalStackLayout>
+        </ScrollView>
+
+        <!-- Agreement List -->
+        <RefreshView Grid.Row="2" 
+                     x:Name="RefreshViewControl"
+                     Refreshing="OnRefreshing">
+            <CollectionView x:Name="AgreementCollection"
+                            SelectionMode="Single"
+                            SelectionChanged="OnAgreementSelected">
+                <CollectionView.EmptyView>
+                    <VerticalStackLayout VerticalOptions="Center" HorizontalOptions="Center" Padding="32">
+                        <Label Text="ðŸ“‹" FontSize="48" HorizontalOptions="Center"/>
+                        <Label Text="No service agreements" 
+                               FontSize="18" 
+                               TextColor="#9E9E9E"
+                               HorizontalTextAlignment="Center"/>
+                        <Label Text="Tap + to create your first agreement"
+                               FontSize="14"
+                               TextColor="#BDBDBD"
+                               HorizontalTextAlignment="Center"
+                               Margin="0,8,0,0"/>
+                    </VerticalStackLayout>
+                </CollectionView.EmptyView>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <!-- Service Agreement Card - Using Standard Card Style -->
+                        <Border Style="{StaticResource CardStyle}"
+                                Margin="16,4">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnAgreementTapped" CommandParameter="{Binding}"/>
+                            </Border.GestureRecognizers>
+                            
+                            <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="12">
+                                <!-- Status Icon -->
+                                <Border WidthRequest="48" 
+                                        HeightRequest="48"
+                                        StrokeShape="RoundRectangle 24"
+                                        BackgroundColor="{Binding StatusColor}"
+                                        Stroke="Transparent"
+                                        VerticalOptions="Center">
+                                    <Label Text="{Binding StatusIcon}"
+                                           FontSize="20"
+                                           HorizontalOptions="Center"
+                                           VerticalOptions="Center"/>
+                                </Border>
+
+                                <!-- Details -->
+                                <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+                                    <Label Text="{Binding Name}"
+                                           FontSize="16"
+                                           FontAttributes="Bold"
+                                           TextColor="#333"
+                                           LineBreakMode="TailTruncation"/>
+                                    <Label Text="{Binding CustomerName}"
+                                           FontSize="14"
+                                           TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                                    <HorizontalStackLayout Spacing="8">
+                                        <Label Text="{Binding TypeDisplay}"
+                                               FontSize="12"
+                                               TextColor="#1976D2"/>
+                                        <Label Text="|" FontSize="12" TextColor="#E0E0E0"/>
+                                        <Label Text="{Binding VisitInfo}"
+                                               FontSize="12"
+                                               TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                                    </HorizontalStackLayout>
+                                </VerticalStackLayout>
+
+                                <!-- Price & Expiry -->
+                                <VerticalStackLayout Grid.Column="2" VerticalOptions="Center" HorizontalOptions="End">
+                                    <Label Text="{Binding AnnualPrice, StringFormat='${0:N0}/yr'}"
+                                           FontSize="16"
+                                           FontAttributes="Bold"
+                                           TextColor="#4CAF50"
+                                           HorizontalTextAlignment="End"/>
+                                    <Label Text="{Binding ExpiryInfo}"
+                                           FontSize="11"
+                                           TextColor="{Binding ExpiryColor}"
+                                           HorizontalTextAlignment="End"/>
+                                </VerticalStackLayout>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+
+        <!-- FAB Add Button -->
+        <Button Grid.Row="2"
+                Text="+ "
+                FontSize="28"
+                TextColor="White"
+                BackgroundColor="#1976D2"
+                WidthRequest="60"
+                HeightRequest="60"
+                CornerRadius="30"
+                HorizontalOptions="End"
+                VerticalOptions="End"
+                Margin="0,0,20,20"
+                Shadow="{Shadow Brush=Black, Offset='0,4', Radius=8, Opacity=0.3}"
+                Clicked="OnAddAgreementClicked"/>
+
+    </Grid>
+
+</ContentPage>

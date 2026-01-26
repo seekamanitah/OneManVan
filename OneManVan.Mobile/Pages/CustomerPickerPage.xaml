@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="OneManVan.Mobile.Pages.CustomerPickerPage"
+             Title="Select Customer"
+             BackgroundColor="{AppThemeBinding Light={StaticResource LightBackground}, Dark={StaticResource DarkBackground}}">
+
+    <Grid RowDefinitions="Auto, Auto, *, Auto">
+        
+        <!-- Header with Search -->
+        <Border Grid.Row="0" 
+                BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                Padding="16"
+                StrokeShape="RoundRectangle 0"
+                Stroke="Transparent">
+            <Border.Shadow>
+                <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,2" Radius="4" Opacity="0.1"/>
+            </Border.Shadow>
+            <VerticalStackLayout Spacing="12">
+                <Label Text="Select Customer" 
+                       FontSize="20" 
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource Primary}"/>
+                
+                <!-- Search Box -->
+                <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightInputBackground}, Dark={StaticResource DarkInputBackground}}" 
+                        StrokeShape="RoundRectangle 8" 
+                        Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+                        Padding="12,8">
+                    <Entry x:Name="SearchEntry"
+                           Placeholder="Search by name, phone, or company..."
+                           FontSize="16"
+                           BackgroundColor="Transparent"
+                           TextChanged="OnSearchTextChanged"/>
+                </Border>
+            </VerticalStackLayout>
+        </Border>
+
+        <!-- Add New Customer Button -->
+        <Border Grid.Row="1" 
+                BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                Margin="16,8"
+                Padding="12"
+                StrokeShape="RoundRectangle 8"
+                Stroke="{StaticResource Primary}">
+            <Border.GestureRecognizers>
+                <TapGestureRecognizer Tapped="OnAddNewCustomerTapped"/>
+            </Border.GestureRecognizers>
+            <HorizontalStackLayout Spacing="12" HorizontalOptions="Center">
+                <Label Text="+" 
+                       FontSize="20" 
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource Primary}"
+                       VerticalOptions="Center"/>
+                <Label Text="Add New Customer" 
+                       FontSize="16" 
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource Primary}"
+                       VerticalOptions="Center"/>
+            </HorizontalStackLayout>
+        </Border>
+
+        <!-- Customer List -->
+        <CollectionView x:Name="CustomerCollection"
+                        Grid.Row="2"
+                        Margin="16,0"
+                        SelectionMode="Single"
+                        SelectionChanged="OnCustomerSelected">
+            <CollectionView.EmptyView>
+                <VerticalStackLayout Padding="20" HorizontalOptions="Center" VerticalOptions="Center">
+                    <Label Text="No customers found" 
+                           FontSize="16" 
+                           TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"
+                           HorizontalOptions="Center"/>
+                    <Label Text="Try a different search or add a new customer" 
+                           FontSize="14" 
+                           TextColor="{AppThemeBinding Light={StaticResource LightTextTertiary}, Dark={StaticResource DarkTextTertiary}}"
+                           HorizontalOptions="Center"/>
+                </VerticalStackLayout>
+            </CollectionView.EmptyView>
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Border Margin="0,4" 
+                            Padding="12"
+                            BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}"
+                            StrokeShape="RoundRectangle 8"
+                            Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}">
+                        <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="12">
+                            <!-- Avatar -->
+                            <Border WidthRequest="44" 
+                                    HeightRequest="44"
+                                    StrokeShape="RoundRectangle 22"
+                                    BackgroundColor="{AppThemeBinding Light={StaticResource PrimarySurface}, Dark={StaticResource Gray600}}"
+                                    Stroke="Transparent">
+                                <Label Text="{Binding InitialLetter}"
+                                       FontSize="18"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource Primary}"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"/>
+                            </Border>
+                            
+                            <!-- Customer Info -->
+                            <VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
+                                <Label Text="{Binding Name}"
+                                       FontSize="16"
+                                       FontAttributes="Bold"
+                                       TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"
+                                       LineBreakMode="TailTruncation"/>
+                                <Label Text="{Binding CompanyName}"
+                                       FontSize="12"
+                                       TextColor="{StaticResource Primary}"
+                                       IsVisible="{Binding HasCompanyName}"
+                                       LineBreakMode="TailTruncation"/>
+                                <Label Text="{Binding Phone}"
+                                       FontSize="12"
+                                       TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"
+                                       IsVisible="{Binding HasPhone}"/>
+                            </VerticalStackLayout>
+                            
+                            <!-- Customer Type Badge -->
+                            <Border Grid.Column="2"
+                                    BackgroundColor="{Binding TypeBadgeColor}"
+                                    StrokeShape="RoundRectangle 10"
+                                    Stroke="Transparent"
+                                    Padding="8,4"
+                                    VerticalOptions="Center">
+                                <Label Text="{Binding TypeShortName}"
+                                       FontSize="10"
+                                       TextColor="White"/>
+                            </Border>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <!-- Cancel Button -->
+        <Border Grid.Row="3" 
+                BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                Padding="16"
+                StrokeShape="RoundRectangle 0"
+                Stroke="Transparent">
+            <Border.Shadow>
+                <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,-2" Radius="4" Opacity="0.1"/>
+            </Border.Shadow>
+            <Button Text="Cancel"
+                    BackgroundColor="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+                    TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"
+                    FontAttributes="Bold"
+                    HeightRequest="50"
+                    CornerRadius="8"
+                    Clicked="OnCancelClicked"/>
+        </Border>
+    </Grid>
+
+</ContentPage>

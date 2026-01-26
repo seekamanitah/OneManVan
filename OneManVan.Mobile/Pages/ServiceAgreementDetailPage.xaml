@@ -1,0 +1,56 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="OneManVan.Mobile.Pages.ServiceAgreementDetailPage"
+             Title="Service Agreement">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="16">
+
+            <ActivityIndicator x:Name="LoadingIndicator" IsVisible="False"/>
+
+            <!-- Header -->
+            <Border StrokeThickness="0" BackgroundColor="{DynamicResource PrimarySurface}" Padding="16">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="8"/>
+                </Border.StrokeShape>
+                <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto" RowSpacing="8">
+                    <Label x:Name="AgreementNumberLabel" Grid.Row="0" Grid.Column="0" FontSize="20" FontAttributes="Bold"/>
+                    <Label x:Name="StatusLabel" Grid.Row="0" Grid.Column="1" FontSize="14" FontAttributes="Bold"/>
+                    <Label x:Name="CustomerNameLabel" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" TextColor="Gray"/>
+                </Grid>
+            </Border>
+
+            <!-- Details -->
+            <Border StrokeThickness="1" Stroke="{DynamicResource Gray200}" Padding="16">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="8"/>
+                </Border.StrokeShape>
+                <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="Auto,*" RowSpacing="12" ColumnSpacing="16">
+                    <Label Text="Type:" Grid.Row="0" Grid.Column="0" TextColor="Gray"/>
+                    <Label x:Name="TypeLabel" Grid.Row="0" Grid.Column="1"/>
+                    
+                    <Label Text="Start Date:" Grid.Row="1" Grid.Column="0" TextColor="Gray"/>
+                    <Label x:Name="StartDateLabel" Grid.Row="1" Grid.Column="1"/>
+                    
+                    <Label Text="End Date:" Grid.Row="2" Grid.Column="0" TextColor="Gray"/>
+                    <Label x:Name="EndDateLabel" Grid.Row="2" Grid.Column="1"/>
+                    
+                    <Label Text="Frequency:" Grid.Row="3" Grid.Column="0" TextColor="Gray"/>
+                    <Label x:Name="FrequencyLabel" Grid.Row="3" Grid.Column="1"/>
+                    
+                    <Label Text="Price:" Grid.Row="4" Grid.Column="0" TextColor="Gray"/>
+                    <Label x:Name="PriceLabel" Grid.Row="4" Grid.Column="1" FontSize="18" FontAttributes="Bold" TextColor="{DynamicResource Primary}"/>
+                    
+                    <Label Text="Description:" Grid.Row="5" Grid.Column="0" TextColor="Gray" VerticalOptions="Start"/>
+                    <Label x:Name="DescriptionLabel" Grid.Row="5" Grid.Column="1"/>
+                </Grid>
+            </Border>
+
+            <!-- Action Buttons -->
+            <Button Text="Edit Agreement" Clicked="OnEditClicked" BackgroundColor="{DynamicResource Primary}"/>
+            <Button Text="Delete Agreement" Clicked="OnDeleteClicked" BackgroundColor="{DynamicResource Error}"/>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

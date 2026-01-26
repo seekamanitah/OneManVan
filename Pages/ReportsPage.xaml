@@ -1,0 +1,382 @@
+<UserControl x:Class="OneManVan.Pages.ReportsPage"
+         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+         mc:Ignorable="d" 
+         d:DesignHeight="700" d:DesignWidth="1000"
+         Background="{DynamicResource BackgroundBrush}">
+
+<UserControl.Resources>
+    <Style x:Key="MetricCard" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="20,15"/>
+    </Style>
+
+    <Style x:Key="ActionButton" TargetType="Button">
+        <Setter Property="Background" Value="{DynamicResource PrimaryBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource BackgroundBrush}"/>
+        <Setter Property="Padding" Value="15,8"/>
+        <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                CornerRadius="6" 
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Opacity" Value="0.85"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="25">
+        <StackPanel>
+            <!-- Header -->
+            <Grid Margin="0,0,0,20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel>
+                    <TextBlock Text="Reports" FontSize="28" FontWeight="Bold" 
+                               Foreground="{DynamicResource TextBrush}"/>
+                    <TextBlock Text="Business metrics and insights" FontSize="14"
+                               Foreground="{DynamicResource SubtextBrush}"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <ComboBox ItemsSource="{Binding PeriodOptions}"
+                              SelectedItem="{Binding SelectedPeriod}"
+                              Background="{DynamicResource SurfaceBrush}"
+                              Foreground="{DynamicResource TextBrush}"
+                              Width="140" Padding="10,8" Margin="0,0,10,0"/>
+                    <Button Content="Refresh" Command="{Binding RefreshCommand}"
+                            Style="{StaticResource ActionButton}" Margin="0,0,10,0"/>
+                    <Button Content="&#x1F4C4; Export PDF" Command="{Binding ExportPdfCommand}"
+                            Style="{StaticResource ActionButton}" Margin="0,0,10,0"/>
+                    <Button Content="&#x1F4CA; Export CSV" Command="{Binding ExportCsvCommand}"
+                            Style="{StaticResource ActionButton}"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- Revenue Section -->
+            <TextBlock Text="REVENUE" FontSize="12" FontWeight="SemiBold"
+                       Foreground="{DynamicResource SubtextBrush}" Margin="0,0,0,10"/>
+            
+            <Grid Margin="0,0,0,25">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="15"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="15"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="15"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Style="{StaticResource MetricCard}">
+                    <StackPanel>
+                        <TextBlock Text="Total Revenue" FontSize="12"
+                                   Foreground="{DynamicResource SubtextBrush}"/>
+                        <TextBlock Text="{Binding TotalRevenue, StringFormat='${0:N0}'}" 
+                                   FontSize="28" FontWeight="Bold"
+                                   Foreground="{DynamicResource SecondaryBrush}" Margin="0,5,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="2" Style="{StaticResource MetricCard}">
+                    <StackPanel>
+                        <TextBlock Text="Paid" FontSize="12"
+                                   Foreground="{DynamicResource SubtextBrush}"/>
+                        <TextBlock Text="{Binding PaidRevenue, StringFormat='${0:N0}'}" 
+                                   FontSize="28" FontWeight="Bold"
+                                   Foreground="{DynamicResource TextBrush}" Margin="0,5,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="4" Style="{StaticResource MetricCard}">
+                    <StackPanel>
+                        <TextBlock Text="Outstanding" FontSize="12"
+                                   Foreground="{DynamicResource SubtextBrush}"/>
+                        <TextBlock Text="{Binding OutstandingRevenue, StringFormat='${0:N0}'}" 
+                                   FontSize="28" FontWeight="Bold"
+                                   Foreground="{DynamicResource WarningBrush}" Margin="0,5,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="6" Style="{StaticResource MetricCard}">
+                    <StackPanel>
+                        <TextBlock Text="Avg Job Value" FontSize="12"
+                                   Foreground="{DynamicResource SubtextBrush}"/>
+                        <TextBlock Text="{Binding AverageJobValue, StringFormat='${0:N0}'}" 
+                                   FontSize="28" FontWeight="Bold"
+                                   Foreground="{DynamicResource PrimaryBrush}" Margin="0,5,0,0"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Jobs Section -->
+            <TextBlock Text="JOBS" FontSize="12" FontWeight="SemiBold"
+                       Foreground="{DynamicResource SubtextBrush}" Margin="0,0,0,10"/>
+            
+            <Grid Margin="0,0,0,25">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="15"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="15"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="15"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Style="{StaticResource MetricCard}">
+                    <StackPanel>
+                        <TextBlock Text="Total Jobs" FontSize="12"
+                                   Foreground="{DynamicResource SubtextBrush}"/>
+                        <TextBlock Text="{Binding TotalJobs}" 
+                                   FontSize="28" FontWeight="Bold"
+                                   Foreground="{DynamicResource TextBrush}" Margin="0,5,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="2" Style="{StaticResource MetricCard}">
+                    <StackPanel>
+                        <TextBlock Text="Completed" FontSize="12"
+                                   Foreground="{DynamicResource SubtextBrush}"/>
+                        <TextBlock Text="{Binding CompletedJobs}" 
+                                   FontSize="28" FontWeight="Bold"
+                                   Foreground="{DynamicResource SecondaryBrush}" Margin="0,5,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="4" Style="{StaticResource MetricCard}">
+                    <StackPanel>
+                        <TextBlock Text="Cancelled" FontSize="12"
+                                   Foreground="{DynamicResource SubtextBrush}"/>
+                        <TextBlock Text="{Binding CancelledJobs}" 
+                                   FontSize="28" FontWeight="Bold"
+                                   Foreground="{DynamicResource ErrorBrush}" Margin="0,5,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="6" Style="{StaticResource MetricCard}">
+                    <StackPanel>
+                        <TextBlock Text="Completion Rate" FontSize="12"
+                                   Foreground="{DynamicResource SubtextBrush}"/>
+                        <TextBlock Text="{Binding CompletionRate, StringFormat='{}{0:N0}%'}" 
+                                   FontSize="28" FontWeight="Bold"
+                                   Foreground="{DynamicResource PrimaryBrush}" Margin="0,5,0,0"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Customers & Assets Section -->
+            <Grid Margin="0,0,0,25">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="15"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Customers -->
+                <Border Grid.Column="0" Style="{StaticResource MetricCard}">
+                    <StackPanel>
+                        <TextBlock Text="CUSTOMERS" FontSize="12" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource SubtextBrush}" Margin="0,0,0,15"/>
+                        
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="{Binding TotalCustomers}" FontSize="24" FontWeight="Bold"
+                                           Foreground="{DynamicResource TextBrush}"/>
+                                <TextBlock Text="Total" FontSize="11" Foreground="{DynamicResource SubtextBrush}"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="{Binding NewCustomers}" FontSize="24" FontWeight="Bold"
+                                           Foreground="{DynamicResource SecondaryBrush}"/>
+                                <TextBlock Text="New" FontSize="11" Foreground="{DynamicResource SubtextBrush}"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="{Binding ActiveCustomers}" FontSize="24" FontWeight="Bold"
+                                           Foreground="{DynamicResource PrimaryBrush}"/>
+                                <TextBlock Text="Active" FontSize="11" Foreground="{DynamicResource SubtextBrush}"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Assets -->
+                <Border Grid.Column="2" Style="{StaticResource MetricCard}">
+                    <StackPanel>
+                        <TextBlock Text="ASSETS" FontSize="12" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource SubtextBrush}" Margin="0,0,0,15"/>
+                        
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="{Binding TotalAssets}" FontSize="24" FontWeight="Bold"
+                                           Foreground="{DynamicResource TextBrush}"/>
+                                <TextBlock Text="Total Units" FontSize="11" Foreground="{DynamicResource SubtextBrush}"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="{Binding ExpiringWarranties}" FontSize="24" FontWeight="Bold"
+                                           Foreground="{DynamicResource WarningBrush}"/>
+                                <TextBlock Text="Expiring (90d)" FontSize="11" Foreground="{DynamicResource SubtextBrush}"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Details Grid -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="15"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="15"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Revenue by Fuel Type -->
+                <Border Grid.Column="0" Style="{StaticResource MetricCard}">
+                    <StackPanel>
+                        <TextBlock Text="Revenue by Fuel Type" FontSize="14" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextBrush}" Margin="0,0,0,15"/>
+                        
+                        <ItemsControl ItemsSource="{Binding RevenueByFuel}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding FuelType}" 
+                                                       Foreground="{DynamicResource TextBrush}"/>
+                                            <TextBlock Text="{Binding JobCount, StringFormat='{}{0} jobs'}" 
+                                                       FontSize="11" Foreground="{DynamicResource SubtextBrush}"/>
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="1" 
+                                                   Text="{Binding Revenue, StringFormat='${0:N0}'}"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource SecondaryBrush}"
+                                                   VerticalAlignment="Center"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBlock Text="No data for period" 
+                                   Foreground="{DynamicResource SubtextBrush}"
+                                   Visibility="{Binding RevenueByFuel.Count, Converter={StaticResource BoolToVisibility}, ConverterParameter=inverse}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Jobs by Status -->
+                <Border Grid.Column="2" Style="{StaticResource MetricCard}">
+                    <StackPanel>
+                        <TextBlock Text="Jobs by Status" FontSize="14" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextBrush}" Margin="0,0,0,15"/>
+                        
+                        <ItemsControl ItemsSource="{Binding JobsByStatusData}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding Status}" 
+                                                   Foreground="{DynamicResource TextBrush}"/>
+                                        <TextBlock Grid.Column="1" 
+                                                   Text="{Binding Count}"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource PrimaryBrush}"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBlock Text="No jobs in period" 
+                                   Foreground="{DynamicResource SubtextBrush}"
+                                   Visibility="{Binding JobsByStatusData.Count, Converter={StaticResource BoolToVisibility}, ConverterParameter=inverse}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Top Customers -->
+                <Border Grid.Column="4" Style="{StaticResource MetricCard}">
+                    <StackPanel>
+                        <TextBlock Text="Top Customers" FontSize="14" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextBrush}" Margin="0,0,0,15"/>
+                        
+                        <ItemsControl ItemsSource="{Binding TopCustomers}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Name}" 
+                                                       Foreground="{DynamicResource TextBrush}"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="{Binding JobCount, StringFormat='{}{0} jobs'}" 
+                                                       FontSize="11" Foreground="{DynamicResource SubtextBrush}"/>
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="1" 
+                                                   Text="{Binding Revenue, StringFormat='${0:N0}'}"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource SecondaryBrush}"
+                                                   VerticalAlignment="Center"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBlock Text="No completed jobs" 
+                                   Foreground="{DynamicResource SubtextBrush}"
+                                   Visibility="{Binding TopCustomers.Count, Converter={StaticResource BoolToVisibility}, ConverterParameter=inverse}"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Loading Overlay -->
+            <Border Background="#80000000" CornerRadius="8" Margin="-25"
+                    Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibility}}">
+                <TextBlock Text="Loading metrics..." FontSize="16" Foreground="White"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

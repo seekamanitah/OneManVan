@@ -1,0 +1,840 @@
+<UserControl x:Class="OneManVan.Pages.CustomerListPage"
+xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+xmlns:enums="clr-namespace:OneManVan.Shared.Models.Enums;assembly=OneManVan.Shared"
+xmlns:converters="clr-namespace:OneManVan.Converters"
+mc:Ignorable="d" 
+d:DesignHeight="600" d:DesignWidth="1000"
+Background="{DynamicResource BackgroundBrush}">
+
+    <UserControl.Resources>
+        <Style x:Key="ActionButton" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource PrimaryBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource BackgroundBrush}"/>
+            <Setter Property="Padding" Value="15,8"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                CornerRadius="6" 
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Opacity" Value="0.85"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.5"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource ActionButton}">
+            <Setter Property="Background" Value="{DynamicResource Surface2Brush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+        </Style>
+
+        <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource ActionButton}">
+            <Setter Property="Background" Value="{DynamicResource ErrorBrush}"/>
+        </Style>
+
+        <Style x:Key="SearchTextBox" TargetType="TextBox">
+            <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Surface2Brush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="CaretBrush" Value="{DynamicResource TextBrush}"/>
+        </Style>
+
+        <Style x:Key="FormTextBox" TargetType="TextBox">
+            <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Surface2Brush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="CaretBrush" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="Margin" Value="0,0,0,15"/>
+        </Style>
+
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibility"/>
+        <converters:FirstCharConverter x:Key="FirstChar"/>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="300"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Left Panel: Customer List (Narrow) -->
+        <Border Grid.Column="0" Background="{DynamicResource SurfaceBrush}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Header -->
+                <StackPanel Grid.Row="0" Margin="15,15,15,10">
+                    <StackPanel Orientation="Horizontal">
+                        
+                        <TextBlock Text="Customers" FontSize="18" FontWeight="Bold" 
+                                   Foreground="{DynamicResource TextBrush}"/>
+                    </StackPanel>
+                    <TextBlock Text="{Binding Customers.Count, StringFormat='{}{0} customers'}" 
+                               FontSize="12" Foreground="{DynamicResource SubtextBrush}" Margin="0,3,0,0"/>
+                    <Button Content="+ Add" 
+                            Command="{Binding AddCustomerCommand}"
+                            Style="{StaticResource ActionButton}"
+                            HorizontalAlignment="Left" Margin="0,10,0,0"/>
+                </StackPanel>
+
+                <!-- Search Bar -->
+                <Border Grid.Row="1" Margin="15,5,15,10">
+                    <Grid>
+                        <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                 Background="{DynamicResource BackgroundBrush}"
+                                 Foreground="{DynamicResource TextBrush}"
+                                 BorderBrush="{DynamicResource Surface2Brush}"
+                                 Padding="10,8" FontSize="12"/>
+                        <TextBlock Text="Search..." 
+                                   IsHitTestVisible="False"
+                                   Foreground="{DynamicResource SubtextBrush}"
+                                   FontSize="12"
+                                   VerticalAlignment="Center" Margin="12,0,0,0"
+                                   Visibility="{Binding SearchText.Length, Converter={StaticResource BoolToVisibility}, ConverterParameter=inverse}"/>
+                    </Grid>
+                </Border>
+
+                <!-- Customer List (Compact) -->
+                <ListView Grid.Row="2" ItemsSource="{Binding Customers}"
+                          SelectedItem="{Binding SelectedCustomer}"
+                          Background="Transparent"
+                          BorderThickness="0"
+                          Margin="5,0,5,10"
+                          ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem">
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                            <Setter Property="Padding" Value="10,8"/>
+                            <Setter Property="Margin" Value="0,1"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListViewItem">
+                                        <Border x:Name="itemBorder" Background="Transparent"
+                                                CornerRadius="6"
+                                                Padding="{TemplateBinding Padding}">
+                                            <ContentPresenter/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter TargetName="itemBorder" Property="Background" Value="{DynamicResource ListItemSelectedBrush}"/>
+                                            </Trigger>
+                                            <MultiTrigger>
+                                                <MultiTrigger.Conditions>
+                                                    <Condition Property="IsMouseOver" Value="True"/>
+                                                    <Condition Property="IsSelected" Value="False"/>
+                                                </MultiTrigger.Conditions>
+                                                <Setter TargetName="itemBorder" Property="Background" Value="{DynamicResource ListItemHoverBrush}"/>
+                                            </MultiTrigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListView.ItemContainerStyle>
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Avatar -->
+                                <Border Grid.Column="0" Width="32" Height="32" 
+                                        CornerRadius="16" Background="{DynamicResource PrimaryBrush}"
+                                        Margin="0,0,10,0">
+                                    <TextBlock Text="{Binding Name, Converter={StaticResource FirstChar}}" 
+                                               FontSize="13" FontWeight="Bold"
+                                               Foreground="{DynamicResource BackgroundBrush}"
+                                               HorizontalAlignment="Center" 
+                                               VerticalAlignment="Center"/>
+                                </Border>
+
+                                <!-- Info -->
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Name}" 
+                                               FontSize="13" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource TextBrush}"
+                                               TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock FontSize="11" Foreground="{DynamicResource SubtextBrush}" Margin="0,2,0,0">
+                                        <Run Text="{Binding Sites.Count, StringFormat='{}{0} sites', Mode=OneWay}"/>
+                                        <Run Text=" | "/>
+                                        <Run Text="{Binding Assets.Count, StringFormat='{}{0} assets', Mode=OneWay}"/>
+                                    </TextBlock>
+                                </StackPanel>
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+
+                <!-- Loading Overlay -->
+                <Border Grid.Row="2" Background="#80000000" CornerRadius="6"
+                        Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibility}}">
+                    <TextBlock Text="Loading..." FontSize="13" Foreground="White"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- Right Panel: Customer Details (Wide) -->
+        <Border Grid.Column="1" Background="{DynamicResource BackgroundBrush}" Padding="25">
+            <Grid>
+                <!-- No Selection State -->
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding HasSelectedCustomer}" Value="False"/>
+                                        <Condition Binding="{Binding IsEditing}" Value="False"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
+                    
+                    <TextBlock Text="Select a customer" FontSize="18" 
+                               Foreground="{DynamicResource SubtextBrush}"
+                               HorizontalAlignment="Center" Margin="0,15,0,0"/>
+                    <TextBlock Text="to view their details and assets" FontSize="13" 
+                               Foreground="{DynamicResource SubtextBrush}"
+                               HorizontalAlignment="Center" Margin="0,5,0,0"/>
+                </StackPanel>
+
+                <!-- Customer Details View (show when customer selected OR editing) -->
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ScrollViewer.Style>
+                        <Style TargetType="ScrollViewer">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasSelectedCustomer}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding IsEditing}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ScrollViewer.Style>
+                    <Grid>
+                        <!-- Edit Mode -->
+                        <StackPanel Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibility}}"
+                                    MaxWidth="500" HorizontalAlignment="Left">
+                            <TextBlock Text="Customer Details" FontSize="22" FontWeight="Bold"
+                                       Foreground="{DynamicResource TextBrush}" Margin="0,0,0,25"/>
+
+                            <TextBlock Text="Name *" FontSize="12" Foreground="{DynamicResource SubtextBrush}" Margin="0,0,0,5"/>
+                            <TextBox Text="{Binding EditName, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource FormTextBox}"/>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Email" FontSize="12" Foreground="{DynamicResource SubtextBrush}" Margin="0,0,0,5"/>
+                                    <TextBox Text="{Binding EditEmail, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource FormTextBox}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Phone" FontSize="12" Foreground="{DynamicResource SubtextBrush}" Margin="0,0,0,5"/>
+                                    <TextBox Text="{Binding EditPhone, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource FormTextBox}"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <TextBlock Text="Notes" FontSize="12" Foreground="{DynamicResource SubtextBrush}" Margin="0,0,0,5"/>
+                            <TextBox Text="{Binding EditNotes, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource FormTextBox}"
+                                     TextWrapping="Wrap" AcceptsReturn="True" Height="80"
+                                     VerticalContentAlignment="Top"/>
+
+                            <!-- Custom Fields -->
+                            <ItemsControl ItemsSource="{Binding CustomFieldValues}" Margin="0,5,0,0">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Margin="0,0,0,12">
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                                                <TextBlock Text="{Binding DisplayLabel}" FontSize="12" 
+                                                           Foreground="{DynamicResource SubtextBrush}"/>
+                                                <TextBlock Text=" *" FontSize="12" 
+                                                           Foreground="{DynamicResource ErrorBrush}"
+                                                           Visibility="{Binding IsRequired, Converter={StaticResource BoolToVisibility}}"/>
+                                            </StackPanel>
+                                            <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
+                                                     Background="{DynamicResource SurfaceBrush}"
+                                                     Foreground="{DynamicResource TextBrush}"
+                                                     BorderBrush="{DynamicResource Surface2Brush}"
+                                                     Padding="10,8" FontSize="13">
+                                                <TextBox.Style>
+                                                    <Style TargetType="TextBox">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding FieldType}" Value="{x:Static enums:CustomFieldType.Boolean}">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding FieldType}" Value="{x:Static enums:CustomFieldType.Date}">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding FieldType}" Value="{x:Static enums:CustomFieldType.Enum}">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBox.Style>
+                                            </TextBox>
+                                            <CheckBox IsChecked="{Binding BoolValue}" Content="Yes"
+                                                      Foreground="{DynamicResource TextBrush}">
+                                                <CheckBox.Style>
+                                                    <Style TargetType="CheckBox">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding FieldType}" Value="{x:Static enums:CustomFieldType.Boolean}">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </CheckBox.Style>
+                                            </CheckBox>
+                                            <DatePicker SelectedDate="{Binding DateValue}"
+                                                        Background="{DynamicResource SurfaceBrush}">
+                                                <DatePicker.Style>
+                                                    <Style TargetType="DatePicker">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding FieldType}" Value="{x:Static enums:CustomFieldType.Date}">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </DatePicker.Style>
+                                            </DatePicker>
+                                            <ComboBox ItemsSource="{Binding EnumOptions}" SelectedItem="{Binding Value}"
+                                                      Background="{DynamicResource SurfaceBrush}" Padding="10,8">
+                                                <ComboBox.Style>
+                                                    <Style TargetType="ComboBox">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding FieldType}" Value="{x:Static enums:CustomFieldType.Enum}">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </ComboBox.Style>
+                                            </ComboBox>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,15,0,0">
+                                <Button Content="Save Customer" Command="{Binding SaveCustomerCommand}"
+                                        Style="{StaticResource ActionButton}" Margin="0,0,10,0"/>
+                                <Button Content="Cancel" Command="{Binding CancelEditCommand}"
+                                        Style="{StaticResource SecondaryButton}"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- View Mode -->
+                        <StackPanel Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibility}, ConverterParameter=inverse}">
+                            <!-- Customer Header with Actions -->
+                            <Grid Margin="0,0,0,20">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <Border Grid.Column="0" Width="70" Height="70" 
+                                        CornerRadius="35" Background="{DynamicResource PrimaryBrush}"
+                                        Margin="0,0,20,0">
+                                    <TextBlock Text="{Binding SelectedCustomer.Name, Converter={StaticResource FirstChar}}" 
+                                               FontSize="28" FontWeight="Bold"
+                                               Foreground="{DynamicResource BackgroundBrush}"
+                                               HorizontalAlignment="Center" 
+                                               VerticalAlignment="Center"/>
+                                </Border>
+
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding SelectedCustomer.Name}" 
+                                               FontSize="24" FontWeight="Bold"
+                                               Foreground="{DynamicResource TextBrush}"/>
+                                    <TextBlock Text="{Binding SelectedCustomer.CreatedAt, StringFormat='Customer since {0:MMM yyyy}'}" 
+                                               FontSize="12" Foreground="{DynamicResource SubtextBrush}" Margin="0,4,0,0"/>
+                                </StackPanel>
+
+                                <!-- Quick Actions -->
+                                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Top">
+                                    <Button Content="Call" Command="{Binding CallCustomerCommand}"
+                                            ToolTip="Call Customer"
+                                            Background="{DynamicResource SurfaceBrush}" Foreground="{DynamicResource TextBrush}"
+                                            BorderThickness="0" Padding="10,8" FontSize="16" Cursor="Hand" Margin="0,0,5,0">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+                                    <Button Content="Email" Command="{Binding EmailCustomerCommand}"
+                                            ToolTip="Email Customer"
+                                            Background="{DynamicResource SurfaceBrush}" Foreground="{DynamicResource TextBrush}"
+                                            BorderThickness="0" Padding="10,8" FontSize="16" Cursor="Hand" Margin="0,0,5,0">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+                                    <Button Content="Edit" Command="{Binding EditCustomerCommand}"
+                                            Style="{StaticResource ActionButton}" Margin="0,0,5,0"/>
+                                    <Button Content="Delete" Command="{Binding DeleteCustomerCommand}"
+                                            Style="{StaticResource DangerButton}"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Contact & Stats Row -->
+                            <Grid Margin="0,0,0,20">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Contact Card -->
+                                <Border Grid.Column="0" Background="{DynamicResource SurfaceBrush}" 
+                                        CornerRadius="8" Padding="15" Margin="0,0,8,0">
+                                    <StackPanel>
+                                        <TextBlock Text="Contact" FontSize="11" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource SubtextBrush}" Margin="0,0,0,8"/>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4"
+                                                    Visibility="{Binding SelectedCustomer.Email, Converter={StaticResource BoolToVisibility}}">
+                                            <TextBlock Text="&#x1F4E7;" FontSize="11" Margin="0,0,6,0"/>
+                                            <TextBlock Text="{Binding SelectedCustomer.Email}" FontSize="12"
+                                                       Foreground="{DynamicResource TextBrush}" TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal"
+                                                    Visibility="{Binding SelectedCustomer.Phone, Converter={StaticResource BoolToVisibility}}">
+                                            <TextBlock Text="&#x1F4DE;" FontSize="11" Margin="0,0,6,0"/>
+                                            <TextBlock Text="{Binding SelectedCustomer.Phone}" FontSize="12"
+                                                       Foreground="{DynamicResource TextBrush}"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Sites Stat -->
+                                <Border Grid.Column="1" Background="{DynamicResource SurfaceBrush}" 
+                                        CornerRadius="8" Padding="15" Margin="4,0">
+                                    <StackPanel HorizontalAlignment="Center">
+                                        <TextBlock Text="{Binding TotalSites}" FontSize="28" FontWeight="Bold"
+                                                   Foreground="{DynamicResource PrimaryBrush}" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="Sites" FontSize="11" Foreground="{DynamicResource SubtextBrush}"
+                                                   HorizontalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Assets Stat -->
+                                <Border Grid.Column="2" Background="{DynamicResource SurfaceBrush}" 
+                                        CornerRadius="8" Padding="15" Margin="4,0">
+                                    <StackPanel HorizontalAlignment="Center">
+                                        <TextBlock Text="{Binding TotalAssets}" FontSize="28" FontWeight="Bold"
+                                                   Foreground="{DynamicResource SecondaryBrush}" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="Assets" FontSize="11" Foreground="{DynamicResource SubtextBrush}"
+                                                   HorizontalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Warranty Alerts -->
+                                <Border Grid.Column="3" Background="{DynamicResource SurfaceBrush}" 
+                                        CornerRadius="8" Padding="15" Margin="8,0,0,0">
+                                    <StackPanel HorizontalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                            <TextBlock Text="{Binding ExpiringWarranties}" FontSize="20" FontWeight="Bold"
+                                                       Foreground="{DynamicResource WarningBrush}"/>
+                                            <TextBlock Text="/" FontSize="16" Foreground="{DynamicResource SubtextBrush}" 
+                                                       Margin="4,4,4,0"/>
+                                            <TextBlock Text="{Binding ExpiredWarranties}" FontSize="20" FontWeight="Bold"
+                                                       Foreground="{DynamicResource ErrorBrush}"/>
+                                        </StackPanel>
+                                        <TextBlock Text="Expiring / Expired" FontSize="10" Foreground="{DynamicResource SubtextBrush}"
+                                                   HorizontalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+
+                            <!-- Notes Section -->
+                            <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="8" 
+                                    Padding="15" Margin="0,0,0,20"
+                                    Visibility="{Binding SelectedCustomer.Notes, Converter={StaticResource BoolToVisibility}}">
+                                <StackPanel>
+                                    <TextBlock Text="Notes" FontSize="12" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource SubtextBrush}" Margin="0,0,0,8"/>
+                                    <TextBlock Text="{Binding SelectedCustomer.Notes}" 
+                                               FontSize="13" Foreground="{DynamicResource TextBrush}"
+                                               TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Sites & Assets Section -->
+                            <Grid Margin="0,0,0,20">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,15">
+                                    <TextBlock Text="&#x1F3E0;" FontSize="18" Margin="0,0,8,0"/>
+                                    <TextBlock Text="Sites &amp; Assets" FontSize="16" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource TextBrush}"/>
+                                    <Button Content="+ Add Site" Command="{Binding AddSiteCommand}"
+                                            Style="{StaticResource SecondaryButton}" 
+                                            Padding="10,5" FontSize="11" Margin="15,0,0,0"/>
+                                </StackPanel>
+
+                                <!-- Sites with Assets Hierarchy -->
+                                <ItemsControl Grid.Row="1" ItemsSource="{Binding SitesWithAssets}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="{DynamicResource SurfaceBrush}" 
+                                                    CornerRadius="8" Margin="0,0,0,12">
+                                                <StackPanel>
+                                                    <!-- Site Header -->
+                                                    <Border Background="{DynamicResource Surface2Brush}" 
+                                                            CornerRadius="8,8,0,0" Padding="15,12">
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                            </Grid.ColumnDefinitions>
+
+                                                            <TextBlock Grid.Column="0" Text="" FontSize="16" 
+                                                                       VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                                            
+                                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                                <StackPanel Orientation="Horizontal">
+                                                                    <TextBlock Text="{Binding DisplayName}" FontSize="14" FontWeight="SemiBold"
+                                                                               Foreground="{DynamicResource TextBrush}"/>
+                                                                    <Border Background="{DynamicResource PrimaryBrush}" CornerRadius="3" 
+                                                                            Padding="6,2" Margin="8,0,0,0"
+                                                                            Visibility="{Binding IsPrimary, Converter={StaticResource BoolToVisibility}}">
+                                                                        <TextBlock Text="PRIMARY" FontSize="9" FontWeight="Bold"
+                                                                                   Foreground="{DynamicResource BackgroundBrush}"/>
+                                                                    </Border>
+                                                                </StackPanel>
+                                                                <TextBlock Text="{Binding DisplayLocation}" FontSize="11" 
+                                                                           Foreground="{DynamicResource SubtextBrush}" Margin="0,2,0,0"
+                                                                           Visibility="{Binding DisplayLocation, Converter={StaticResource BoolToVisibility}}"/>
+                                                            </StackPanel>
+
+                                                            <TextBlock Grid.Column="2" 
+                                                                       Text="{Binding AssetCount, StringFormat='{}{0} assets'}"
+                                                                       FontSize="11" Foreground="{DynamicResource SubtextBrush}"
+                                                                       VerticalAlignment="Center" Margin="0,0,10,0"/>
+
+                                                            <Button Grid.Column="3" Content="+ Asset"
+                                                                    Command="{Binding DataContext.AddAssetToSiteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                    CommandParameter="{Binding Site}"
+                                                                    Background="{DynamicResource PrimaryBrush}"
+                                                                    Foreground="{DynamicResource BackgroundBrush}"
+                                                                    BorderThickness="0" Padding="8,4" FontSize="10" Cursor="Hand">
+                                                                <Button.Template>
+                                                                    <ControlTemplate TargetType="Button">
+                                                                        <Border Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                        </Border>
+                                                                    </ControlTemplate>
+                                                                </Button.Template>
+                                                            </Button>
+                                                        </Grid>
+                                                    </Border>
+
+                                                    <!-- Assets List -->
+                                                    <ItemsControl ItemsSource="{Binding Assets}" Margin="0,0,0,0">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Border BorderBrush="{DynamicResource Surface2Brush}" 
+                                                                        BorderThickness="0,1,0,0" Padding="15,10" Cursor="Hand"
+                                                                        Background="Transparent">
+                                                                    <Border.InputBindings>
+                                                                        <MouseBinding MouseAction="LeftClick"
+                                                                                      Command="{Binding DataContext.ViewAssetCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                                      CommandParameter="{Binding}"/>
+                                                                    </Border.InputBindings>
+                                                                    <Border.Style>
+                                                                        <Style TargetType="Border">
+                                                                            <Style.Triggers>
+                                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                                    <Setter Property="Background" Value="{DynamicResource ListItemHoverBrush}"/>
+                                                                                </Trigger>
+                                                                            </Style.Triggers>
+                                                                        </Style>
+                                                                    </Border.Style>
+                                                                    <Grid>
+                                                                        <Grid.ColumnDefinitions>
+                                                                            <ColumnDefinition Width="Auto"/>
+                                                                            <ColumnDefinition Width="*"/>
+                                                                            <ColumnDefinition Width="Auto"/>
+                                                                            <ColumnDefinition Width="Auto"/>
+                                                                        </Grid.ColumnDefinitions>
+
+                                                                        <TextBlock Grid.Column="0" Text="" FontSize="14" 
+                                                                                   VerticalAlignment="Center" Margin="15,0,12,0"/>
+
+                                                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                                            <TextBlock Text="{Binding Serial}" FontSize="13" FontWeight="Medium"
+                                                                                       Foreground="{DynamicResource TextBrush}"/>
+                                                                            <TextBlock FontSize="11" Foreground="{DynamicResource SubtextBrush}">
+                                                                                <Run Text="{Binding Brand}"/>
+                                                                                <Run Text=" "/>
+                                                                                <Run Text="{Binding Model}"/>
+                                                                            </TextBlock>
+                                                                        </StackPanel>
+
+                                                                        <Border Grid.Column="2" CornerRadius="4" Padding="8,3"
+                                                                                VerticalAlignment="Center" Margin="0,0,10,0">
+                                                                            <Border.Style>
+                                                                                <Style TargetType="Border">
+                                                                                    <Setter Property="Background" Value="{DynamicResource Surface2Brush}"/>
+                                                                                    <Style.Triggers>
+                                                                                        <DataTrigger Binding="{Binding IsWarrantyExpired}" Value="True">
+                                                                                            <Setter Property="Background" Value="{DynamicResource BadgeErrorBrush}"/>
+                                                                                        </DataTrigger>
+                                                                                        <DataTrigger Binding="{Binding IsWarrantyExpiringSoon}" Value="True">
+                                                                                            <Setter Property="Background" Value="{DynamicResource BadgeWarningBrush}"/>
+                                                                                        </DataTrigger>
+                                                                                    </Style.Triggers>
+                                                                                </Style>
+                                                                            </Border.Style>
+                                                                            <TextBlock FontSize="10" Foreground="{DynamicResource SubtextBrush}">
+                                                                                <TextBlock.Style>
+                                                                                    <Style TargetType="TextBlock">
+                                                                                        <Setter Property="Text" Value="Valid"/>
+                                                                                        <Style.Triggers>
+                                                                                            <DataTrigger Binding="{Binding IsWarrantyExpired}" Value="True">
+                                                                                                <Setter Property="Text" Value="Expired"/>
+                                                                                            </DataTrigger>
+                                                                                            <DataTrigger Binding="{Binding IsWarrantyExpiringSoon}" Value="True">
+                                                                                                <Setter Property="Text" Value="Expiring"/>
+                                                                                            </DataTrigger>
+                                                                                            <DataTrigger Binding="{Binding WarrantyEndDate}" Value="{x:Null}">
+                                                                                                <Setter Property="Text" Value="No Warranty"/>
+                                                                                            </DataTrigger>
+                                                                                        </Style.Triggers>
+                                                                                    </Style>
+                                                                                </TextBlock.Style>
+                                                                            </TextBlock>
+                                                                        </Border>
+
+                                                                        <TextBlock Grid.Column="3" Text=">" FontSize="18" 
+                                                                                   Foreground="{DynamicResource SubtextBrush}"
+                                                                                   VerticalAlignment="Center"/>
+                                                                    </Grid>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+
+                                                    <!-- Empty State -->
+                                                    <TextBlock Text="No assets at this site" 
+                                                               FontSize="12" Foreground="{DynamicResource SubtextBrush}"
+                                                               HorizontalAlignment="Center" Margin="0,15,0,15"
+                                                               Visibility="{Binding AssetCount, Converter={StaticResource BoolToVisibility}, ConverterParameter=inverse}"/>
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Grid>
+                        </StackPanel>
+                    </Grid>
+                </ScrollViewer>
+
+                <!-- Asset Detail Overlay -->
+                <Border Background="{DynamicResource BackgroundBrush}"
+                        Visibility="{Binding IsViewingAsset, Converter={StaticResource BoolToVisibility}}">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="0">
+                            <!-- Back Button -->
+                            <Button Content="? Back to Customer" Command="{Binding CloseAssetViewCommand}"
+                                    Style="{StaticResource SecondaryButton}" 
+                                    HorizontalAlignment="Left" Margin="0,0,0,20"/>
+
+                            <!-- Asset Header -->
+                            <Grid Margin="0,0,0,20">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="{Binding SelectedAsset.Serial}" 
+                                               FontSize="24" FontWeight="Bold"
+                                               Foreground="{DynamicResource TextBrush}"/>
+                                    <TextBlock FontSize="14" Foreground="{DynamicResource SubtextBrush}" Margin="0,5,0,0">
+                                        <Run Text="{Binding SelectedAsset.Brand}"/>
+                                        <Run Text=" | "/>
+                                        <Run Text="{Binding SelectedAsset.Model}"/>
+                                    </TextBlock>
+                                </StackPanel>
+
+                                <Border Grid.Column="1" CornerRadius="6" Padding="12,8" VerticalAlignment="Top">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="{DynamicResource BadgeSuccessBrush}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SelectedAsset.IsWarrantyExpired}" Value="True">
+                                                    <Setter Property="Background" Value="{DynamicResource BadgeErrorBrush}"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding SelectedAsset.IsWarrantyExpiringSoon}" Value="True">
+                                                    <Setter Property="Background" Value="{DynamicResource BadgeWarningBrush}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <TextBlock FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource BackgroundBrush}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Text" Value="Warranty Valid"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding SelectedAsset.IsWarrantyExpired}" Value="True">
+                                                        <Setter Property="Text" Value="Warranty Expired"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding SelectedAsset.IsWarrantyExpiringSoon}" Value="True">
+                                                        <Setter Property="Text" Value="Expiring Soon"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Border>
+                            </Grid>
+
+                            <!-- HVAC Details -->
+                            <Border Background="{DynamicResource SurfaceBrush}" 
+                                    CornerRadius="8" Padding="20" Margin="0,0,0,15">
+                                <StackPanel>
+                                    <TextBlock Text="HVAC Details" FontSize="14" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource PrimaryBrush}" Margin="0,0,0,15"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                            <TextBlock Text="Fuel Type" FontSize="11" Foreground="{DynamicResource SubtextBrush}"/>
+                                            <TextBlock Text="{Binding SelectedAsset.FuelType}" FontSize="14" FontWeight="Medium"
+                                                       Foreground="{DynamicResource TextBrush}" Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Margin="10,0">
+                                            <TextBlock Text="Unit Config" FontSize="11" Foreground="{DynamicResource SubtextBrush}"/>
+                                            <TextBlock Text="{Binding SelectedAsset.UnitConfig}" FontSize="14" FontWeight="Medium"
+                                                       Foreground="{DynamicResource TextBrush}" Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Margin="10,0">
+                                            <TextBlock Text="BTU Rating" FontSize="11" Foreground="{DynamicResource SubtextBrush}"/>
+                                            <TextBlock Text="{Binding SelectedAsset.BtuRating, StringFormat='{}{0:N0}'}" FontSize="14" FontWeight="Medium"
+                                                       Foreground="{DynamicResource TextBrush}" Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="3" Margin="10,0,0,0">
+                                            <TextBlock Text="SEER Rating" FontSize="11" Foreground="{DynamicResource SubtextBrush}"/>
+                                            <TextBlock Text="{Binding SelectedAsset.SeerRating}" FontSize="14" FontWeight="Medium"
+                                                       Foreground="{DynamicResource TextBrush}" Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Warranty Info -->
+                            <Border Background="{DynamicResource SurfaceBrush}" 
+                                    CornerRadius="8" Padding="20" Margin="0,0,0,15">
+                                <StackPanel>
+                                    <TextBlock Text="Service &amp; Warranty" FontSize="14" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource SecondaryBrush}" Margin="0,0,0,15"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                            <TextBlock Text="Install Date" FontSize="11" Foreground="{DynamicResource SubtextBrush}"/>
+                                            <TextBlock Text="{Binding SelectedAsset.InstallDate, StringFormat='{}{0:MMM d, yyyy}'}" FontSize="14" FontWeight="Medium"
+                                                       Foreground="{DynamicResource TextBrush}" Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Margin="10,0">
+                                            <TextBlock Text="Warranty Start" FontSize="11" Foreground="{DynamicResource SubtextBrush}"/>
+                                            <TextBlock Text="{Binding SelectedAsset.WarrantyStartDate, StringFormat='{}{0:MMM d, yyyy}'}" FontSize="14" FontWeight="Medium"
+                                                       Foreground="{DynamicResource TextBrush}" Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Margin="10,0">
+                                            <TextBlock Text="Warranty End" FontSize="11" Foreground="{DynamicResource SubtextBrush}"/>
+                                            <TextBlock Text="{Binding SelectedAsset.WarrantyEndDate, StringFormat='{}{0:MMM d, yyyy}'}" FontSize="14" FontWeight="Medium"
+                                                       Foreground="{DynamicResource TextBrush}" Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="3" Margin="10,0,0,0">
+                                            <TextBlock Text="Term" FontSize="11" Foreground="{DynamicResource SubtextBrush}"/>
+                                            <TextBlock Text="{Binding SelectedAsset.WarrantyTermYears, StringFormat='{}{0} years'}" FontSize="14" FontWeight="Medium"
+                                                       Foreground="{DynamicResource TextBrush}" Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Notes -->
+                            <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="8" Padding="20"
+                                    Visibility="{Binding SelectedAsset.Notes, Converter={StaticResource BoolToVisibility}}">
+                                <StackPanel>
+                                    <TextBlock Text="Notes" FontSize="12" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource SubtextBrush}" Margin="0,0,0,8"/>
+                                    <TextBlock Text="{Binding SelectedAsset.Notes}" FontSize="13"
+                                               Foreground="{DynamicResource TextBrush}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>
+

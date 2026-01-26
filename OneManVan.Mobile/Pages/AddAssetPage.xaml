@@ -1,0 +1,351 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="OneManVan.Mobile.Pages.AddAssetPage"
+             Title="Add Asset"
+             BackgroundColor="{AppThemeBinding Light={StaticResource LightBackground}, Dark={StaticResource DarkBackground}}">
+
+    <Grid RowDefinitions="*, Auto">
+        <ScrollView Grid.Row="0">
+            <VerticalStackLayout Padding="16" Spacing="16">
+
+                <!-- Customer Selection -->
+                <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                        StrokeShape="RoundRectangle 12" 
+                        Stroke="Transparent"
+                        Padding="16">
+                    <Border.Shadow>
+                        <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="Asset Location (Site or Customer)" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}" FontAttributes="Bold"/>
+                        <Label Text="Optional - can be assigned later" FontSize="10" TextColor="{AppThemeBinding Light={StaticResource LightTextTertiary}, Dark={StaticResource DarkTextTertiary}}" Margin="0,-4,0,4"/>
+                        <Border x:Name="LocationSelector"
+                                BackgroundColor="{AppThemeBinding Light={StaticResource LightInputBackground}, Dark={StaticResource DarkInputBackground}}"
+                                StrokeShape="RoundRectangle 8"
+                                Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+                                Padding="12">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnSelectLocationTapped"/>
+                            </Border.GestureRecognizers>
+                            <VerticalStackLayout Spacing="4">
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <Label x:Name="LocationNameLabel" 
+                                           Text="Tap to select site or customer..."
+                                           TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"
+                                           FontSize="16"
+                                           VerticalOptions="Center"/>
+                                    <Label Grid.Column="1" 
+                                           Text=">" 
+                                           TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"
+                                           VerticalOptions="Center"/>
+                                </Grid>
+                                <Label x:Name="LocationDetailLabel"
+                                       FontSize="12"
+                                       TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"
+                                       IsVisible="False"
+                                       Margin="0,2,0,0"/>
+                            </VerticalStackLayout>
+                        </Border>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Equipment Type and Nickname -->
+                <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                        StrokeShape="RoundRectangle 12" 
+                        Stroke="Transparent"
+                        Padding="16">
+                    <Border.Shadow>
+                        <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <VerticalStackLayout Spacing="12">
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Equipment Type *" FontSize="12" TextColor="{StaticResource Primary}" FontAttributes="Bold"/>
+                            <Picker x:Name="EquipmentTypePicker" Title="Select Type">
+                                <Picker.ItemsSource>
+                                    <x:Array Type="{x:Type x:String}">
+                                        <x:String>Air Conditioner</x:String>
+                                        <x:String>Heat Pump</x:String>
+                                        <x:String>Furnace</x:String>
+                                        <x:String>Air Handler</x:String>
+                                        <x:String>Package Unit</x:String>
+                                        <x:String>Mini Split</x:String>
+                                        <x:String>Boiler</x:String>
+                                        <x:String>Water Heater</x:String>
+                                        <x:String>Thermostat</x:String>
+                                        <x:String>Other</x:String>
+                                    </x:Array>
+                                </Picker.ItemsSource>
+                            </Picker>
+                        </VerticalStackLayout>
+
+                        <!-- Nickname - helps identify in multi-unit homes -->
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Nickname (optional)" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Entry x:Name="NicknameEntry" Placeholder="e.g., Upstairs Unit, Main Floor, Garage"/>
+                        </VerticalStackLayout>
+
+                        <!-- Location -->
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Location" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Picker x:Name="LocationPicker" Title="Where is it located?">
+                                <Picker.ItemsSource>
+                                    <x:Array Type="{x:Type x:String}">
+                                        <x:String></x:String>
+                                        <x:String>Attic</x:String>
+                                        <x:String>Basement</x:String>
+                                        <x:String>Closet</x:String>
+                                        <x:String>Garage</x:String>
+                                        <x:String>Crawlspace</x:String>
+                                        <x:String>Utility Room</x:String>
+                                        <x:String>Rooftop</x:String>
+                                        <x:String>Side of House</x:String>
+                                        <x:String>Backyard</x:String>
+                                        <x:String>Other</x:String>
+                                    </x:Array>
+                                </Picker.ItemsSource>
+                            </Picker>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Brand, Model, Serial -->
+                <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                        StrokeShape="RoundRectangle 12" 
+                        Stroke="Transparent"
+                        Padding="16">
+                    <Border.Shadow>
+                        <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <Grid ColumnDefinitions="*, *" ColumnSpacing="12" RowDefinitions="Auto, Auto, Auto" RowSpacing="12">
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Brand *" FontSize="12" TextColor="{StaticResource Primary}" FontAttributes="Bold"/>
+                            <Entry x:Name="BrandEntry" Placeholder="e.g., Carrier"/>
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1" Spacing="4">
+                            <Label Text="Model" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Entry x:Name="ModelEntry" Placeholder="e.g., 24ACC636"/>
+                        </VerticalStackLayout>
+                        
+                        <!-- Serial with scan button -->
+                        <Grid Grid.Row="1" Grid.ColumnSpan="2" ColumnDefinitions="*, Auto" ColumnSpacing="8">
+                            <VerticalStackLayout Spacing="4">
+                                <Label Text="Serial Number *" FontSize="12" TextColor="{StaticResource Primary}" FontAttributes="Bold"/>
+                                <Entry x:Name="SerialEntry" Placeholder="Enter or scan serial number"/>
+                            </VerticalStackLayout>
+                            <Button Grid.Column="1"
+                                    Text="Scan"
+                                    BackgroundColor="{AppThemeBinding Light={StaticResource PrimarySurface}, Dark={StaticResource Gray600}}"
+                                    TextColor="{StaticResource Primary}"
+                                    FontSize="12"
+                                    HeightRequest="40"
+                                    WidthRequest="60"
+                                    CornerRadius="8"
+                                    VerticalOptions="End"
+                                    Clicked="OnScanSerialClicked"/>
+                        </Grid>
+
+                        <!-- Condition -->
+                        <VerticalStackLayout Grid.Row="2" Grid.ColumnSpan="2" Spacing="4">
+                            <Label Text="Condition" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Picker x:Name="ConditionPicker" Title="Select Condition">
+                                <Picker.ItemsSource>
+                                    <x:Array Type="{x:Type x:String}">
+                                        <x:String>Excellent</x:String>
+                                        <x:String>Good</x:String>
+                                        <x:String>Fair</x:String>
+                                        <x:String>Poor</x:String>
+                                        <x:String>Failed</x:String>
+                                    </x:Array>
+                                </Picker.ItemsSource>
+                            </Picker>
+                        </VerticalStackLayout>
+                    </Grid>
+                </Border>
+
+                <!-- Capacity -->
+                <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                        StrokeShape="RoundRectangle 12" 
+                        Stroke="Transparent"
+                        Padding="16">
+                    <Border.Shadow>
+                        <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <Grid ColumnDefinitions="*, *" ColumnSpacing="12">
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Tonnage" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Entry x:Name="TonnageEntry" Placeholder="e.g., 3.0" Keyboard="Numeric"/>
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1" Spacing="4">
+                            <Label Text="BTU" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Entry x:Name="BtuEntry" Placeholder="e.g., 36000" Keyboard="Numeric"/>
+                        </VerticalStackLayout>
+                    </Grid>
+                </Border>
+
+                <!-- Efficiency -->
+                <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                        StrokeShape="RoundRectangle 12" 
+                        Stroke="Transparent"
+                        Padding="16">
+                    <Border.Shadow>
+                        <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <Grid ColumnDefinitions="*, *" ColumnSpacing="12">
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="SEER Rating" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Entry x:Name="SeerEntry" Placeholder="e.g., 16" Keyboard="Numeric"/>
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1" Spacing="4">
+                            <Label Text="AFUE %" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Entry x:Name="AfueEntry" Placeholder="e.g., 96" Keyboard="Numeric"/>
+                        </VerticalStackLayout>
+                    </Grid>
+                </Border>
+
+                <!-- Fuel and Refrigerant -->
+                <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                        StrokeShape="RoundRectangle 12" 
+                        Stroke="Transparent"
+                        Padding="16">
+                    <Border.Shadow>
+                        <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <Grid ColumnDefinitions="*, *" ColumnSpacing="12">
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Fuel Type" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Picker x:Name="FuelTypePicker" Title="Select">
+                                <Picker.ItemsSource>
+                                    <x:Array Type="{x:Type x:String}">
+                                        <x:String>Electric</x:String>
+                                        <x:String>Natural Gas</x:String>
+                                        <x:String>Propane</x:String>
+                                        <x:String>Oil</x:String>
+                                        <x:String>Dual Fuel</x:String>
+                                    </x:Array>
+                                </Picker.ItemsSource>
+                            </Picker>
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1" Spacing="4">
+                            <Label Text="Refrigerant" FontSize="12" TextColor="{StaticResource Primary}" FontAttributes="Bold"/>
+                            <Picker x:Name="RefrigerantPicker" Title="Select">
+                                <Picker.ItemsSource>
+                                    <x:Array Type="{x:Type x:String}">
+                                        <x:String>R-410A</x:String>
+                                        <x:String>R-22</x:String>
+                                        <x:String>R-32</x:String>
+                                        <x:String>R-454B</x:String>
+                                        <x:String>None</x:String>
+                                    </x:Array>
+                                </Picker.ItemsSource>
+                            </Picker>
+                        </VerticalStackLayout>
+                    </Grid>
+                </Border>
+
+                <!-- Install and Warranty Dates -->
+                <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                        StrokeShape="RoundRectangle 12" 
+                        Stroke="Transparent"
+                        Padding="16">
+                    <Border.Shadow>
+                        <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <Grid ColumnDefinitions="*, *" ColumnSpacing="12" RowDefinitions="Auto, Auto" RowSpacing="12">
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Install Date" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <DatePicker x:Name="InstallDatePicker"/>
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1" Spacing="4">
+                            <Label Text="Warranty Years" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Picker x:Name="WarrantyYearsPicker" Title="Select">
+                                <Picker.ItemsSource>
+                                    <x:Array Type="{x:Type x:String}">
+                                        <x:String>1 Year</x:String>
+                                        <x:String>5 Years</x:String>
+                                        <x:String>10 Years</x:String>
+                                        <x:String>12 Years</x:String>
+                                        <x:String>Lifetime</x:String>
+                                    </x:Array>
+                                </Picker.ItemsSource>
+                            </Picker>
+                        </VerticalStackLayout>
+
+                        <!-- Filter Info -->
+                        <VerticalStackLayout Grid.Row="1" Spacing="4">
+                            <Label Text="Filter Size" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Entry x:Name="FilterSizeEntry" Placeholder="e.g., 20x25x1"/>
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Row="1" Grid.Column="1" Spacing="4">
+                            <Label Text="Filter Change (months)" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Entry x:Name="FilterMonthsEntry" Placeholder="e.g., 3" Keyboard="Numeric"/>
+                        </VerticalStackLayout>
+                    </Grid>
+                </Border>
+
+                <!-- Notes -->
+                <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                        StrokeShape="RoundRectangle 12" 
+                        Stroke="Transparent"
+                        Padding="16">
+                    <Border.Shadow>
+                        <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Technical Notes" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                        <Editor x:Name="NotesEditor" 
+                                Placeholder="Access notes, special issues, ductwork notes, etc."
+                                HeightRequest="80"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Photo Capture -->
+                <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                        StrokeShape="RoundRectangle 12" 
+                        Stroke="Transparent"
+                        Padding="16">
+                    <Border.Shadow>
+                        <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="Photo" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                        <Button x:Name="PhotoButton"
+                                Text="Take Photo of Data Plate"
+                                BackgroundColor="{AppThemeBinding Light={StaticResource PrimarySurface}, Dark={StaticResource Gray600}}"
+                                TextColor="{StaticResource Primary}"
+                                HeightRequest="44"
+                                CornerRadius="8"
+                                Clicked="OnTakePhotoClicked"/>
+                        <Image x:Name="PhotoPreview"
+                               HeightRequest="120"
+                               Aspect="AspectFit"
+                               IsVisible="False"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Spacer -->
+                <BoxView HeightRequest="16"/>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- Save Button -->
+        <Border Grid.Row="1" 
+                BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                Padding="16"
+                StrokeShape="RoundRectangle 0"
+                Stroke="Transparent">
+            <Border.Shadow>
+                <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,-2" Radius="4" Opacity="0.1"/>
+            </Border.Shadow>
+            <Button Text="Save Asset"
+                    BackgroundColor="{StaticResource Primary}"
+                    TextColor="White"
+                    FontAttributes="Bold"
+                    HeightRequest="50"
+                    CornerRadius="8"
+                    Clicked="OnSaveClicked"/>
+        </Border>
+    </Grid>
+
+</ContentPage>

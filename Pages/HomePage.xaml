@@ -1,0 +1,357 @@
+<UserControl x:Class="OneManVan.Pages.HomePage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d" 
+             d:DesignHeight="600" d:DesignWidth="900"
+             Background="{DynamicResource BackgroundBrush}">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
+
+        <Style x:Key="StatCard" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="20,16"/>
+            <Setter Property="MinWidth" Value="140"/>
+        </Style>
+
+        <Style x:Key="QuickActionButton" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource Surface2Brush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="Padding" Value="16,12"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" 
+                                CornerRadius="8" 
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{DynamicResource Surface3Brush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="25,20,25,30">
+            <!-- Welcome Header -->
+            <StackPanel Margin="0,0,0,25">
+                <TextBlock Text="Welcome back!" FontSize="28" FontWeight="Bold" 
+                           Foreground="{DynamicResource TextBrush}"/>
+                <TextBlock Text="{Binding CurrentDate, StringFormat='Today is {0:dddd, MMMM d, yyyy}'}" 
+                           FontSize="13" Foreground="{DynamicResource SubtextBrush}"
+                           Margin="0,5,0,0"/>
+            </StackPanel>
+
+            <!-- Stats Grid - Using WrapPanel for responsive layout -->
+            <TextBlock Text="Overview" FontSize="16" FontWeight="SemiBold"
+                       Foreground="{DynamicResource TextBrush}" Margin="0,0,0,12"/>
+            
+            <!-- Primary Stats - Responsive Grid -->
+            <UniformGrid Rows="1" Margin="0,0,0,15">
+                <UniformGrid.Style>
+                    <Style TargetType="UniformGrid">
+                        <Setter Property="Columns" Value="4"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ScrollViewer}, Converter={StaticResource BoolToVisibility}}" Value="True">
+                                <Setter Property="Columns" Value="2"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </UniformGrid.Style>
+                
+                <!-- Customers Card -->
+                <Border Style="{StaticResource StatCard}" Margin="0,0,10,10">
+                    <StackPanel>
+                        
+                        <TextBlock Text="{Binding CustomerCount}" FontSize="32" FontWeight="Bold"
+                                   Foreground="{DynamicResource PrimaryBrush}"/>
+                        <TextBlock Text="Customers" FontSize="12" 
+                                   Foreground="{DynamicResource SubtextBrush}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Assets Card -->
+                <Border Style="{StaticResource StatCard}" Margin="0,0,10,10">
+                    <StackPanel>
+                        
+                        <TextBlock Text="{Binding AssetCount}" FontSize="32" FontWeight="Bold"
+                                   Foreground="{DynamicResource SecondaryBrush}"/>
+                        <TextBlock Text="Assets" FontSize="12" 
+                                   Foreground="{DynamicResource SubtextBrush}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Active Jobs Card -->
+                <Border Style="{StaticResource StatCard}" Margin="0,0,10,10">
+                    <StackPanel>
+                        <TextBlock Text="&#x1F4CB;" FontSize="24" Margin="0,0,0,8"/>
+                        <TextBlock Text="{Binding ActiveJobCount}" FontSize="32" FontWeight="Bold"
+                                   Foreground="{DynamicResource InfoBrush}"/>
+                        <TextBlock Text="Active Jobs" FontSize="12" 
+                                   Foreground="{DynamicResource SubtextBrush}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Outstanding Balance Card -->
+                <Border Style="{StaticResource StatCard}" Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="&#x1F4B0;" FontSize="24" Margin="0,0,0,8"/>
+                        <TextBlock Text="{Binding OutstandingBalance, StringFormat='${0:N0}'}" FontSize="32" FontWeight="Bold"
+                                   Foreground="{DynamicResource AccentBrush}"/>
+                        <TextBlock Text="Outstanding" FontSize="12" 
+                                   Foreground="{DynamicResource SubtextBrush}"/>
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <!-- Secondary Stats Row -->
+            <WrapPanel Margin="0,0,0,25">
+                <!-- Sites Card -->
+                <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="8" Padding="12,10" Margin="0,0,10,10">
+                    <StackPanel Orientation="Horizontal">
+                        
+                        <StackPanel>
+                            <TextBlock Text="{Binding SiteCount}" FontSize="18" FontWeight="Bold"
+                                       Foreground="{DynamicResource TextBrush}"/>
+                            <TextBlock Text="Sites" FontSize="10" Foreground="{DynamicResource SubtextBrush}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Expiring Warranties Card -->
+                <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="8" Padding="12,10" Margin="0,0,10,10">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#x26A0;" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                        <StackPanel>
+                            <TextBlock Text="{Binding ExpiringWarrantyCount}" FontSize="18" FontWeight="Bold"
+                                       Foreground="{DynamicResource WarningBrush}"/>
+                            <TextBlock Text="Warranty Alerts" FontSize="10" Foreground="{DynamicResource SubtextBrush}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Pending Invoices Card -->
+                <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="8" Padding="12,10" Margin="0,0,10,10">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#x1F4C4;" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                        <StackPanel>
+                            <TextBlock Text="{Binding PendingInvoiceCount}" FontSize="18" FontWeight="Bold"
+                                       Foreground="{DynamicResource LavenderBrush}"/>
+                            <TextBlock Text="Pending Invoices" FontSize="10" Foreground="{DynamicResource SubtextBrush}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </WrapPanel>
+
+            <!-- Two Column Layout - Responsive -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" MinWidth="300"/>
+                    <ColumnDefinition Width="15"/>
+                    <ColumnDefinition Width="Auto" MinWidth="280" MaxWidth="350"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0">
+                    <!-- Recent Activity -->
+                    <TextBlock Text="Recent Activity" FontSize="16" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextBrush}" Margin="0,0,0,12"/>
+                    
+                    <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="10" Padding="5" Margin="0,0,0,20">
+                        <ItemsControl ItemsSource="{Binding RecentActivity}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Padding="12,10" BorderBrush="{DynamicResource Surface2Brush}" 
+                                            BorderThickness="0,0,0,1">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <Border Grid.Column="0" Width="32" Height="32" CornerRadius="6"
+                                                    Background="{DynamicResource Surface2Brush}"
+                                                    Margin="0,0,10,0" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Icon}" FontSize="14" 
+                                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Title}" FontWeight="Medium" FontSize="13"
+                                                           Foreground="{DynamicResource TextBrush}"/>
+                                                <TextBlock Text="{Binding Description}" FontSize="11"
+                                                           Foreground="{DynamicResource SubtextBrush}"/>
+                                            </StackPanel>
+
+                                            <TextBlock Grid.Column="2" Text="{Binding TimeAgo}" 
+                                                       FontSize="10" VerticalAlignment="Center"
+                                                       Foreground="{DynamicResource SubtextBrush}"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Border>
+
+                    <!-- Empty state for activity -->
+                    <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="10" Padding="25"
+                            Visibility="{Binding HasNoActivity, Converter={StaticResource BoolToVisibility}}"
+                            Margin="0,0,0,20">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="&#x1F4ED;" FontSize="28" HorizontalAlignment="Center" Opacity="0.5"/>
+                            <TextBlock Text="No recent activity" FontSize="13"
+                                       Foreground="{DynamicResource SubtextBrush}"
+                                       HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                            <TextBlock Text="Start by adding a customer or asset" FontSize="11"
+                                       Foreground="{DynamicResource SubtextBrush}"
+                                       HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Border>
+                    
+                    <!-- Warranty Alerts -->
+                    <TextBlock Text="Warranty Alerts" FontSize="16" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextBrush}" Margin="0,0,0,12"/>
+                    
+                    <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="10" Padding="5">
+                        <ItemsControl ItemsSource="{Binding WarrantyAlerts}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Padding="12,10" BorderBrush="{DynamicResource Surface2Brush}" 
+                                            BorderThickness="0,0,0,1">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <Border Grid.Column="0" Width="8" Height="8" CornerRadius="4"
+                                                    Margin="0,0,10,0" VerticalAlignment="Center">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="{DynamicResource WarningBrush}"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsExpired}" Value="True">
+                                                                <Setter Property="Background" Value="{DynamicResource ErrorBrush}"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                            </Border>
+
+                                            <StackPanel Grid.Column="1">
+                                                <TextBlock Text="{Binding Serial}" FontWeight="SemiBold" FontSize="13"
+                                                           Foreground="{DynamicResource TextBrush}"/>
+                                                <TextBlock Text="{Binding CustomerName}" FontSize="11"
+                                                           Foreground="{DynamicResource SubtextBrush}"/>
+                                            </StackPanel>
+
+                                            <TextBlock Grid.Column="2" Text="{Binding StatusText}" 
+                                                       FontSize="11" VerticalAlignment="Center"
+                                                       Foreground="{DynamicResource SubtextBrush}"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Border>
+
+                    <!-- Empty state -->
+                    <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="10" Padding="25"
+                            Visibility="{Binding HasNoAlerts, Converter={StaticResource BoolToVisibility}}">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="&#x2713;" FontSize="28" HorizontalAlignment="Center"
+                                       Foreground="{DynamicResource SecondaryBrush}"/>
+                            <TextBlock Text="No warranty alerts" FontSize="13"
+                                       Foreground="{DynamicResource SubtextBrush}"
+                                       HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- Quick Actions -->
+                <StackPanel Grid.Column="2">
+                    <TextBlock Text="Quick Actions" FontSize="16" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextBrush}" Margin="0,0,0,12"/>
+                    
+                    <Button Style="{StaticResource QuickActionButton}" Margin="0,0,0,8"
+                            Click="AddCustomer_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#x2795;" FontSize="16" Margin="0,0,10,0"/>
+                            <StackPanel>
+                                <TextBlock Text="Add Customer" FontWeight="SemiBold" FontSize="13"
+                                           Foreground="{DynamicResource TextBrush}"/>
+                                <TextBlock Text="Create a new customer profile" FontSize="10"
+                                           Foreground="{DynamicResource SubtextBrush}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Style="{StaticResource QuickActionButton}" Margin="0,0,0,8"
+                            Click="AddAsset_Click">
+                        <StackPanel Orientation="Horizontal">
+                            
+                            <StackPanel>
+                                <TextBlock Text="Log Asset" FontWeight="SemiBold" FontSize="13"
+                                           Foreground="{DynamicResource TextBrush}"/>
+                                <TextBlock Text="Track new HVAC equipment" FontSize="10"
+                                           Foreground="{DynamicResource SubtextBrush}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Style="{StaticResource QuickActionButton}" Margin="0,0,0,8"
+                            Click="CreateEstimate_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#x1F4DD;" FontSize="16" Margin="0,0,10,0"/>
+                            <StackPanel>
+                                <TextBlock Text="Create Estimate" FontWeight="SemiBold" FontSize="13"
+                                           Foreground="{DynamicResource TextBrush}"/>
+                                <TextBlock Text="Build a new job proposal" FontSize="10"
+                                           Foreground="{DynamicResource SubtextBrush}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Style="{StaticResource QuickActionButton}" Margin="0,0,0,8"
+                            Click="ExportBackup_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#x1F4BE;" FontSize="16" Margin="0,0,10,0"/>
+                            <StackPanel>
+                                <TextBlock Text="Export Backup" FontWeight="SemiBold" FontSize="13"
+                                           Foreground="{DynamicResource TextBrush}"/>
+                                <TextBlock Text="Save your data to JSON" FontSize="10"
+                                           Foreground="{DynamicResource SubtextBrush}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- HVAC Tip -->
+                    <Border Background="{DynamicResource Surface2Brush}" CornerRadius="8" 
+                            Padding="12" Margin="0,15,0,0">
+                        <StackPanel>
+                            <TextBlock Text=" HVAC Tip" FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource PrimaryBrush}" Margin="0,0,0,6"/>
+                            <TextBlock Text="{Binding HvacTip}" TextWrapping="Wrap"
+                                       FontSize="11" Foreground="{DynamicResource SubtextBrush}"
+                                       LineHeight="16"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

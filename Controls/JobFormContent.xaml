@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl x:Class="OneManVan.Controls.JobFormContent"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    
+    <StackPanel>
+        <!-- Title -->
+        <TextBlock Text="Job Title *" FontSize="12" FontWeight="SemiBold"
+                   Foreground="{DynamicResource TextBrush}" Margin="0,0,0,4"/>
+        <TextBox x:Name="TitleTextBox"
+                 Background="{DynamicResource SurfaceBrush}"
+                 Foreground="{DynamicResource TextBrush}"
+                 BorderBrush="{DynamicResource Surface2Brush}"
+                 BorderThickness="1"
+                 Padding="10,8"
+                 FontSize="13"
+                 Margin="0,0,0,15"/>
+        
+        <!-- Customer -->
+        <TextBlock Text="Customer *" FontSize="12" FontWeight="SemiBold"
+                   Foreground="{DynamicResource TextBrush}" Margin="0,0,0,4"/>
+        <ComboBox x:Name="CustomerCombo"
+                  Background="{DynamicResource SurfaceBrush}"
+                  Foreground="{DynamicResource TextBrush}"
+                  BorderBrush="{DynamicResource Surface2Brush}"
+                  BorderThickness="1"
+                  Padding="10,8"
+                  FontSize="13"
+                  SelectionChanged="OnCustomerChanged"
+                  Margin="0,0,0,15"/>
+        
+        <!-- Site -->
+        <TextBlock Text="Site" FontSize="12" FontWeight="SemiBold"
+                   Foreground="{DynamicResource TextBrush}" Margin="0,0,0,4"/>
+        <ComboBox x:Name="SiteCombo"
+                  Background="{DynamicResource SurfaceBrush}"
+                  Foreground="{DynamicResource TextBrush}"
+                  BorderBrush="{DynamicResource Surface2Brush}"
+                  BorderThickness="1"
+                  Padding="10,8"
+                  FontSize="13"
+                  Margin="0,0,0,15"/>
+        
+        <!-- Scheduled Date -->
+        <TextBlock Text="Scheduled Date" FontSize="12" FontWeight="SemiBold"
+                   Foreground="{DynamicResource TextBrush}" Margin="0,0,0,4"/>
+        <DatePicker x:Name="ScheduledDatePicker"
+                    Background="{DynamicResource SurfaceBrush}"
+                    Foreground="{DynamicResource TextBrush}"
+                    BorderBrush="{DynamicResource Surface2Brush}"
+                    BorderThickness="1"
+                    Padding="10,8"
+                    FontSize="13"
+                    Margin="0,0,0,15"/>
+        
+        <!-- Job Type -->
+        <TextBlock Text="Job Type" FontSize="12" FontWeight="SemiBold"
+                   Foreground="{DynamicResource TextBrush}" Margin="0,0,0,4"/>
+        <ComboBox x:Name="JobTypeCombo"
+                  Background="{DynamicResource SurfaceBrush}"
+                  Foreground="{DynamicResource TextBrush}"
+                  BorderBrush="{DynamicResource Surface2Brush}"
+                  BorderThickness="1"
+                  Padding="10,8"
+                  FontSize="13"
+                  Margin="0,0,0,15"/>
+        
+        <!-- Priority -->
+        <TextBlock Text="Priority" FontSize="12" FontWeight="SemiBold"
+                   Foreground="{DynamicResource TextBrush}" Margin="0,0,0,4"/>
+        <ComboBox x:Name="PriorityCombo"
+                  Background="{DynamicResource SurfaceBrush}"
+                  Foreground="{DynamicResource TextBrush}"
+                  BorderBrush="{DynamicResource Surface2Brush}"
+                  BorderThickness="1"
+                  Padding="10,8"
+                  FontSize="13"
+                  Margin="0,0,0,15"/>
+        
+        <!-- Description -->
+        <TextBlock Text="Description" FontSize="12" FontWeight="SemiBold"
+                   Foreground="{DynamicResource TextBrush}" Margin="0,0,0,4"/>
+        <TextBox x:Name="DescriptionTextBox"
+                 Background="{DynamicResource SurfaceBrush}"
+                 Foreground="{DynamicResource TextBrush}"
+                 BorderBrush="{DynamicResource Surface2Brush}"
+                 BorderThickness="1"
+                 Padding="10,8"
+                 FontSize="13"
+                 Height="100"
+                 TextWrapping="Wrap"
+                 AcceptsReturn="True"
+                 VerticalScrollBarVisibility="Auto"/>
+    </StackPanel>
+</UserControl>

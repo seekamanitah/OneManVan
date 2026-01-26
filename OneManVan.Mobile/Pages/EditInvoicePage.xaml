@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="OneManVan.Mobile.Pages.EditInvoicePage"
+             Title="Edit Invoice">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="12">
+            <ActivityIndicator x:Name="LoadingIndicator" 
+                             IsVisible="False" 
+                             IsRunning="False"
+                             Color="{DynamicResource Primary}"
+                             Margin="0,8"/>
+            <DatePicker x:Name="InvoiceDatePicker" Format="D"/>
+            <DatePicker x:Name="DueDatePicker" Format="D"/>
+            <Entry x:Name="LaborAmountEntry" Placeholder="Labor Amount" Keyboard="Numeric"/>
+            <Entry x:Name="PartsAmountEntry" Placeholder="Parts Amount" Keyboard="Numeric"/>
+            <Entry x:Name="TaxRateEntry" Placeholder="Tax Rate %" Keyboard="Numeric"/>
+            
+            <Picker x:Name="StatusPicker" Title="Status">
+                <Picker.Items>
+                    <x:String>Draft</x:String>
+                    <x:String>Sent</x:String>
+                    <x:String>PartiallyPaid</x:String>
+                    <x:String>Paid</x:String>
+                    <x:String>Overdue</x:String>
+                    <x:String>Cancelled</x:String>
+                    <x:String>Refunded</x:String>
+                </Picker.Items>
+            </Picker>
+
+            <Editor x:Name="NotesEditor" Placeholder="Notes" HeightRequest="100"/>
+
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="12" Margin="0,16,0,0">
+                <Button Text="Cancel" Grid.Column="0" Clicked="OnCancelClicked" BackgroundColor="Gray"/>
+                <Button Text="Save" Grid.Column="1" Clicked="OnSaveClicked" BackgroundColor="{DynamicResource Primary}"/>
+            </Grid>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="OneManVan.Mobile.Pages.JobListPage"
+             Title="Jobs"
+             BackgroundColor="{AppThemeBinding Light={StaticResource LightBackground}, Dark={StaticResource DarkBackground}}">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+        
+        <Border Grid.Row="0" 
+                BackgroundColor="#1976D2" 
+                Padding="16,12"
+                StrokeShape="RoundRectangle 0"
+                Stroke="Transparent">
+            <Grid ColumnDefinitions="*,Auto">
+                <VerticalStackLayout>
+                    <Label x:Name="DateHeaderLabel" 
+                           Text="Today" 
+                           FontSize="24" 
+                           FontAttributes="Bold"
+                           TextColor="White"/>
+                    <Label x:Name="DateSubHeaderLabel" 
+                           Text="December 12, 2024" 
+                           FontSize="14" 
+                           TextColor="{AppThemeBinding Light=#BBDEFB, Dark=#90CAF9}"/>
+                </VerticalStackLayout>
+                <Button Grid.Column="1"
+                        x:Name="CalendarButton"
+                        Text="Calendar"
+                        BackgroundColor="#1565C0"
+                        TextColor="White"
+                        FontSize="12"
+                        HeightRequest="36"
+                        CornerRadius="18"
+                        Padding="16,0"
+                        Clicked="OnCalendarClicked"/>
+            </Grid>
+        </Border>
+
+        <ScrollView Grid.Row="1" 
+                    Orientation="Horizontal" 
+                    HorizontalScrollBarVisibility="Never"
+                    Padding="16,8">
+            <HorizontalStackLayout Spacing="8">
+                <Button x:Name="TodayFilter"
+                        Text="Today"
+                        BackgroundColor="#1976D2"
+                        TextColor="White"
+                        FontSize="12"
+                        HeightRequest="32"
+                        CornerRadius="16"
+                        Padding="16,0"
+                        Clicked="OnFilterClicked"/>
+                <Button x:Name="ScheduledFilter"
+                        Text="Scheduled"
+                        BackgroundColor="{AppThemeBinding Light={StaticResource PrimarySurface}, Dark=#1E3A5F}"
+                        TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"
+                        FontSize="12"
+                        HeightRequest="32"
+                        CornerRadius="16"
+                        Padding="16,0"
+                        Clicked="OnFilterClicked"/>
+                <Button x:Name="InProgressFilter"
+                        Text="In Progress"
+                        BackgroundColor="{AppThemeBinding Light={StaticResource WarningSurface}, Dark=#3D2D1F}"
+                        TextColor="{AppThemeBinding Light={StaticResource SectionWarning}, Dark={StaticResource SectionWarningDark}}"
+                        FontSize="12"
+                        HeightRequest="32"
+                        CornerRadius="16"
+                        Padding="16,0"
+                        Clicked="OnFilterClicked"/>
+                <Button x:Name="CompletedFilter"
+                        Text="Completed"
+                        BackgroundColor="{AppThemeBinding Light={StaticResource SuccessSurface}, Dark=#1B3D1F}"
+                        TextColor="{AppThemeBinding Light={StaticResource SectionSuccess}, Dark={StaticResource SectionSuccessDark}}"
+                        FontSize="12"
+                        HeightRequest="32"
+                        CornerRadius="16"
+                        Padding="16,0"
+                        Clicked="OnFilterClicked"/>
+                <Button x:Name="AllFilter"
+                        Text="All"
+                        BackgroundColor="{AppThemeBinding Light=#E0E0E0, Dark={StaticResource Gray600}}"
+                        TextColor="{AppThemeBinding Light=#616161, Dark={StaticResource DarkTextSecondary}}"
+                        FontSize="12"
+                        HeightRequest="32"
+                        CornerRadius="16"
+                        Padding="16,0"
+                        Clicked="OnFilterClicked"/>
+            </HorizontalStackLayout>
+        </ScrollView>
+
+        <!-- Loading Indicator -->
+        <ActivityIndicator Grid.Row="2"
+                           x:Name="LoadingIndicator"
+                           IsRunning="False"
+                           IsVisible="False"
+                           Color="{AppThemeBinding Light=#1976D2, Dark={StaticResource SectionPrimaryDark}}"
+                           VerticalOptions="Center"
+                           HorizontalOptions="Center"
+                           HeightRequest="50"
+                           WidthRequest="50"/>
+
+        <RefreshView Grid.Row="2"
+                     x:Name="RefreshViewControl"
+                     Refreshing="OnRefreshing">
+            <CollectionView x:Name="JobCollection"
+                            SelectionMode="Single"
+                            SelectionChanged="OnJobSelected">
+                
+                <CollectionView.EmptyView>
+                    <VerticalStackLayout VerticalOptions="Center" 
+                                         HorizontalOptions="Center"
+                                         Padding="40">
+                        <Label Text="No jobs found" 
+                               FontSize="18" 
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource LightTextTertiary}, Dark={StaticResource DarkTextTertiary}}"
+                               HorizontalOptions="Center"/>
+                        <Label Text="Tap + to create a new job" 
+                               FontSize="14" 
+                               TextColor="{AppThemeBinding Light=#BDBDBD, Dark=#616161}"
+                               HorizontalOptions="Center"
+                               Margin="0,8,0,0"/>
+                    </VerticalStackLayout>
+                </CollectionView.EmptyView>
+
+                <CollectionView.ItemsLayout>
+                    <LinearItemsLayout Orientation="Vertical" ItemSpacing="8"/>
+                </CollectionView.ItemsLayout>
+
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <SwipeView>
+                            <SwipeView.RightItems>
+                                <SwipeItems Mode="Reveal">
+                                    <SwipeItem Text="Complete"
+                                               BackgroundColor="#4CAF50"
+                                               Invoked="OnCompleteSwipe"
+                                               BindingContext="{Binding}"/>
+                                </SwipeItems>
+                            </SwipeView.RightItems>
+                            
+                            <SwipeView.LeftItems>
+                                <SwipeItems Mode="Reveal">
+                                    <SwipeItem Text="Start"
+                                               BackgroundColor="#1976D2"
+                                               Invoked="OnStartSwipe"
+                                               BindingContext="{Binding}"/>
+                                </SwipeItems>
+                            </SwipeView.LeftItems>
+
+                            <!-- Job Card - Using Standard Card Style -->
+                            <Border Style="{StaticResource CardStyle}"
+                                    Margin="16,4"
+                                    Padding="0">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnJobSelected" CommandParameter="{Binding}"/>
+                                </Border.GestureRecognizers>
+                                
+                                <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="4,*">
+                                    
+                                    <BoxView Grid.RowSpan="2"
+                                             WidthRequest="4"
+                                             Color="{Binding Status, Converter={StaticResource StatusColorConverter}}"
+                                             VerticalOptions="Fill"/>
+                                    
+                                    <VerticalStackLayout Grid.Column="1" 
+                                                         Padding="12,12,12,8"
+                                                         Spacing="4">
+                                        
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Border BackgroundColor="{AppThemeBinding Light={StaticResource PrimarySurface}, Dark=#1E3A5F}"
+                                                    StrokeShape="RoundRectangle 10"
+                                                    Stroke="Transparent"
+                                                    Padding="8,4">
+                                                <Label Text="{Binding ScheduledDate, StringFormat='{0:h:mm tt}'}"
+                                                       FontSize="12"
+                                                       FontAttributes="Bold"
+                                                       TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"/>
+                                            </Border>
+                                            
+                                            <Border Grid.Column="2"
+                                                    BackgroundColor="{Binding Status, Converter={StaticResource StatusColorConverter}}"
+                                                    StrokeShape="RoundRectangle 10"
+                                                    Stroke="Transparent"
+                                                    Padding="8,4">
+                                                <Label Text="{Binding StatusDisplay}"
+                                                       FontSize="10"
+                                                       FontAttributes="Bold"
+                                                       TextColor="White"/>
+                                            </Border>
+                                        </Grid>
+                                        
+                                        <Label Text="{Binding Title}"
+                                               FontSize="16"
+                                               FontAttributes="Bold"
+                                               TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"
+                                               LineBreakMode="TailTruncation"
+                                               Margin="0,4,0,0"/>
+                                        
+                                        <Label Text="{Binding Customer.Name}"
+                                               FontSize="14"
+                                               TextColor="{AppThemeBinding Light=#616161, Dark=#B0B0B0}"/>
+                                        
+                                        <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+                                            <Label Text="{Binding Site.Address}"
+                                                   FontSize="12"
+                                                   TextColor="{AppThemeBinding Light=#9E9E9E, Dark=#808080}"
+                                                   LineBreakMode="TailTruncation"
+                                                   VerticalOptions="Center"/>
+                                            <Button Grid.Column="1"
+                                                    Text="Navigate"
+                                                    BackgroundColor="{AppThemeBinding Light=#E8F5E9, Dark=#1B3D1F}"
+                                                    TextColor="{AppThemeBinding Light=#388E3C, Dark=#81C784}"
+                                                    FontSize="11"
+                                                    HeightRequest="28"
+                                                    CornerRadius="14"
+                                                    Padding="12,0"
+                                                    Clicked="OnNavigateClicked"
+                                                    BindingContext="{Binding}"/>
+                                        </Grid>
+                                        
+                                    </VerticalStackLayout>
+                                    
+                                    <Border Grid.Column="1"
+                                            Grid.Row="1"
+                                            IsVisible="{Binding IsEmergency}"
+                                            BackgroundColor="#FFEBEE"
+                                            StrokeShape="RoundRectangle 0,0,12,0"
+                                            Stroke="Transparent"
+                                            Padding="12,6">
+                                        <Label Text="PRIORITY"
+                                               FontSize="10"
+                                               FontAttributes="Bold"
+                                               TextColor="#D32F2F"/>
+                                    </Border>
+                                    
+                                </Grid>
+                            </Border>
+                        </SwipeView>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+
+        <Border Grid.Row="3"
+                BackgroundColor="#1976D2"
+                StrokeShape="RoundRectangle 0"
+                Stroke="Transparent"
+                Padding="16,12">
+            <Grid ColumnDefinitions="*,*,*">
+                <VerticalStackLayout HorizontalOptions="Center">
+                    <Label x:Name="TodayCountLabel"
+                           Text="0"
+                           FontSize="20"
+                           FontAttributes="Bold"
+                           TextColor="White"
+                           HorizontalTextAlignment="Center"/>
+                    <Label Text="Today"
+                           FontSize="10"
+                           TextColor="#BBDEFB"
+                           HorizontalTextAlignment="Center"/>
+                </VerticalStackLayout>
+                <VerticalStackLayout Grid.Column="1" HorizontalOptions="Center">
+                    <Label x:Name="ActiveCountLabel"
+                           Text="0"
+                           FontSize="20"
+                           FontAttributes="Bold"
+                           TextColor="#FFEB3B"
+                           HorizontalTextAlignment="Center"/>
+                    <Label Text="Active"
+                           FontSize="10"
+                           TextColor="#BBDEFB"
+                           HorizontalTextAlignment="Center"/>
+                </VerticalStackLayout>
+                <VerticalStackLayout Grid.Column="2" HorizontalOptions="Center">
+                    <Label x:Name="CompletedCountLabel"
+                           Text="0"
+                           FontSize="20"
+                           FontAttributes="Bold"
+                           TextColor="#81C784"
+                           HorizontalTextAlignment="Center"/>
+                    <Label Text="Done"
+                           FontSize="10"
+                           TextColor="#BBDEFB"
+                           HorizontalTextAlignment="Center"/>
+                </VerticalStackLayout>
+            </Grid>
+        </Border>
+
+        <Button Grid.Row="2"
+                Text="+"
+                FontSize="28"
+                WidthRequest="60"
+                HeightRequest="60"
+                CornerRadius="30"
+                BackgroundColor="#1976D2"
+                TextColor="White"
+                FontAttributes="Bold"
+                HorizontalOptions="End"
+                VerticalOptions="End"
+                Margin="20,0,20,20"
+                Clicked="OnAddJobClicked">
+            <Button.Shadow>
+                <Shadow Brush="Black" Offset="2,4" Radius="8" Opacity="0.3"/>
+            </Button.Shadow>
+        </Button>
+
+    </Grid>
+
+</ContentPage>

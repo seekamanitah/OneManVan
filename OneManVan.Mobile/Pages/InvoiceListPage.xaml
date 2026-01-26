@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="OneManVan.Mobile.Pages.InvoiceListPage"
+             Title="Invoices"
+             BackgroundColor="{AppThemeBinding Light={StaticResource LightBackground}, Dark={StaticResource DarkBackground}}">
+
+    <Grid RowDefinitions="Auto,Auto,*">
+        
+        <!-- Status Filter Chips -->
+        <ScrollView Grid.Row="0" 
+                    Orientation="Horizontal" 
+                    HorizontalScrollBarVisibility="Never"
+                    Padding="16,12">
+            <HorizontalStackLayout Spacing="8">
+                <Button x:Name="AllFilter"
+                        Text="All"
+                        BackgroundColor="#1976D2"
+                        TextColor="White"
+                        FontSize="12"
+                        HeightRequest="32"
+                        CornerRadius="16"
+                        Padding="16,0"
+                        Clicked="OnFilterClicked"/>
+                <Button x:Name="DraftFilter"
+                        Text="Draft"
+                        BackgroundColor="#E3F2FD"
+                        TextColor="#1976D2"
+                        FontSize="12"
+                        HeightRequest="32"
+                        CornerRadius="16"
+                        Padding="16,0"
+                        Clicked="OnFilterClicked"/>
+                <Button x:Name="SentFilter"
+                        Text="Sent"
+                        BackgroundColor="#E3F2FD"
+                        TextColor="#1976D2"
+                        FontSize="12"
+                        HeightRequest="32"
+                        CornerRadius="16"
+                        Padding="16,0"
+                        Clicked="OnFilterClicked"/>
+                <Button x:Name="OverdueFilter"
+                        Text="Overdue"
+                        BackgroundColor="#FFEBEE"
+                        TextColor="#F44336"
+                        FontSize="12"
+                        HeightRequest="32"
+                        CornerRadius="16"
+                        Padding="16,0"
+                        Clicked="OnFilterClicked"/>
+                <Button x:Name="PaidFilter"
+                        Text="Paid"
+                        BackgroundColor="#E8F5E9"
+                        TextColor="#4CAF50"
+                        FontSize="12"
+                        HeightRequest="32"
+                        CornerRadius="16"
+                        Padding="16,0"
+                        Clicked="OnFilterClicked"/>
+            </HorizontalStackLayout>
+        </ScrollView>
+
+        <!-- Stats Row -->
+        <Grid Grid.Row="1" Padding="16,8" ColumnDefinitions="*,*,*" ColumnSpacing="8">
+            <Frame BackgroundColor="White" CornerRadius="8" Padding="12" BorderColor="Transparent">
+                <VerticalStackLayout>
+                    <Label x:Name="OutstandingLabel"
+                           Text="$0"
+                           FontSize="18"
+                           FontAttributes="Bold"
+                           TextColor="#FF9800"
+                           HorizontalTextAlignment="Center"/>
+                    <Label Text="Outstanding"
+                           FontSize="10"
+                           TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"
+                           HorizontalTextAlignment="Center"/>
+                </VerticalStackLayout>
+            </Frame>
+            <Frame Grid.Column="1" BackgroundColor="White" CornerRadius="8" Padding="12" BorderColor="Transparent">
+                <VerticalStackLayout>
+                    <Label x:Name="OverdueCountLabel"
+                           Text="0"
+                           FontSize="18"
+                           FontAttributes="Bold"
+                           TextColor="#F44336"
+                           HorizontalTextAlignment="Center"/>
+                    <Label Text="Overdue"
+                           FontSize="10"
+                           TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"
+                           HorizontalTextAlignment="Center"/>
+                </VerticalStackLayout>
+            </Frame>
+            <Frame Grid.Column="2" BackgroundColor="White" CornerRadius="8" Padding="12" BorderColor="Transparent">
+                <VerticalStackLayout>
+                    <Label x:Name="PaidMonthLabel"
+                           Text="$0"
+                           FontSize="18"
+                           FontAttributes="Bold"
+                           TextColor="#4CAF50"
+                           HorizontalTextAlignment="Center"/>
+                    <Label Text="Paid (Month)"
+                           FontSize="10"
+                           TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"
+                           HorizontalTextAlignment="Center"/>
+                </VerticalStackLayout>
+            </Frame>
+        </Grid>
+
+        <!-- Loading Indicator -->
+        <ActivityIndicator Grid.Row="2"
+                           x:Name="LoadingIndicator"
+                           IsRunning="False"
+                           IsVisible="False"
+                           Color="#1976D2"
+                           VerticalOptions="Center"
+                           HorizontalOptions="Center"
+                           HeightRequest="50"
+                           WidthRequest="50"/>
+
+        <!-- Invoice List -->
+        <RefreshView Grid.Row="2"
+                     x:Name="RefreshViewControl"
+                     Refreshing="OnRefreshing">
+            <CollectionView x:Name="InvoiceCollection"
+                            SelectionMode="Single"
+                            SelectionChanged="OnInvoiceSelected"
+                            EmptyView="No invoices found. Tap + to create one.">
+                
+                <CollectionView.ItemsLayout>
+                    <LinearItemsLayout Orientation="Vertical" ItemSpacing="8"/>
+                </CollectionView.ItemsLayout>
+
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <SwipeView>
+                            <SwipeView.RightItems>
+                                <SwipeItems Mode="Reveal">
+                                    <SwipeItem Text="Send"
+                                               BackgroundColor="#2196F3"
+                                               Invoked="OnSendSwipe"
+                                               BindingContext="{Binding}"/>
+                                </SwipeItems>
+                            </SwipeView.RightItems>
+                            
+                            <SwipeView.LeftItems>
+                                <SwipeItems Mode="Reveal">
+                                    <SwipeItem Text="Pay"
+                                               BackgroundColor="#4CAF50"
+                                               Invoked="OnPaySwipe"
+                                               BindingContext="{Binding}"/>
+                                </SwipeItems>
+                            </SwipeView.LeftItems>
+
+                            <!-- Invoice Card - Using Standard Card Style -->
+                            <Border Style="{StaticResource CardStyle}"
+                                    Margin="16,4">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnInvoiceTapped" CommandParameter="{Binding}"/>
+                                </Border.GestureRecognizers>
+                                
+                                <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto">
+                                    
+                                    <!-- Invoice Number and Status -->
+                                    <Label Text="{Binding InvoiceNumber}"
+                                           FontSize="16"
+                                           FontAttributes="Bold"
+                                           TextColor="#333"/>
+                                    
+                                    <Frame Grid.Column="1"
+                                           CornerRadius="12"
+                                           Padding="8,4"
+                                           BorderColor="Transparent"
+                                           BackgroundColor="{Binding Status, Converter={StaticResource InvoiceStatusColorConverter}}">
+                                        <Label Text="{Binding StatusDisplay}"
+                                               FontSize="10"
+                                               FontAttributes="Bold"
+                                               TextColor="White"/>
+                                    </Frame>
+
+                                    <!-- Customer -->
+                                    <HorizontalStackLayout Grid.Row="1" 
+                                                           Grid.ColumnSpan="2"
+                                                           Spacing="8"
+                                                           Margin="0,4,0,0">
+                                        <Label Text="{Binding Customer.Name}"
+                                               FontSize="13"
+                                               TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                                        <Label Text="{Binding DueDate, StringFormat='Due: {0:MMM dd}'}"
+                                               FontSize="12"
+                                               TextColor="#9E9E9E"/>
+                                    </HorizontalStackLayout>
+
+                                    <!-- Amount and Balance -->
+                                    <Grid Grid.Row="2" 
+                                          Grid.ColumnSpan="2"
+                                          ColumnDefinitions="*,*"
+                                          Margin="0,8,0,0">
+                                        
+                                        <VerticalStackLayout>
+                                            <Label Text="Total" FontSize="10" TextColor="#9E9E9E"/>
+                                            <Label FontSize="18" FontAttributes="Bold" TextColor="#333">
+                                                <Label.FormattedText>
+                                                    <FormattedString>
+                                                        <Span Text="$"/>
+                                                        <Span Text="{Binding Total, StringFormat='{0:N2}'}"/>
+                                                    </FormattedString>
+                                                </Label.FormattedText>
+                                            </Label>
+                                        </VerticalStackLayout>
+
+                                        <VerticalStackLayout Grid.Column="1" HorizontalOptions="End">
+                                            <Label Text="Balance Due" FontSize="10" TextColor="#9E9E9E" HorizontalTextAlignment="End"/>
+                                            <Label FontSize="18" FontAttributes="Bold" HorizontalTextAlignment="End">
+                                                <Label.Style>
+                                                    <Style TargetType="Label">
+                                                        <Setter Property="TextColor" Value="#FF9800"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger TargetType="Label" Binding="{Binding IsPaid}" Value="True">
+                                                                <Setter Property="TextColor" Value="#4CAF50"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger TargetType="Label" Binding="{Binding IsOverdue}" Value="True">
+                                                                <Setter Property="TextColor" Value="#F44336"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Label.Style>
+                                                <Label.FormattedText>
+                                                    <FormattedString>
+                                                        <Span Text="$"/>
+                                                        <Span Text="{Binding BalanceDue, StringFormat='{0:N2}'}"/>
+                                                    </FormattedString>
+                                                </Label.FormattedText>
+                                            </Label>
+                                        </VerticalStackLayout>
+                                    </Grid>
+
+                                </Grid>
+                            </Border>
+                        </SwipeView>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+
+        <!-- Floating Action Button -->
+        <Button Grid.Row="2"
+                Text="+"
+                FontSize="28"
+                WidthRequest="60"
+                HeightRequest="60"
+                CornerRadius="30"
+                BackgroundColor="#1976D2"
+                TextColor="White"
+                FontAttributes="Bold"
+                HorizontalOptions="End"
+                VerticalOptions="End"
+                Margin="20"
+                Clicked="OnAddInvoiceClicked">
+            <Button.Shadow>
+                <Shadow Brush="Black" Offset="2,4" Radius="8" Opacity="0.25"/>
+            </Button.Shadow>
+        </Button>
+
+    </Grid>
+
+</ContentPage>

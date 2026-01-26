@@ -1,0 +1,198 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="OneManVan.Mobile.Pages.ProductDetailPage"
+             Title="Product Details"
+             BackgroundColor="#F5F5F5">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="16">
+
+            <!-- Header -->
+            <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                    StrokeShape="RoundRectangle 12" 
+                    Stroke="Transparent"
+                    Padding="16">
+                <Border.Shadow>
+                    <Shadow Brush="Black" Offset="0,2" Radius="4" Opacity="0.1"/>
+                </Border.Shadow>
+                <VerticalStackLayout Spacing="8">
+                    <Label x:Name="ManufacturerLabel" 
+                           Text="Manufacturer" 
+                           FontSize="14" 
+                           TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"/>
+                    <Label x:Name="ModelLabel" 
+                           Text="Model Number" 
+                           FontSize="24" 
+                           FontAttributes="Bold"
+                           TextColor="#333"/>
+                    <Label x:Name="ProductNameLabel" 
+                           Text="Product Name" 
+                           FontSize="14" 
+                           TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                    
+                    <HorizontalStackLayout Spacing="8" Margin="0,8,0,0">
+                        <Border BackgroundColor="{AppThemeBinding Light={StaticResource PrimarySurface}, Dark={StaticResource DarkCardBackground}}"
+                                StrokeShape="RoundRectangle 12"
+                                Stroke="Transparent"
+                                Padding="8,4">
+                            <Label x:Name="CategoryLabel" Text="Category" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"/>
+                        </Border>
+                        <Border BackgroundColor="#E8F5E9"
+                                StrokeShape="RoundRectangle 12"
+                                Stroke="Transparent"
+                                Padding="8,4">
+                            <Label x:Name="EfficiencyLabel" Text="SEER 16" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource SectionSuccess}, Dark={StaticResource SectionSuccessDark}}"/>
+                        </Border>
+                    </HorizontalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Pricing -->
+            <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                    StrokeShape="RoundRectangle 12" 
+                    Stroke="Transparent"
+                    Padding="16">
+                <Border.Shadow>
+                    <Shadow Brush="Black" Offset="0,2" Radius="4" Opacity="0.1"/>
+                </Border.Shadow>
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Pricing" FontSize="18" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"/>
+                    
+                    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="12">
+                        <VerticalStackLayout HorizontalOptions="Center">
+                            <Label Text="MSRP" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}" HorizontalTextAlignment="Center"/>
+                            <Label x:Name="MsrpLabel" Text="$0" FontSize="16" TextColor="#333" HorizontalTextAlignment="Center"/>
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1" HorizontalOptions="Center">
+                            <Label Text="Your Cost" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}" HorizontalTextAlignment="Center"/>
+                            <Label x:Name="CostLabel" Text="$0" FontSize="16" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}" HorizontalTextAlignment="Center"/>
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="2" HorizontalOptions="Center">
+                            <Label Text="Sell Price" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource SectionSuccess}, Dark={StaticResource SectionSuccessDark}}" FontAttributes="Bold" HorizontalTextAlignment="Center"/>
+                            <Label x:Name="SellPriceLabel" Text="$0" FontSize="20" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource SectionSuccess}, Dark={StaticResource SectionSuccessDark}}" HorizontalTextAlignment="Center"/>
+                        </VerticalStackLayout>
+                    </Grid>
+
+                    <BoxView HeightRequest="1" Color="#E0E0E0"/>
+
+                    <HorizontalStackLayout Spacing="16" HorizontalOptions="Center">
+                        <Label x:Name="LaborHoursLabel" Text="Est. Labor: 4 hrs" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                        <Label x:Name="MarginLabel" Text="Margin: 40%" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource SectionSuccess}, Dark={StaticResource SectionSuccessDark}}"/>
+                    </HorizontalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Specifications -->
+            <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                    StrokeShape="RoundRectangle 12" 
+                    Stroke="Transparent"
+                    Padding="16">
+                <Border.Shadow>
+                    <Shadow Brush="Black" Offset="0,2" Radius="4" Opacity="0.1"/>
+                </Border.Shadow>
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Specifications" FontSize="18" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"/>
+
+                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="16">
+                        <Label Text="Capacity" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                        <Label x:Name="CapacityValueLabel" Grid.Column="1" Text="-" FontSize="14" TextColor="#333" FontAttributes="Bold"/>
+
+                        <Label Grid.Row="1" Text="Refrigerant" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                        <Label x:Name="RefrigerantValueLabel" Grid.Row="1" Grid.Column="1" Text="-" FontSize="14" TextColor="#333"/>
+
+                        <Label Grid.Row="2" Text="Voltage" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                        <Label x:Name="VoltageValueLabel" Grid.Row="2" Grid.Column="1" Text="-" FontSize="14" TextColor="#333"/>
+
+                        <Label Grid.Row="3" Text="Dimensions" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                        <Label x:Name="DimensionsValueLabel" Grid.Row="3" Grid.Column="1" Text="-" FontSize="14" TextColor="#333"/>
+
+                        <Label Grid.Row="4" Text="Weight" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                        <Label x:Name="WeightValueLabel" Grid.Row="4" Grid.Column="1" Text="-" FontSize="14" TextColor="#333"/>
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Efficiency Ratings -->
+            <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                    StrokeShape="RoundRectangle 12" 
+                    Stroke="Transparent"
+                    Padding="16">
+                <Border.Shadow>
+                    <Shadow Brush="Black" Offset="0,2" Radius="4" Opacity="0.1"/>
+                </Border.Shadow>
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Efficiency Ratings" FontSize="18" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"/>
+
+                    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="12">
+                        <VerticalStackLayout HorizontalOptions="Center">
+                            <Label x:Name="SeerValueLabel" Text="-" FontSize="24" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource SectionSuccess}, Dark={StaticResource SectionSuccessDark}}" HorizontalTextAlignment="Center"/>
+                            <Label Text="SEER" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}" HorizontalTextAlignment="Center"/>
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1" HorizontalOptions="Center">
+                            <Label x:Name="EerValueLabel" Text="-" FontSize="24" FontAttributes="Bold" TextColor="#2196F3" HorizontalTextAlignment="Center"/>
+                            <Label Text="EER" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}" HorizontalTextAlignment="Center"/>
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="2" HorizontalOptions="Center">
+                            <Label x:Name="HspfValueLabel" Text="-" FontSize="24" FontAttributes="Bold" TextColor="#FF9800" HorizontalTextAlignment="Center"/>
+                            <Label Text="HSPF" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}" HorizontalTextAlignment="Center"/>
+                        </VerticalStackLayout>
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Warranty -->
+            <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                    StrokeShape="RoundRectangle 12" 
+                    Stroke="Transparent"
+                    Padding="16">
+                <Border.Shadow>
+                    <Shadow Brush="Black" Offset="0,2" Radius="4" Opacity="0.1"/>
+                </Border.Shadow>
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Warranty" FontSize="18" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"/>
+
+                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="16">
+                        <Label Text="Parts" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                        <Label x:Name="PartsWarrantyLabel" Grid.Column="1" Text="-" FontSize="14" TextColor="#333"/>
+
+                        <Label Grid.Row="1" Text="Compressor" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                        <Label x:Name="CompressorWarrantyLabel" Grid.Row="1" Grid.Column="1" Text="-" FontSize="14" TextColor="#333"/>
+
+                        <Label Grid.Row="2" Text="Registration Required" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                        <Label x:Name="RegistrationLabel" Grid.Row="2" Grid.Column="1" Text="-" FontSize="14" TextColor="#333"/>
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Description/Features -->
+            <Border x:Name="DescriptionSection"
+                    BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                    StrokeShape="RoundRectangle 12" 
+                    Stroke="Transparent"
+                    Padding="16"
+                    IsVisible="False">
+                <Border.Shadow>
+                    <Shadow Brush="Black" Offset="0,2" Radius="4" Opacity="0.1"/>
+                </Border.Shadow>
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Description" FontSize="18" FontAttributes="Bold" TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"/>
+                    <Label x:Name="DescriptionLabel" Text="" FontSize="14" TextColor="#333"/>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Actions -->
+            <Button Text="Create Asset from Product"
+                    BackgroundColor="#4CAF50"
+                    TextColor="White"
+                    CornerRadius="8"
+                    HeightRequest="50"
+                    FontAttributes="Bold"
+                    Clicked="OnCreateAssetClicked"/>
+
+            <BoxView HeightRequest="16"/>
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="OneManVan.Mobile.Pages.SyncSettingsPage"
+             Title="Sync Settings"
+             BackgroundColor="#F5F5F5">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="15" Spacing="15">
+
+            <!-- Sync Status Card -->
+            <Border BackgroundColor="White" StrokeShape="RoundRectangle 12" Stroke="Transparent" Padding="15">
+                <Border.Shadow>
+                    <Shadow Brush="Black" Offset="0,2" Radius="4" Opacity="0.1"/>
+                </Border.Shadow>
+                <StackLayout Spacing="12">
+                    <Grid ColumnDefinitions="Auto, *, Auto">
+                        <Border x:Name="StatusIndicator" WidthRequest="12" HeightRequest="12" 
+                                StrokeShape="RoundRectangle 6" BackgroundColor="#4CAF50" 
+                                Stroke="Transparent"/>
+                        <Label Grid.Column="1" Text="Sync Status" FontSize="16" FontAttributes="Bold"
+                               TextColor="#333" VerticalOptions="Center" Margin="10,0,0,0"/>
+                        <Label x:Name="StatusLabel" Grid.Column="2" Text="Online" 
+                               FontSize="14" TextColor="#4CAF50" VerticalOptions="Center"/>
+                    </Grid>
+                    
+                    <BoxView HeightRequest="1" Color="#E0E0E0"/>
+                    
+                    <Grid ColumnDefinitions="*, *" RowDefinitions="Auto, Auto" RowSpacing="8">
+                        <StackLayout>
+                            <Label Text="Last Sync" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Label x:Name="LastSyncLabel" Text="Never" FontSize="14" TextColor="#333"/>
+                        </StackLayout>
+                        
+                        <StackLayout Grid.Column="1">
+                            <Label Text="Pending Changes" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Label x:Name="PendingChangesLabel" Text="0" FontSize="14" TextColor="#333"/>
+                        </StackLayout>
+                        
+                        <StackLayout Grid.Row="1">
+                            <Label Text="Total Syncs" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Label x:Name="TotalSyncsLabel" Text="0" FontSize="14" TextColor="#333"/>
+                        </StackLayout>
+                        
+                        <StackLayout Grid.Row="1" Grid.Column="1">
+                            <Label Text="Last Duration" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Label x:Name="LastDurationLabel" Text="-" FontSize="14" TextColor="#333"/>
+                        </StackLayout>
+                    </Grid>
+                </StackLayout>
+            </Border>
+
+            <!-- Sync Actions -->
+            <Border BackgroundColor="White" StrokeShape="RoundRectangle 12" Stroke="Transparent" Padding="15">
+                <Border.Shadow>
+                    <Shadow Brush="Black" Offset="0,2" Radius="4" Opacity="0.1"/>
+                </Border.Shadow>
+                <StackLayout Spacing="12">
+                    <Label Text="Sync Actions" FontSize="16" FontAttributes="Bold" TextColor="#1976D2"/>
+                    
+                    <Button x:Name="SyncNowButton" Text="Sync Now" Clicked="OnSyncNowClicked"
+                            BackgroundColor="#1976D2" TextColor="White"
+                            HeightRequest="50" CornerRadius="8" FontAttributes="Bold"/>
+                    
+                    <Grid ColumnDefinitions="*, *" ColumnSpacing="10">
+                        <Button Text="Full Sync" Clicked="OnFullSyncClicked"
+                                BackgroundColor="#E3F2FD" TextColor="#1976D2"
+                                HeightRequest="44" CornerRadius="8"/>
+                        <Button Grid.Column="1" Text="Delta Sync" Clicked="OnDeltaSyncClicked"
+                                BackgroundColor="#E3F2FD" TextColor="#1976D2"
+                                HeightRequest="44" CornerRadius="8"/>
+                    </Grid>
+                </StackLayout>
+            </Border>
+
+            <!-- Auto-Sync Settings -->
+            <Border BackgroundColor="White" StrokeShape="RoundRectangle 12" Stroke="Transparent" Padding="15">
+                <Border.Shadow>
+                    <Shadow Brush="Black" Offset="0,2" Radius="4" Opacity="0.1"/>
+                </Border.Shadow>
+                <StackLayout Spacing="12">
+                    <Label Text="Auto-Sync Settings" FontSize="16" FontAttributes="Bold" TextColor="#1976D2"/>
+                    
+                    <Grid ColumnDefinitions="*, Auto">
+                        <StackLayout>
+                            <Label Text="Enable Auto-Sync" FontSize="14" TextColor="#333"/>
+                            <Label Text="Automatically sync when connected" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                        </StackLayout>
+                        <Switch x:Name="AutoSyncSwitch" Grid.Column="1" 
+                                IsToggled="True" OnColor="#1976D2"
+                                Toggled="OnAutoSyncToggled"/>
+                    </Grid>
+                    
+                    <BoxView HeightRequest="1" Color="#E0E0E0"/>
+                    
+                    <Grid ColumnDefinitions="*, Auto">
+                        <StackLayout>
+                            <Label Text="Sync on Wi-Fi Only" FontSize="14" TextColor="#333"/>
+                            <Label Text="Don't sync on mobile data" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                        </StackLayout>
+                        <Switch x:Name="WifiOnlySwitch" Grid.Column="1" 
+                                OnColor="#1976D2" Toggled="OnWifiOnlyToggled"/>
+                    </Grid>
+                    
+                    <BoxView HeightRequest="1" Color="#E0E0E0"/>
+                    
+                    <StackLayout>
+                        <Label Text="Auto-Sync Interval" FontSize="14" TextColor="#333"/>
+                        <Picker x:Name="IntervalPicker" Title="Select interval"
+                                SelectedIndexChanged="OnIntervalChanged">
+                            <Picker.ItemsSource>
+                                <x:Array Type="{x:Type x:String}">
+                                    <x:String>Every 5 minutes</x:String>
+                                    <x:String>Every 15 minutes</x:String>
+                                    <x:String>Every 30 minutes</x:String>
+                                    <x:String>Every hour</x:String>
+                                    <x:String>Manual only</x:String>
+                                </x:Array>
+                            </Picker.ItemsSource>
+                        </Picker>
+                    </StackLayout>
+                </StackLayout>
+            </Border>
+
+            <!-- Conflict Resolution -->
+            <Border BackgroundColor="White" StrokeShape="RoundRectangle 12" Stroke="Transparent" Padding="15">
+                <Border.Shadow>
+                    <Shadow Brush="Black" Offset="0,2" Radius="4" Opacity="0.1"/>
+                </Border.Shadow>
+                <StackLayout Spacing="12">
+                    <Label Text="Conflict Resolution" FontSize="16" FontAttributes="Bold" TextColor="#1976D2"/>
+                    
+                    <Label Text="When both local and server have changes:" FontSize="13" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                    
+                    <RadioButton x:Name="ServerWinsRadio" Content="Server wins (recommended)"
+                                 IsChecked="True" GroupName="ConflictStrategy"/>
+                    <RadioButton x:Name="ClientWinsRadio" Content="Device wins"
+                                 GroupName="ConflictStrategy"/>
+                    <RadioButton x:Name="LastWriteWinsRadio" Content="Most recent wins"
+                                 GroupName="ConflictStrategy"/>
+                    <RadioButton x:Name="AskMeRadio" Content="Ask me each time"
+                                 GroupName="ConflictStrategy"/>
+                </StackLayout>
+            </Border>
+
+            <!-- Data Management -->
+            <Border BackgroundColor="White" StrokeShape="RoundRectangle 12" Stroke="Transparent" Padding="15">
+                <Border.Shadow>
+                    <Shadow Brush="Black" Offset="0,2" Radius="4" Opacity="0.1"/>
+                </Border.Shadow>
+                <StackLayout Spacing="12">
+                    <Label Text="Data Management" FontSize="16" FontAttributes="Bold" TextColor="#1976D2"/>
+                    
+                    <Button Text="View Pending Changes" Clicked="OnViewPendingClicked"
+                            BackgroundColor="#F5F5F5" TextColor="#333"
+                            HeightRequest="44" CornerRadius="8"/>
+                    
+                    <Button Text="View Sync Log" Clicked="OnViewLogClicked"
+                            BackgroundColor="#F5F5F5" TextColor="#333"
+                            HeightRequest="44" CornerRadius="8"/>
+                    
+                    <Button Text="Clear Sync Queue" Clicked="OnClearQueueClicked"
+                            BackgroundColor="#FFEBEE" TextColor="#D32F2F"
+                            HeightRequest="44" CornerRadius="8"/>
+                </StackLayout>
+            </Border>
+
+            <!-- Info Card -->
+            <Border BackgroundColor="#E3F2FD" StrokeShape="RoundRectangle 12" Stroke="Transparent" Padding="15">
+                <StackLayout Spacing="8">
+                    <Label Text="About Sync" FontSize="14" FontAttributes="Bold" TextColor="#1976D2"/>
+                    <Label Text="Your data is stored locally on this device. When connected, changes are synchronized to keep everything up to date."
+                           FontSize="13" TextColor="#333" LineBreakMode="WordWrap"/>
+                    <Label Text="Working offline? Changes will queue and sync when you reconnect."
+                           FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                </StackLayout>
+            </Border>
+
+            <!-- Spacer -->
+            <BoxView HeightRequest="20"/>
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+    <!-- Sync Progress Overlay -->
+    <Grid x:Name="SyncOverlay" BackgroundColor="#80000000" IsVisible="False">
+        <Border BackgroundColor="White" StrokeShape="RoundRectangle 12" Stroke="Transparent"
+                Padding="25" HorizontalOptions="Center" VerticalOptions="Center" WidthRequest="280">
+            <Border.Shadow>
+                <Shadow Brush="Black" Offset="0,4" Radius="8" Opacity="0.2"/>
+            </Border.Shadow>
+            <StackLayout Spacing="15">
+                <ActivityIndicator x:Name="SyncSpinner" IsRunning="True" Color="#1976D2" Scale="1.3"/>
+                <Label x:Name="SyncStatusText" Text="Syncing..." 
+                       HorizontalOptions="Center" FontSize="16" FontAttributes="Bold"/>
+                <Label x:Name="SyncProgressText" Text="0 / 0 items" 
+                       HorizontalOptions="Center" FontSize="13" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                <ProgressBar x:Name="SyncProgressBar" Progress="0" ProgressColor="#1976D2"/>
+                <Button Text="Cancel" Clicked="OnCancelSyncClicked"
+                        BackgroundColor="#F5F5F5" TextColor="#333"
+                        HeightRequest="40" CornerRadius="8"/>
+            </StackLayout>
+        </Border>
+    </Grid>
+</ContentPage>

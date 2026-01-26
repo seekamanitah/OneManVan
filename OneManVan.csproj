@@ -1,0 +1,69 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>OneManVan</RootNamespace>
+    <AssemblyName>OneManVan</AssemblyName>
+  </PropertyGroup>
+
+  <!-- Exclude Mobile, Shared, and Mobile.Tests from WPF compilation -->
+  <ItemGroup>
+    <Compile Remove="OneManVan.Mobile\**" />
+    <Compile Remove="OneManVan.Shared\**" />
+    <Compile Remove="OneManVan.Mobile.Tests\**" />
+    <Content Remove="OneManVan.Mobile\**" />
+    <Content Remove="OneManVan.Shared\**" />
+    <Content Remove="OneManVan.Mobile.Tests\**" />
+    <EmbeddedResource Remove="OneManVan.Mobile\**" />
+    <EmbeddedResource Remove="OneManVan.Shared\**" />
+    <EmbeddedResource Remove="OneManVan.Mobile.Tests\**" />
+    <None Remove="OneManVan.Mobile\**" />
+    <None Remove="OneManVan.Shared\**" />
+    <None Remove="OneManVan.Mobile.Tests\**" />
+    <Page Remove="OneManVan.Mobile\**" />
+    <Page Remove="OneManVan.Shared\**" />
+    <Page Remove="OneManVan.Mobile.Tests\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ClosedXML" Version="0.104.2" />
+    <PackageReference Include="Google.Apis.Calendar.v3" Version="1.72.0.3953" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="itext7" Version="9.0.0" />
+    <PackageReference Include="itext7.bouncy-castle-adapter" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3595.46" />
+    <PackageReference Include="QuestPDF" Version="2024.12.3" />
+    <PackageReference Include="Square" Version="42.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="OneManVan.Shared\OneManVan.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Presets\HvacPreset.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Data\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include=".github\copilot-instructions.md" />
+  </ItemGroup>
+
+</Project>

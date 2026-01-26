@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ResourceDictionary xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <!-- Standard Card Border Style -->
+    <Style x:Key="CardStyle" TargetType="Border">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=White, Dark=#1E1E1E}"/>
+        <Setter Property="StrokeShape">
+            <RoundRectangle CornerRadius="12"/>
+        </Setter>
+        <Setter Property="Stroke" Value="Transparent"/>
+        <Setter Property="Padding" Value="16"/>
+        <Setter Property="Margin" Value="0,0,0,12"/>
+        <Setter Property="Shadow">
+            <Shadow Brush="Black" Offset="0,2" Radius="4" Opacity="0.1"/>
+        </Setter>
+    </Style>
+
+    <!-- Clickable Card - Has press feedback -->
+    <Style x:Key="ClickableCardStyle" TargetType="Border" BasedOn="{StaticResource CardStyle}">
+        <Setter Property="VisualStateManager.VisualStateGroups">
+            <VisualStateGroupList>
+                <VisualStateGroup x:Name="CommonStates">
+                    <VisualState x:Name="Normal"/>
+                    <VisualState x:Name="PointerOver">
+                        <VisualState.Setters>
+                            <Setter Property="Opacity" Value="0.95"/>
+                        </VisualState.Setters>
+                    </VisualState>
+                </VisualStateGroup>
+            </VisualStateGroupList>
+        </Setter>
+    </Style>
+
+    <!-- Elevated Card - Stronger shadow for emphasis -->
+    <Style x:Key="ElevatedCardStyle" TargetType="Border" BasedOn="{StaticResource CardStyle}">
+        <Setter Property="Shadow">
+            <Shadow Brush="Black" Offset="0,4" Radius="8" Opacity="0.15"/>
+        </Setter>
+    </Style>
+
+    <!-- Flat Card - No shadow, just border -->
+    <Style x:Key="FlatCardStyle" TargetType="Border">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=White, Dark=#1E1E1E}"/>
+        <Setter Property="StrokeShape">
+            <RoundRectangle CornerRadius="12"/>
+        </Setter>
+        <Setter Property="Stroke" Value="{AppThemeBinding Light=#E0E0E0, Dark=#424242}"/>
+        <Setter Property="StrokeThickness" Value="1"/>
+        <Setter Property="Padding" Value="16"/>
+        <Setter Property="Margin" Value="0,0,0,12"/>
+    </Style>
+
+</ResourceDictionary>
