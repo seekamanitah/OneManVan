@@ -10,7 +10,12 @@ builder.Services.AddRazorComponents()
 
 // Configure database
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
-    ?? "Data Source=onemanvan.db";
+    ?? "Data Source=Data/onemanvan.db";
+
+// Ensure Data directory exists
+var dataDir = Path.Combine(builder.Environment.ContentRootPath, "Data");
+Directory.CreateDirectory(dataDir);
+
 builder.Services.AddDbContext<OneManVanDbContext>(options =>
     options.UseSqlite(connectionString));
 
