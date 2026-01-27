@@ -233,11 +233,14 @@
                 .ToListAsync();
 
             // Get low stock items
-            lowStockItems = await DbContext.InventoryItems
+            var lowStockQuery = await DbContext.InventoryItems
                 .Where(i => i.IsActive && i.QuantityOnHand <= i.ReorderPoint)
+                .Take(10)
+                .ToListAsync();
+            lowStockItems = lowStockQuery
                 .OrderBy(i => i.QuantityOnHand)
                 .Take(5)
-                .ToListAsync();
+                .ToList();
         }
         finally
         {
