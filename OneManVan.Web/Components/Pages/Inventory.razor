@@ -1,0 +1,182 @@
+@page "/inventory"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@inject OneManVanDbContext DbContext
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Inventory - TradeFlow</PageTitle>
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col">
+            <h1>Inventory</h1>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary" @onclick="CreateItem">
+                <span class="bi bi-plus-circle"></span> New Item
+            </button>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <input type="text" class="form-control" placeholder="Search inventory..." 
+                   @bind="searchText" @bind:event="oninput" @bind:after="FilterInventory" />
+        </div>
+    </div>
+
+    @if (loading)
+    {
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else if (filteredItems == null || !filteredItems.Any())
+    {
+        <div class="alert alert-info">
+            No inventory items found. Click "New Item" to add one.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>SKU</th>
+                        <th>Name</th>
+                        <th>Category</th>
+                        <th>Quantity</th>
+                        <th>Min Stock</th>
+                        <th>Cost</th>
+                        <th>Price</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in filteredItems)
+                    {
+                        <tr class="@GetRowClass(item)">
+                            <td>@item.Sku</td>
+                            <td>@item.Name</td>
+                            <td>@item.Category</td>
+                            <td>@item.QuantityOnHand</td>
+                            <td>@item.ReorderPoint</td>
+                            <td>@item.Cost.ToString("C")</td>
+                            <td>@item.Price.ToString("C")</td>
+                            <td>
+                                @if (item.QuantityOnHand <= 0)
+                                {
+                                    <span class="badge bg-danger">Out of Stock</span>
+                                }
+                                else if (item.QuantityOnHand <= item.ReorderPoint)
+                                {
+                                    <span class="badge bg-warning">Low Stock</span>
+                                }
+                                else if (item.IsActive)
+                                {
+                                    <span class="badge bg-success">In Stock</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Inactive</span>
+                                }
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" 
+                                        @onclick="() => ViewItem(item.Id)">
+                                    View
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Inventory Summary</h5>
+                        <p class="mb-1">Total Items: @filteredItems.Count</p>
+                        <p class="mb-1">Low Stock: @filteredItems.Count(i => i.QuantityOnHand <= i.ReorderPoint && i.QuantityOnHand > 0)</p>
+                        <p class="mb-0">Out of Stock: @filteredItems.Count(i => i.QuantityOnHand <= 0)</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<InventoryItem>? items;
+    private List<InventoryItem>? filteredItems;
+    private string searchText = string.Empty;
+    private bool loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadInventory();
+    }
+
+    private async Task LoadInventory()
+    {
+        loading = true;
+        try
+        {
+            items = await DbContext.InventoryItems
+                .OrderBy(i => i.Name)
+                .ToListAsync();
+            filteredItems = items;
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private void FilterInventory()
+    {
+        if (items == null) return;
+
+        if (string.IsNullOrWhiteSpace(searchText))
+        {
+            filteredItems = items;
+        }
+        else
+        {
+            var search = searchText.ToLower();
+            filteredItems = items
+                .Where(i => 
+                    (i.Name?.ToLower().Contains(search) ?? false) ||
+                    (i.Sku?.ToLower().Contains(search) ?? false) ||
+                    (i.Category.ToString().ToLower().Contains(search)))
+                .ToList();
+        }
+    }
+
+    private string GetRowClass(InventoryItem item)
+    {
+        if (item.QuantityOnHand <= 0)
+            return "table-danger";
+        if (item.QuantityOnHand <= item.ReorderPoint)
+            return "table-warning";
+        return string.Empty;
+    }
+
+    private void CreateItem()
+    {
+        Navigation.NavigateTo("/inventory/new");
+    }
+
+    private void ViewItem(int id)
+    {
+        Navigation.NavigateTo($"/inventory/{id}");
+    }
+}

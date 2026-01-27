@@ -1,0 +1,177 @@
+@page "/estimates"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@using OneManVan.Shared.Models.Enums
+@inject OneManVanDbContext DbContext
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Estimates - TradeFlow</PageTitle>
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col">
+            <h1>Estimates</h1>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary" @onclick="CreateEstimate">
+                <span class="bi bi-plus-circle"></span> New Estimate
+            </button>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <input type="text" class="form-control" placeholder="Search estimates..." 
+                   @bind="searchText" @bind:event="oninput" @bind:after="FilterEstimates" />
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" @bind="selectedStatus" @bind:after="FilterEstimates">
+                <option value="">All Statuses</option>
+                <option value="Draft">Draft</option>
+                <option value="Sent">Sent</option>
+                <option value="Accepted">Accepted</option>
+                <option value="Declined">Declined</option>
+                <option value="Expired">Expired</option>
+            </select>
+        </div>
+    </div>
+
+    @if (loading)
+    {
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else if (filteredEstimates == null || !filteredEstimates.Any())
+    {
+        <div class="alert alert-info">
+            No estimates found. Click "New Estimate" to create one.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Customer</th>
+                        <th>Title</th>
+                        <th>Date</th>
+                        <th>Valid Until</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var estimate in filteredEstimates)
+                    {
+                        <tr>
+                            <td>@(estimate.Customer?.Name ?? "N/A")</td>
+                            <td>@estimate.Title</td>
+                            <td>@estimate.CreatedAt.ToString("MM/dd/yyyy")</td>
+                            <td>@(estimate.ExpiresAt?.ToString("MM/dd/yyyy") ?? "N/A")</td>
+                            <td>@estimate.Total.ToString("C")</td>
+                            <td>
+                                <span class="badge @GetStatusBadgeClass(estimate.Status)">
+                                    @estimate.Status
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" 
+                                        @onclick="() => ViewEstimate(estimate.Id)">
+                                    View
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@code {
+    private List<Estimate>? estimates;
+    private List<Estimate>? filteredEstimates;
+    private string searchText = string.Empty;
+    private string selectedStatus = string.Empty;
+    private bool loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEstimates();
+    }
+
+    private async Task LoadEstimates()
+    {
+        loading = true;
+        try
+        {
+            estimates = await DbContext.Estimates
+                .Include(e => e.Customer)
+                .OrderByDescending(e => e.CreatedAt)
+                .ToListAsync();
+            filteredEstimates = estimates;
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private void FilterEstimates()
+    {
+        if (estimates == null) return;
+
+        filteredEstimates = estimates;
+
+        // Filter by search text
+        if (!string.IsNullOrWhiteSpace(searchText))
+        {
+            var search = searchText.ToLower();
+            filteredEstimates = filteredEstimates
+                .Where(e => 
+
+                    (e.Title?.ToLower().Contains(search) ?? false) ||
+                    (e.Customer?.Name?.ToLower().Contains(search) ?? false))
+                .ToList();
+        }
+
+        // Filter by status
+        if (!string.IsNullOrWhiteSpace(selectedStatus))
+        {
+            if (Enum.TryParse<EstimateStatus>(selectedStatus, out var status))
+            {
+                filteredEstimates = filteredEstimates.Where(e => e.Status == status).ToList();
+            }
+        }
+    }
+
+    private string GetStatusBadgeClass(EstimateStatus status)
+    {
+        return status switch
+        {
+            EstimateStatus.Draft => "bg-secondary",
+            EstimateStatus.Sent => "bg-info",
+            EstimateStatus.Accepted => "bg-success",
+            EstimateStatus.Declined => "bg-danger",
+            EstimateStatus.Expired => "bg-warning",
+            _ => "bg-secondary"
+        };
+    }
+
+    private void CreateEstimate()
+    {
+        Navigation.NavigateTo("/estimates/new");
+    }
+
+    private void ViewEstimate(int id)
+    {
+        Navigation.NavigateTo($"/estimates/{id}");
+    }
+}

@@ -1,0 +1,150 @@
+@page "/products"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@inject OneManVanDbContext DbContext
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Products - TradeFlow</PageTitle>
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col">
+            <h1>Products</h1>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary" @onclick="CreateProduct">
+                <span class="bi bi-plus-circle"></span> New Product
+            </button>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <input type="text" class="form-control" placeholder="Search products..." 
+                   @bind="searchText" @bind:event="oninput" @bind:after="FilterProducts" />
+        </div>
+    </div>
+
+    @if (loading)
+    {
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else if (filteredProducts == null || !filteredProducts.Any())
+    {
+        <div class="alert alert-info">
+            No products found. Click "New Product" to add one.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Product #</th>
+                        <th>Manufacturer</th>
+                        <th>Model</th>
+                        <th>Category</th>
+                        <th>Equipment Type</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var product in filteredProducts)
+                    {
+                        <tr>
+                            <td>@product.ProductNumber</td>
+                            <td>@product.Manufacturer</td>
+                            <td>@product.ModelNumber</td>
+                            <td>@product.Category</td>
+                            <td>@product.EquipmentType</td>
+                            <td>
+                                @if (product.IsActive)
+                                {
+                                    <span class="badge bg-success">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Inactive</span>
+                                }
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" 
+                                        @onclick="() => ViewProduct(product.Id)">
+                                    View
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@code {
+    private List<Product>? products;
+    private List<Product>? filteredProducts;
+    private string searchText = string.Empty;
+    private bool loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProducts();
+    }
+
+    private async Task LoadProducts()
+    {
+        loading = true;
+        try
+        {
+            products = await DbContext.Products
+                .OrderBy(p => p.Manufacturer)
+                .ThenBy(p => p.ModelNumber)
+                .ToListAsync();
+            filteredProducts = products;
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private void FilterProducts()
+    {
+        if (products == null) return;
+
+        if (string.IsNullOrWhiteSpace(searchText))
+        {
+            filteredProducts = products;
+        }
+        else
+        {
+            var search = searchText.ToLower();
+            filteredProducts = products
+                .Where(p => 
+                    (p.ProductNumber?.ToLower().Contains(search) ?? false) ||
+                    (p.Manufacturer?.ToLower().Contains(search) ?? false) ||
+                    (p.ModelNumber?.ToLower().Contains(search) ?? false) ||
+                    (p.Category.ToString().ToLower().Contains(search)))
+                .ToList();
+        }
+    }
+
+    private void CreateProduct()
+    {
+        Navigation.NavigateTo("/products/new");
+    }
+
+    private void ViewProduct(int id)
+    {
+        Navigation.NavigateTo($"/products/{id}");
+    }
+}

@@ -1,0 +1,154 @@
+@page "/customers"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@inject OneManVanDbContext DbContext
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Customers - TradeFlow</PageTitle>
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col">
+            <h1>Customers</h1>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary" @onclick="CreateCustomer">
+                <span class="bi bi-plus-circle"></span> New Customer
+            </button>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <input type="text" class="form-control" placeholder="Search customers..." 
+                   @bind="searchText" @bind:event="oninput" @bind:after="FilterCustomers" />
+        </div>
+    </div>
+
+    @if (loading)
+    {
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else if (filteredCustomers == null || !filteredCustomers.Any())
+    {
+        <div class="alert alert-info">
+            No customers found. Click "New Customer" to add one.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Customer #</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var customer in filteredCustomers)
+                    {
+                        <tr>
+                            <td>@customer.CustomerNumber</td>
+                            <td>@customer.Name</td>
+                            <td>@customer.Email</td>
+                            <td>@customer.Phone</td>
+                            <td>@customer.CustomerType</td>
+                            <td>
+                                <span class="badge @GetStatusBadgeClass(customer.Status)">
+                                    @customer.Status
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" 
+                                        @onclick="() => ViewCustomer(customer.Id)">
+                                    View
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@code {
+    private List<Customer>? customers;
+    private List<Customer>? filteredCustomers;
+    private string searchText = string.Empty;
+    private bool loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCustomers();
+    }
+
+    private async Task LoadCustomers()
+    {
+        loading = true;
+        try
+        {
+            customers = await DbContext.Customers
+                .OrderBy(c => c.Name)
+                .ToListAsync();
+            filteredCustomers = customers;
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private void FilterCustomers()
+    {
+        if (customers == null) return;
+
+        if (string.IsNullOrWhiteSpace(searchText))
+        {
+            filteredCustomers = customers;
+        }
+        else
+        {
+            var search = searchText.ToLower();
+            filteredCustomers = customers
+                .Where(c => 
+                    (c.Name?.ToLower().Contains(search) ?? false) ||
+                    (c.Email?.ToLower().Contains(search) ?? false) ||
+                    (c.CustomerNumber?.ToLower().Contains(search) ?? false) ||
+                    (c.Phone?.ToLower().Contains(search) ?? false))
+                .ToList();
+        }
+    }
+
+    private string GetStatusBadgeClass(OneManVan.Shared.Models.Enums.CustomerStatus status)
+    {
+        return status switch
+        {
+            OneManVan.Shared.Models.Enums.CustomerStatus.Active => "bg-success",
+            OneManVan.Shared.Models.Enums.CustomerStatus.Inactive => "bg-secondary",
+            _ => "bg-info"
+        };
+    }
+
+    private void CreateCustomer()
+    {
+        Navigation.NavigateTo("/customers/new");
+    }
+
+    private void ViewCustomer(int id)
+    {
+        Navigation.NavigateTo($"/customers/{id}");
+    }
+}

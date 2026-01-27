@@ -1,0 +1,273 @@
+﻿@page "/"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@using OneManVan.Shared.Models.Enums
+@inject OneManVanDbContext DbContext
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Dashboard - TradeFlow</PageTitle>
+
+<div class="container-fluid">
+    <h1 class="mb-4">Dashboard</h1>
+
+    @if (loading)
+    {
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-white bg-primary mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Customers</h5>
+                        <h2 class="card-text">@customerCount</h2>
+                        <a href="/customers" class="btn btn-light btn-sm">View All</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-success mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Active Jobs</h5>
+                        <h2 class="card-text">@activeJobsCount</h2>
+                        <a href="/jobs" class="btn btn-light btn-sm">View All</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-warning mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Pending Invoices</h5>
+                        <h2 class="card-text">@pendingInvoicesCount</h2>
+                        <a href="/invoices" class="btn btn-light btn-sm">View All</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-info mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Assets</h5>
+                        <h2 class="card-text">@assetsCount</h2>
+                        <a href="/assets" class="btn btn-light btn-sm">View All</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Today's Jobs</h5>
+                    </div>
+                    <div class="card-body">
+                        @if (todaysJobs?.Any() == true)
+                        {
+                            <div class="list-group">
+                                @foreach (var job in todaysJobs)
+                                {
+                                    <a href="/jobs/@job.Id" class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">@job.Title</h6>
+                                            <small>@(job.ScheduledDate?.ToString("hh:mm tt"))</small>
+                                        </div>
+                                        <p class="mb-1">@(job.Customer?.Name ?? "N/A")</p>
+                                        <small>
+                                            <span class="badge @GetJobStatusBadgeClass(job.Status)">@job.Status</span>
+                                        </small>
+                                    </a>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-muted">No jobs scheduled for today.</p>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Recent Invoices</h5>
+                    </div>
+                    <div class="card-body">
+                        @if (recentInvoices?.Any() == true)
+                        {
+                            <div class="list-group">
+                                @foreach (var invoice in recentInvoices)
+                                {
+                                    <a href="/invoices/@invoice.Id" class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">@invoice.InvoiceNumber</h6>
+                                            <small>@invoice.Total.ToString("C")</small>
+                                        </div>
+                                        <p class="mb-1">@(invoice.Customer?.Name ?? "N/A")</p>
+                                        <small>
+                                            <span class="badge @GetInvoiceStatusBadgeClass(invoice.Status)">@invoice.Status</span>
+                                        </small>
+                                    </a>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-muted">No recent invoices.</p>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Low Stock Items</h5>
+                    </div>
+                    <div class="card-body">
+                        @if (lowStockItems?.Any() == true)
+                        {
+                            <div class="list-group">
+                                @foreach (var item in lowStockItems)
+                                {
+                                    <a href="/inventory/@item.Id" class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">@item.Name</h6>
+                                            <span class="badge @(item.QuantityOnHand <= 0 ? "bg-danger" : "bg-warning")">
+                                                @item.QuantityOnHand in stock
+                                            </span>
+                                        </div>
+                                        <small class="text-muted">SKU: @item.Sku | Min: @item.ReorderPoint</small>
+                                    </a>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-muted">All inventory items are well stocked.</p>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Quick Actions</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-primary" @onclick='() => Navigation.NavigateTo("/customers/new")'>
+                                <span class="bi bi-plus-circle"></span> New Customer
+                            </button>
+                            <button class="btn btn-outline-success" @onclick='() => Navigation.NavigateTo("/jobs/new")'>
+                                <span class="bi bi-plus-circle"></span> New Job
+                            </button>
+                            <button class="btn btn-outline-warning" @onclick='() => Navigation.NavigateTo("/invoices/new")'>
+                                <span class="bi bi-plus-circle"></span> New Invoice
+                            </button>
+                            <button class="btn btn-outline-info" @onclick='() => Navigation.NavigateTo("/estimates/new")'>
+                                <span class="bi bi-plus-circle"></span> New Estimate
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private bool loading = true;
+    private int customerCount;
+    private int activeJobsCount;
+    private int pendingInvoicesCount;
+    private int assetsCount;
+    private List<Job>? todaysJobs;
+    private List<Invoice>? recentInvoices;
+    private List<InventoryItem>? lowStockItems;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDashboardData();
+    }
+
+    private async Task LoadDashboardData()
+    {
+        loading = true;
+        try
+        {
+            var today = DateTime.Today;
+            var tomorrow = today.AddDays(1);
+
+            // Get counts
+            customerCount = await DbContext.Customers.CountAsync();
+            activeJobsCount = await DbContext.Jobs
+                .CountAsync(j => j.Status == JobStatus.Scheduled || j.Status == JobStatus.InProgress);
+            pendingInvoicesCount = await DbContext.Invoices
+                .CountAsync(i => i.Status != InvoiceStatus.Paid && i.Status != InvoiceStatus.Cancelled);
+            assetsCount = await DbContext.Assets.CountAsync();
+
+            // Get today's jobs
+            todaysJobs = await DbContext.Jobs
+                .Include(j => j.Customer)
+                .Where(j => j.ScheduledDate >= today && j.ScheduledDate < tomorrow)
+                .OrderBy(j => j.ScheduledDate)
+                .Take(5)
+                .ToListAsync();
+
+            // Get recent invoices
+            recentInvoices = await DbContext.Invoices
+                .Include(i => i.Customer)
+                .OrderByDescending(i => i.InvoiceDate)
+                .Take(5)
+                .ToListAsync();
+
+            // Get low stock items
+            lowStockItems = await DbContext.InventoryItems
+                .Where(i => i.IsActive && i.QuantityOnHand <= i.ReorderPoint)
+                .OrderBy(i => i.QuantityOnHand)
+                .Take(5)
+                .ToListAsync();
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private string GetJobStatusBadgeClass(JobStatus status)
+    {
+        return status switch
+        {
+            JobStatus.Scheduled => "bg-info",
+            JobStatus.InProgress => "bg-warning",
+            JobStatus.Completed => "bg-success",
+            JobStatus.Cancelled => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+
+    private string GetInvoiceStatusBadgeClass(InvoiceStatus status)
+    {
+        return status switch
+        {
+            InvoiceStatus.Draft => "bg-secondary",
+            InvoiceStatus.Sent => "bg-info",
+            InvoiceStatus.Paid => "bg-success",
+            InvoiceStatus.Overdue => "bg-danger",
+            InvoiceStatus.Cancelled => "bg-dark",
+            _ => "bg-secondary"
+        };
+    }
+}
+

@@ -1,0 +1,194 @@
+@page "/invoices"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@using OneManVan.Shared.Models.Enums
+@inject OneManVanDbContext DbContext
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Invoices - TradeFlow</PageTitle>
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col">
+            <h1>Invoices</h1>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary" @onclick="CreateInvoice">
+                <span class="bi bi-plus-circle"></span> New Invoice
+            </button>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <input type="text" class="form-control" placeholder="Search invoices..." 
+                   @bind="searchText" @bind:event="oninput" @bind:after="FilterInvoices" />
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" @bind="selectedStatus" @bind:after="FilterInvoices">
+                <option value="">All Statuses</option>
+                <option value="Draft">Draft</option>
+                <option value="Sent">Sent</option>
+                <option value="Paid">Paid</option>
+                <option value="Overdue">Overdue</option>
+                <option value="Cancelled">Cancelled</option>
+            </select>
+        </div>
+    </div>
+
+    @if (loading)
+    {
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else if (filteredInvoices == null || !filteredInvoices.Any())
+    {
+        <div class="alert alert-info">
+            No invoices found. Click "New Invoice" to create one.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Invoice #</th>
+                        <th>Customer</th>
+                        <th>Date</th>
+                        <th>Due Date</th>
+                        <th>Amount</th>
+                        <th>Paid</th>
+                        <th>Balance</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var invoice in filteredInvoices)
+                    {
+                        <tr>
+                            <td>@invoice.InvoiceNumber</td>
+                            <td>@(invoice.Customer?.Name ?? "N/A")</td>
+                            <td>@invoice.InvoiceDate.ToString("MM/dd/yyyy")</td>
+                            <td>@invoice.DueDate.ToString("MM/dd/yyyy")</td>
+                            <td>@invoice.Total.ToString("C")</td>
+                            <td>@invoice.AmountPaid.ToString("C")</td>
+                            <td>@((invoice.Total - invoice.AmountPaid).ToString("C"))</td>
+                            <td>
+                                <span class="badge @GetStatusBadgeClass(invoice.Status)">
+                                    @invoice.Status
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" 
+                                        @onclick="() => ViewInvoice(invoice.Id)">
+                                    View
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-md-6 ms-auto">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Summary</h5>
+                        <p class="mb-1">Total Invoices: @filteredInvoices.Count</p>
+                        <p class="mb-1">Total Amount: @filteredInvoices.Sum(i => i.Total).ToString("C")</p>
+                        <p class="mb-1">Total Paid: @filteredInvoices.Sum(i => i.AmountPaid).ToString("C")</p>
+                        <p class="mb-0">Outstanding: @filteredInvoices.Sum(i => i.Total - i.AmountPaid).ToString("C")</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<Invoice>? invoices;
+    private List<Invoice>? filteredInvoices;
+    private string searchText = string.Empty;
+    private string selectedStatus = string.Empty;
+    private bool loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadInvoices();
+    }
+
+    private async Task LoadInvoices()
+    {
+        loading = true;
+        try
+        {
+            invoices = await DbContext.Invoices
+                .Include(i => i.Customer)
+                .OrderByDescending(i => i.InvoiceDate)
+                .ToListAsync();
+            filteredInvoices = invoices;
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private void FilterInvoices()
+    {
+        if (invoices == null) return;
+
+        filteredInvoices = invoices;
+
+        // Filter by search text
+        if (!string.IsNullOrWhiteSpace(searchText))
+        {
+            var search = searchText.ToLower();
+            filteredInvoices = filteredInvoices
+                .Where(i => 
+                    (i.InvoiceNumber?.ToLower().Contains(search) ?? false) ||
+                    (i.Customer?.Name?.ToLower().Contains(search) ?? false))
+                .ToList();
+        }
+
+        // Filter by status
+        if (!string.IsNullOrWhiteSpace(selectedStatus))
+        {
+            if (Enum.TryParse<InvoiceStatus>(selectedStatus, out var status))
+            {
+                filteredInvoices = filteredInvoices.Where(i => i.Status == status).ToList();
+            }
+        }
+    }
+
+    private string GetStatusBadgeClass(InvoiceStatus status)
+    {
+        return status switch
+        {
+            InvoiceStatus.Draft => "bg-secondary",
+            InvoiceStatus.Sent => "bg-info",
+            InvoiceStatus.Paid => "bg-success",
+            InvoiceStatus.Overdue => "bg-danger",
+            InvoiceStatus.Cancelled => "bg-dark",
+            _ => "bg-secondary"
+        };
+    }
+
+    private void CreateInvoice()
+    {
+        Navigation.NavigateTo("/invoices/new");
+    }
+
+    private void ViewInvoice(int id)
+    {
+        Navigation.NavigateTo($"/invoices/{id}");
+    }
+}
