@@ -1,0 +1,317 @@
+@page "/calendar"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@inject OneManVanDbContext DbContext
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Calendar - TradeFlow</PageTitle>
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col">
+            <h1>Calendar</h1>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary" @onclick="CreateJob">
+                <span class="bi bi-plus-circle"></span> Schedule Job
+            </button>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <div class="btn-group" role="group">
+                <button type="button" class="btn @(viewMode == "day" ? "btn-primary" : "btn-outline-primary")" 
+                        @onclick='() => SetViewMode("day")'>Day</button>
+                <button type="button" class="btn @(viewMode == "week" ? "btn-primary" : "btn-outline-primary")" 
+                        @onclick='() => SetViewMode("week")'>Week</button>
+                <button type="button" class="btn @(viewMode == "month" ? "btn-primary" : "btn-outline-primary")" 
+                        @onclick='() => SetViewMode("month")'>Month</button>
+            </div>
+        </div>
+        <div class="col-md-4 text-center">
+            <button class="btn btn-outline-secondary" @onclick="PreviousPeriod">
+                <span class="bi bi-chevron-left"></span>
+            </button>
+            <span class="mx-3"><strong>@GetPeriodDisplay()</strong></span>
+            <button class="btn btn-outline-secondary" @onclick="NextPeriod">
+                <span class="bi bi-chevron-right"></span>
+            </button>
+            <button class="btn btn-outline-secondary ms-2" @onclick="Today">
+                Today
+            </button>
+        </div>
+    </div>
+
+    @if (loading)
+    {
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else if (jobs == null || !jobs.Any())
+    {
+        <div class="alert alert-info">
+            No scheduled jobs found for this period.
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            @if (viewMode == "day")
+            {
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            @foreach (var job in jobs.OrderBy(j => j.ScheduledDate))
+                            {
+                                <div class="card mb-2 @GetJobCardClass(job)">
+                                    <div class="card-body">
+                                        <h6 class="card-title">@job.Title</h6>
+                                        <p class="card-text mb-1">
+                                            <strong>Time:</strong> @(job.ScheduledDate?.ToString("hh:mm tt") ?? "Not set")
+                                        </p>
+                                        <p class="card-text mb-1">
+                                            <strong>Customer:</strong> @(job.Customer?.Name ?? "N/A")
+                                        </p>
+                                        <p class="card-text mb-0">
+                                            <span class="badge @GetStatusBadgeClass(job.Status)">@job.Status</span>
+                                        </p>
+                                        <button class="btn btn-sm btn-outline-primary mt-2" 
+                                                @onclick="() => ViewJob(job.Id)">
+                                            View Details
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+            else if (viewMode == "week")
+            {
+                @for (int i = 0; i < 7; i++)
+                {
+                    var dayDate = currentDate.AddDays(i);
+                    var dayJobs = jobs.Where(j => j.ScheduledDate?.Date == dayDate.Date).ToList();
+                    
+                    <div class="col-md-12 mb-3">
+                        <div class="card">
+                            <div class="card-header">
+                                <strong>@dayDate.ToString("dddd, MMM dd")</strong>
+                                <span class="badge bg-secondary ms-2">@dayJobs.Count jobs</span>
+                            </div>
+                            <div class="card-body">
+                                @if (dayJobs.Any())
+                                {
+                                    @foreach (var job in dayJobs.OrderBy(j => j.ScheduledDate))
+                                    {
+                                        <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+                                            <div>
+                                                <strong>@(job.ScheduledDate?.ToString("hh:mm tt"))</strong> - @job.Title
+                                                <br />
+                                                <small>@(job.Customer?.Name ?? "N/A")</small>
+                                            </div>
+                                            <div>
+                                                <span class="badge @GetStatusBadgeClass(job.Status)">@job.Status</span>
+                                                <button class="btn btn-sm btn-outline-primary ms-2" 
+                                                        @onclick="() => ViewJob(job.Id)">
+                                                    View
+                                                </button>
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    <p class="text-muted mb-0">No jobs scheduled</p>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="col-12">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Sun</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @{
+                                    var firstDay = new DateTime(currentDate.Year, currentDate.Month, 1);
+                                    var daysInMonth = DateTime.DaysInMonth(currentDate.Year, currentDate.Month);
+                                    var startDayOfWeek = (int)firstDay.DayOfWeek;
+                                    var totalCells = daysInMonth + startDayOfWeek;
+                                    var rows = (int)Math.Ceiling(totalCells / 7.0);
+                                    
+                                    for (int row = 0; row < rows; row++)
+                                    {
+                                        <tr>
+                                            @for (int col = 0; col < 7; col++)
+                                            {
+                                                var cellIndex = row * 7 + col;
+                                                var day = cellIndex - startDayOfWeek + 1;
+                                                
+                                                if (day > 0 && day <= daysInMonth)
+                                                {
+                                                    var cellDate = new DateTime(currentDate.Year, currentDate.Month, day);
+                                                    var dayJobs = jobs.Where(j => j.ScheduledDate?.Date == cellDate.Date).ToList();
+                                                    
+                                                    <td class="@(cellDate.Date == DateTime.Today ? "bg-light" : "")" style="height: 100px; vertical-align: top;">
+                                                        <div><strong>@day</strong></div>
+                                                        @if (dayJobs.Any())
+                                                        {
+                                                            <small class="badge bg-primary">@dayJobs.Count</small>
+                                                        }
+                                                    </td>
+                                                }
+                                                else
+                                                {
+                                                    <td></td>
+                                                }
+                                            }
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<Job>? jobs;
+    private DateTime currentDate = DateTime.Today;
+    private string viewMode = "week";
+    private bool loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadJobs();
+    }
+
+    private async Task LoadJobs()
+    {
+        loading = true;
+        try
+        {
+            DateTime startDate, endDate;
+            
+            if (viewMode == "day")
+            {
+                startDate = currentDate.Date;
+                endDate = currentDate.Date.AddDays(1);
+            }
+            else if (viewMode == "week")
+            {
+                startDate = currentDate.Date;
+                endDate = currentDate.Date.AddDays(7);
+            }
+            else // month
+            {
+                startDate = new DateTime(currentDate.Year, currentDate.Month, 1);
+                endDate = startDate.AddMonths(1);
+            }
+
+            jobs = await DbContext.Jobs
+                .Include(j => j.Customer)
+                .Where(j => j.ScheduledDate >= startDate && j.ScheduledDate < endDate)
+                .ToListAsync();
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task SetViewMode(string mode)
+    {
+        viewMode = mode;
+        await LoadJobs();
+    }
+
+    private async Task PreviousPeriod()
+    {
+        currentDate = viewMode switch
+        {
+            "day" => currentDate.AddDays(-1),
+            "week" => currentDate.AddDays(-7),
+            "month" => currentDate.AddMonths(-1),
+            _ => currentDate
+        };
+        await LoadJobs();
+    }
+
+    private async Task NextPeriod()
+    {
+        currentDate = viewMode switch
+        {
+            "day" => currentDate.AddDays(1),
+            "week" => currentDate.AddDays(7),
+            "month" => currentDate.AddMonths(1),
+            _ => currentDate
+        };
+        await LoadJobs();
+    }
+
+    private async Task Today()
+    {
+        currentDate = DateTime.Today;
+        await LoadJobs();
+    }
+
+    private string GetPeriodDisplay()
+    {
+        return viewMode switch
+        {
+            "day" => currentDate.ToString("MMMM dd, yyyy"),
+            "week" => $"{currentDate:MMM dd} - {currentDate.AddDays(6):MMM dd, yyyy}",
+            "month" => currentDate.ToString("MMMM yyyy"),
+            _ => currentDate.ToString("MMMM yyyy")
+        };
+    }
+
+    private string GetJobCardClass(Job job)
+    {
+        return job.Priority switch
+        {
+            OneManVan.Shared.Models.Enums.JobPriority.Emergency => "border-danger",
+            OneManVan.Shared.Models.Enums.JobPriority.High => "border-warning",
+            _ => ""
+        };
+    }
+
+    private string GetStatusBadgeClass(OneManVan.Shared.Models.Enums.JobStatus status)
+    {
+        return status switch
+        {
+            OneManVan.Shared.Models.Enums.JobStatus.Scheduled => "bg-info",
+            OneManVan.Shared.Models.Enums.JobStatus.InProgress => "bg-warning",
+            OneManVan.Shared.Models.Enums.JobStatus.Completed => "bg-success",
+            OneManVan.Shared.Models.Enums.JobStatus.Cancelled => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+
+    private void CreateJob()
+    {
+        Navigation.NavigateTo("/jobs/new");
+    }
+
+    private void ViewJob(int id)
+    {
+        Navigation.NavigateTo($"/jobs/{id}");
+    }
+}
