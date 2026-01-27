@@ -14,8 +14,6 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<OneManVanDbContext>(options =>
     options.UseSqlite(connectionString));
 
-
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
