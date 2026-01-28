@@ -1,0 +1,323 @@
+@page "/products/{Id:int}"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@attribute [Authorize]
+@inject IDbContextFactory<OneManVanDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>@(product?.Name ?? "Product") - TradeFlow</PageTitle>
+
+<div class="container-fluid py-4">
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else if (product == null)
+    {
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            Product not found
+        </div>
+    }
+    else
+    {
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-start mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/products">Products</a></li>
+                        <li class="breadcrumb-item active">@product.ProductName</li>
+                    </ol>
+                </nav>
+                <div class="d-flex align-items-center">
+                    <div class="avatar-circle bg-info bg-opacity-10 text-info me-3" style="width: 60px; height: 60px; font-size: 24px;">
+                        <i class="bi bi-box"></i>
+                    </div>
+                    <div>
+                        <h1 class="h2 mb-1">@product.ProductName</h1>
+                        <div class="d-flex gap-2">
+                            @if (!string.IsNullOrEmpty(product.ProductNumber))
+                            {
+                                <span class="badge bg-secondary">@product.ProductNumber</span>
+                            }
+                            @if (!string.IsNullOrEmpty(product.Category))
+                            {
+                                <span class="badge bg-info">@product.Category</span>
+                            }
+                            @if (product.RegistrationRequired)
+                            {
+                                <span class="badge bg-warning">Serial Required</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary" @onclick="GoBack">
+                    <i class="bi bi-arrow-left me-2"></i>Back
+                </button>
+                <button class="btn btn-primary" @onclick="EditProduct">
+                    <i class="bi bi-pencil me-2"></i>Edit
+                </button>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <!-- Product Information -->
+            <div class="col-md-8">
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0">Product Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Manufacturer</label>
+                                <span>@(product.Manufacturer ?? "—")</span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Model</label>
+                                <span>@(product.ModelNumber ?? "—")</span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Price</label>
+                                <span class="h5 mb-0">@product.SuggestedSellPrice.ToString("C")</span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Cost</label>
+                                <span>@product.Cost?.ToString("C") ?? "—"</span>
+                            </div>
+                            @if (!string.IsNullOrEmpty(product.Description))
+                            {
+                                <div class="col-12">
+                                    <label class="text-muted small d-block mb-1">Description</label>
+                                    <p class="mb-0">@product.Description</p>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(product.Notes))
+                            {
+                                <div class="col-12">
+                                    <label class="text-muted small d-block mb-1">Notes</label>
+                                    <p class="mb-0">@product.Notes</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Associated Assets -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-0 py-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Associated Assets</h5>
+                            <button class="btn btn-sm btn-primary" @onclick="CreateAsset">
+                                <i class="bi bi-plus-circle me-1"></i>New Asset
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (new List<Asset>()?.Any() == true)
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Serial Number</th>
+                                            <th>Customer</th>
+                                            <th>Location</th>
+                                            <th>Install Date</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var asset in new List<Asset>().OrderByDescending(a => a.InstallDate).Take(10))
+                                        {
+                                            <tr>
+                                                <td>
+                                                    @if (!string.IsNullOrEmpty(asset.SerialNumber))
+                                                    {
+                                                        <span class="badge bg-dark">@asset.SerialNumber</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted">—</span>
+                                                    }
+                                                </td>
+                                                <td>@asset.Customer?.Name</td>
+                                                <td>@(asset.Location ?? "—")</td>
+                                                <td>@asset.InstallDate?.ToString("MMM dd, yyyy")</td>
+                                                <td>
+                                                    <a href="/assets/@asset.Id" class="btn btn-sm btn-outline-primary">View</a>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-4 text-muted">
+                                <i class="bi bi-tools fs-3 mb-2 d-block"></i>
+                                <p class="mb-2">No assets installed yet</p>
+                                <button class="btn btn-sm btn-primary" @onclick="CreateAsset">
+                                    Create First Asset
+                                </button>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-md-4">
+                <!-- Quick Stats -->
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0">Quick Stats</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                            <span class="text-muted">Total Assets</span>
+                            <span class="h4 mb-0">@(new List<Asset>()?.Count ?? 0)</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                            <span class="text-muted">Registered</span>
+                            <span class="h4 mb-0">@registeredCount</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted">Unregistered</span>
+                            <span class="h4 mb-0">@unregisteredCount</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product Specifications -->
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0">Specifications</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="text-muted small d-block mb-1">Serial Number Tracking</label>
+                            <span class="badge @(product.RegistrationRequired ? "bg-success" : "bg-secondary")">
+                                @(product.RegistrationRequired ? "Required" : "Optional")
+                            </span>
+                        </div>
+                        @if (product.WarrantyMonths.HasValue)
+                        {
+                            <div class="mb-3">
+                                <label class="text-muted small d-block mb-1">Warranty Period</label>
+                                <span>@product.WarrantyMonths months</span>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(product.ManufacturerWarrantyUrl))
+                        {
+                            <div class="mb-3">
+                                <label class="text-muted small d-block mb-1">Warranty Info</label>
+                                <a href="@product.ManufacturerWarrantyUrl" target="_blank" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-link-45deg me-1"></i>View Details
+                                </a>
+                            </div>
+                        }
+                        <div>
+                            <label class="text-muted small d-block mb-1">Created</label>
+                            <span>@product.CreatedAt.ToString("MMM dd, yyyy")</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-primary" @onclick="CreateAsset">
+                                <i class="bi bi-plus-circle me-2"></i>Add Asset
+                            </button>
+                            <button class="btn btn-outline-secondary" @onclick="ViewInventory">
+                                <i class="bi bi-boxes me-2"></i>View Inventory
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .avatar-circle {
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private bool isLoading = true;
+    private Product? product;
+    private int registeredCount = 0;
+    private int unregisteredCount = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProductAsync();
+    }
+
+    private async Task LoadProductAsync()
+    {
+        try
+        {
+            isLoading = true;
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+            
+            product = await db.Products
+                
+                    .ThenInclude(a => a.Customer)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.Id == Id);
+
+            if (product != null && new List<Asset>() != null)
+            {
+                registeredCount = new List<Asset>().Count(a => a.IsRegistered);
+                unregisteredCount = new List<Asset>().Count(a => !a.IsRegistered);
+            }
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/products");
+    }
+
+    private void EditProduct()
+    {
+        Navigation.NavigateTo($"/products/{Id}/edit");
+    }
+
+    private void CreateAsset()
+    {
+        Navigation.NavigateTo($"/assets/new?productId={Id}");
+    }
+
+    private void ViewInventory()
+    {
+        Navigation.NavigateTo($"/inventory?productId={Id}");
+    }
+}

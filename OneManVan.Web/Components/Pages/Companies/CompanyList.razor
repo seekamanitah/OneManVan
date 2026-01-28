@@ -1,0 +1,255 @@
+@page "/companies"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@using OneManVan.Shared.Models.Enums
+@attribute [Authorize]
+@inject IDbContextFactory<OneManVanDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Companies - OneManVan</PageTitle>
+
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-0">Companies</h1>
+            <p class="text-muted mb-0">Commercial accounts and organizations</p>
+        </div>
+        <div class="d-flex gap-2">
+            <ExportButton EntityType="companies" />
+            <button class="btn btn-primary" @onclick="CreateCompany">
+                <i class="bi bi-plus-circle me-2"></i>New Company
+            </button>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row g-3 mb-3">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <small class="text-muted d-block">Total Companies</small>
+                    <h3 class="mb-0">@totalCompanies</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <small class="text-muted d-block">Customers</small>
+                    <h3 class="mb-0">@customerCount</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <small class="text-muted d-block">Vendors</small>
+                    <h3 class="mb-0">@vendorCount</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <small class="text-muted d-block">Active</small>
+                    <h3 class="mb-0 text-success">@activeCount</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control border-start-0" 
+                               placeholder="Search companies..." 
+                               @bind="searchText" @bind:event="oninput" @onkeyup="OnSearchChanged" />
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" @bind="filterType" @bind:after="ApplyFilters">
+                        <option value="">All Types</option>
+                        @foreach (var t in Enum.GetValues<CompanyType>())
+                        {
+                            <option value="@t">@t</option>
+                        }
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Company List -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            @if (isLoading)
+            {
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary"></div>
+                </div>
+            }
+            else if (filteredCompanies.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Company</th>
+                                <th>Type</th>
+                                <th>Phone</th>
+                                <th>Email</th>
+                                <th>Active</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var company in filteredCompanies)
+                            {
+                                <tr style="cursor: pointer;" @onclick="@(() => ViewCompany(company.Id))">
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-circle bg-primary bg-opacity-10 text-primary me-2">
+                                                @(company.Name?.FirstOrDefault())
+                                            </div>
+                                            <span class="fw-semibold">@company.Name</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge @GetTypeBadge(company.CompanyType)">@company.CompanyType</span>
+                                    </td>
+                                    <td>@(company.Phone ?? "-")</td>
+                                    <td>@(company.Email ?? "-")</td>
+                                    <td>
+                                        <span class="badge @(company.IsActive ? "bg-success" : "bg-secondary")">
+                                            @(company.IsActive ? "Active" : "Inactive")
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="btn-group btn-group-sm" @onclick:stopPropagation="true">
+                                            <button class="btn btn-outline-primary" @onclick="@(() => ViewCompany(company.Id))">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            <button class="btn btn-outline-secondary" @onclick="@(() => EditCompany(company.Id))">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-building fs-1 text-muted mb-3 d-block"></i>
+                    <h5>No companies found</h5>
+                    <button class="btn btn-primary" @onclick="CreateCompany">
+                        <i class="bi bi-plus-circle me-2"></i>Add Company
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .avatar-circle {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 14px;
+    }
+</style>
+
+@code {
+    private bool isLoading = true;
+    private List<Company> allCompanies = new();
+    private List<Company> filteredCompanies = new();
+    
+    private string searchText = "";
+    private string filterType = "";
+    
+    private int totalCompanies = 0;
+    private int customerCount = 0;
+    private int vendorCount = 0;
+    private int activeCount = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCompaniesAsync();
+    }
+
+    private async Task LoadCompaniesAsync()
+    {
+        try
+        {
+            isLoading = true;
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+            
+            allCompanies = await db.Companies
+                .OrderBy(c => c.Name)
+                .AsNoTracking()
+                .ToListAsync();
+
+            // Calculate stats
+            totalCompanies = allCompanies.Count;
+            customerCount = allCompanies.Count(c => c.CompanyType == CompanyType.Customer);
+            vendorCount = allCompanies.Count(c => c.CompanyType == CompanyType.Vendor);
+            activeCount = allCompanies.Count(c => c.IsActive);
+
+            ApplyFilters();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void ApplyFilters()
+    {
+        var query = allCompanies.AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(searchText))
+        {
+            var search = searchText.ToLower();
+            query = query.Where(c =>
+                (c.Name?.ToLower().Contains(search) ?? false) ||
+                (c.Email?.ToLower().Contains(search) ?? false));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filterType) && Enum.TryParse<CompanyType>(filterType, out var type))
+        {
+            query = query.Where(c => c.CompanyType == type);
+        }
+
+        filteredCompanies = query.ToList();
+    }
+
+    private void OnSearchChanged(KeyboardEventArgs e) => ApplyFilters();
+
+    private void CreateCompany() => Navigation.NavigateTo("/companies/new");
+    private void ViewCompany(int id) => Navigation.NavigateTo($"/companies/{id}");
+    private void EditCompany(int id) => Navigation.NavigateTo($"/companies/{id}/edit");
+
+    private string GetTypeBadge(CompanyType type) => type switch
+    {
+        CompanyType.Customer => "bg-primary",
+        CompanyType.Vendor => "bg-secondary",
+        CompanyType.Contractor => "bg-success",
+        CompanyType.PropertyManagement => "bg-warning text-dark",
+        _ => "bg-secondary"
+    };
+}

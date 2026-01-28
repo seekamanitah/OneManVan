@@ -21,7 +21,7 @@ public class LineItemDialogService
         if (itemTypePrompt != null)
         {
             var types = new[] { "Labor", "Part", "Material", "Equipment", "Service", "Fee", "Discount" };
-            selectedType = await page.DisplayActionSheet(itemTypePrompt, "Cancel", null, types);
+            selectedType = await page.DisplayActionSheetAsync(itemTypePrompt, "Cancel", null, types);
             
             if (selectedType == "Cancel" || selectedType == null)
                 return null;
@@ -50,7 +50,7 @@ public class LineItemDialogService
             
         if (!decimal.TryParse(qtyStr, out var quantity) || quantity <= 0)
         {
-            await page.DisplayAlert("Invalid", "Please enter a valid quantity greater than 0", "OK");
+            await page.DisplayAlertAsync("Invalid", "Please enter a valid quantity greater than 0", "OK");
             return null;
         }
 
@@ -68,7 +68,7 @@ public class LineItemDialogService
             
         if (!decimal.TryParse(priceStr, out var unitPrice) || unitPrice < 0)
         {
-            await page.DisplayAlert("Invalid", "Please enter a valid price", "OK");
+            await page.DisplayAlertAsync("Invalid", "Please enter a valid price", "OK");
             return null;
         }
 

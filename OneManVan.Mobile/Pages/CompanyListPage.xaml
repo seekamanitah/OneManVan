@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="OneManVan.Mobile.Pages.CompanyListPage"
+             Title="Companies"
+             BackgroundColor="{AppThemeBinding Light={StaticResource LightBackground}, Dark={StaticResource DarkBackground}}">
+
+    <Grid RowDefinitions="Auto, *, Auto">
+        
+        <!-- Search Bar -->
+        <Border Grid.Row="0" 
+                BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                Padding="16,12"
+                Margin="0,0,0,8">
+            <SearchBar x:Name="SearchBar"
+                       Placeholder="Search companies..."
+                       TextChanged="OnSearchTextChanged"
+                       SearchCommand="{Binding SearchCommand}"
+                       BackgroundColor="Transparent"/>
+        </Border>
+
+        <!-- Companies List -->
+        <CollectionView x:Name="CompaniesCollection"
+                        Grid.Row="1"
+                        SelectionMode="Single"
+                        SelectionChanged="OnCompanySelected">
+            <CollectionView.EmptyView>
+                <ContentView>
+                    <VerticalStackLayout Padding="20" 
+                                        Spacing="12"
+                                        VerticalOptions="Center" 
+                                        HorizontalOptions="Center">
+                        <Label Text="No companies found" 
+                               FontSize="18" 
+                               FontAttributes="Bold"
+                               HorizontalOptions="Center"
+                               TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                        <Label Text="Add your first company to get started" 
+                               FontSize="14"
+                               HorizontalOptions="Center"
+                               TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                    </VerticalStackLayout>
+                </ContentView>
+            </CollectionView.EmptyView>
+
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}"
+                            StrokeShape="RoundRectangle 12"
+                            Stroke="Transparent"
+                            Margin="16,8"
+                            Padding="16">
+                        <Border.Shadow>
+                            <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" 
+                                    Offset="0,2" 
+                                    Radius="4" 
+                                    Opacity="0.1"/>
+                        </Border.Shadow>
+                        
+                        <Grid RowDefinitions="Auto, Auto, Auto" ColumnDefinitions="*, Auto">
+                            <!-- Company Name -->
+                            <Label Grid.Row="0" Grid.Column="0"
+                                   Text="{Binding Name}"
+                                   FontSize="18"
+                                   FontAttributes="Bold"
+                                   TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"/>
+                            
+                            <!-- Status Badge -->
+                            <Border Grid.Row="0" Grid.Column="1"
+                                    BackgroundColor="{Binding IsActive, Converter={StaticResource BoolToStatusColorConverter}}"
+                                    StrokeShape="RoundRectangle 10"
+                                    Padding="8,4"
+                                    VerticalOptions="Center">
+                                <Label Text="{Binding IsActive, Converter={StaticResource BoolToActiveTextConverter}}"
+                                       FontSize="11"
+                                       FontAttributes="Bold"
+                                       TextColor="White"/>
+                            </Border>
+
+                            <!-- Company Type & Industry -->
+                            <Label Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                                   Margin="0,4,0,0">
+                                <Label.FormattedText>
+                                    <FormattedString>
+                                        <Span Text="{Binding CompanyType, Converter={StaticResource CompanyTypeConverter}}"
+                                              FontSize="13"
+                                              TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"/>
+                                        <Span Text=" � "
+                                              FontSize="13"
+                                              TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                                        <Span Text="{Binding Industry, TargetNullValue='No industry'}"
+                                              FontSize="13"
+                                              TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                                    </FormattedString>
+                                </Label.FormattedText>
+                            </Label>
+
+                            <!-- Contact Info -->
+                            <HorizontalStackLayout Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
+                                                  Margin="0,8,0,0"
+                                                  Spacing="16">
+                                <Label Text="{Binding Phone, TargetNullValue='No phone'}"
+                                       FontSize="13"
+                                       TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                                <Label Text="{Binding Email, TargetNullValue='No email'}"
+                                       FontSize="13"
+                                       TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            </HorizontalStackLayout>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <!-- Add Button -->
+        <Button Grid.Row="2"
+                Text="+ Add Company"
+                BackgroundColor="#6366F1"
+                TextColor="White"
+                FontSize="16"
+                FontAttributes="Bold"
+                HeightRequest="56"
+                CornerRadius="12"
+                Margin="16"
+                Clicked="OnAddCompanyClicked"
+                Shadow="{StaticResource ButtonShadow}"/>
+    </Grid>
+</ContentPage>

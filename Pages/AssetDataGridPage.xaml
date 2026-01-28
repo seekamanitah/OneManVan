@@ -169,16 +169,15 @@
 
             <StackPanel Grid.Column="0">
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="" FontSize="24" VerticalAlignment="Center" Margin="0,0,10,0"/>
                     <TextBlock Text="Asset Management" FontSize="24" FontWeight="Bold" 
                                Foreground="{DynamicResource TextBrush}"/>
                 </StackPanel>
                 <TextBlock x:Name="AssetCountText" Text="Loading assets..." 
-                           FontSize="13" Foreground="{DynamicResource SubtextBrush}" Margin="34,5,0,0"/>
+                           FontSize="13" Foreground="{DynamicResource SubtextBrush}" Margin="0,5,0,0"/>
             </StackPanel>
 
             <StackPanel Grid.Column="1" Orientation="Horizontal">
-                <Button Content="?? Export" Click="OnExportClick"
+                <Button Content="Export" Click="OnExportClick"
                         Style="{StaticResource SecondaryButton}" Margin="0,0,10,0"/>
                 <Button Content="+ Add Asset" Click="OnAddAssetClick"
                         Style="{StaticResource ActionButton}"/>
@@ -203,7 +202,7 @@
                              Padding="12,10"
                              FontSize="13"
                              TextChanged="OnSearchTextChanged"/>
-                    <TextBlock Text="?? Search assets..." 
+                    <TextBlock Text="Search assets..." 
                                IsHitTestVisible="False"
                                Foreground="{DynamicResource SubtextBrush}"
                                FontSize="13"
@@ -219,16 +218,16 @@
                 <ToggleButton x:Name="FilterAll" Content="All" IsChecked="True"
                               Style="{StaticResource FilterChip}" Margin="0,0,5,0"
                               Click="OnWarrantyFilterClick"/>
-                <ToggleButton x:Name="FilterValid" Content="? Valid"
+                <ToggleButton x:Name="FilterValid" Content="Valid"
                               Style="{StaticResource FilterChip}" Margin="0,0,5,0"
                               Click="OnWarrantyFilterClick"/>
-                <ToggleButton x:Name="FilterExpiring" Content="?? Expiring"
+                <ToggleButton x:Name="FilterExpiring" Content="Expiring"
                               Style="{StaticResource FilterChip}" Margin="0,0,5,0"
                               Click="OnWarrantyFilterClick"/>
-                <ToggleButton x:Name="FilterExpired" Content="? Expired"
+                <ToggleButton x:Name="FilterExpired" Content="Expired"
                               Style="{StaticResource FilterChip}" Margin="0,0,5,0"
                               Click="OnWarrantyFilterClick"/>
-                <ToggleButton x:Name="FilterR22" Content="?? R-22"
+                <ToggleButton x:Name="FilterR22" Content="R-22"
                               Style="{StaticResource FilterChip}" Margin="0,0,15,0"
                               Click="OnWarrantyFilterClick"/>
                 
@@ -236,11 +235,11 @@
                            VerticalAlignment="Center" Margin="0,0,10,0"/>
                 <ComboBox x:Name="EquipmentFilter" Width="150" SelectionChanged="OnEquipmentFilterChanged">
                     <ComboBoxItem Content="All Equipment" IsSelected="True"/>
-                    <ComboBoxItem Content="?? Furnace"/>
-                    <ComboBoxItem Content="?? Air Conditioner"/>
-                    <ComboBoxItem Content="?? Heat Pump"/>
-                    <ComboBoxItem Content="?? Mini Split"/>
-                    <ComboBoxItem Content="??? Thermostat"/>
+                    <ComboBoxItem Content="Furnace"/>
+                    <ComboBoxItem Content="Air Conditioner"/>
+                    <ComboBoxItem Content="Heat Pump"/>
+                    <ComboBoxItem Content="Mini Split"/>
+                    <ComboBoxItem Content="Thermostat"/>
                 </ComboBox>
             </StackPanel>
         </Grid>
@@ -438,21 +437,21 @@
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
-                                    <Button Content="" ToolTip="View Details"
+                                    <Button Content="View" ToolTip="View Details"
                                             Click="OnViewClick" Tag="{Binding}"
                                             Background="Transparent" BorderThickness="0"
                                             Foreground="{DynamicResource TextBrush}"
-                                            FontSize="14" Padding="6,4" Cursor="Hand"/>
-                                    <Button Content="?" ToolTip="Edit Asset"
+                                            FontSize="12" Padding="6,4" Cursor="Hand"/>
+                                    <Button Content="Edit" ToolTip="Edit Asset"
                                             Click="OnEditClick" Tag="{Binding}"
                                             Background="Transparent" BorderThickness="0"
                                             Foreground="{DynamicResource PrimaryBrush}"
-                                            FontSize="14" Padding="6,4" Cursor="Hand"/>
-                                    <Button Content="" ToolTip="Delete Asset"
+                                            FontSize="12" Padding="6,4" Cursor="Hand"/>
+                                    <Button Content="Delete" ToolTip="Delete Asset"
                                             Click="OnDeleteClick" Tag="{Binding}"
                                             Background="Transparent" BorderThickness="0"
                                             Foreground="{DynamicResource ErrorBrush}"
-                                            FontSize="14" Padding="6,4" Cursor="Hand"/>
+                                            FontSize="12" Padding="6,4" Cursor="Hand"/>
                                 </StackPanel>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
@@ -492,16 +491,16 @@
 
                 <!-- Page navigation -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal">
-                    <Button x:Name="FirstPageBtn" Content="?" Click="OnFirstPageClick"
+                    <Button x:Name="FirstPageBtn" Content="|&lt;" Click="OnFirstPageClick"
                             Style="{StaticResource SecondaryButton}" Padding="8,4" Margin="0,0,5,0"/>
-                    <Button x:Name="PrevPageBtn" Content="?" Click="OnPrevPageClick"
+                    <Button x:Name="PrevPageBtn" Content="&lt;" Click="OnPrevPageClick"
                             Style="{StaticResource SecondaryButton}" Padding="8,4" Margin="0,0,5,0"/>
                     <TextBlock x:Name="CurrentPageText" Text="Page 1" FontSize="12" 
                                Foreground="{DynamicResource TextBrush}"
                                VerticalAlignment="Center" Margin="10,0"/>
-                    <Button x:Name="NextPageBtn" Content="?" Click="OnNextPageClick"
+                    <Button x:Name="NextPageBtn" Content="&gt;" Click="OnNextPageClick"
                             Style="{StaticResource SecondaryButton}" Padding="8,4" Margin="0,0,5,0"/>
-                    <Button x:Name="LastPageBtn" Content="?" Click="OnLastPageClick"
+                    <Button x:Name="LastPageBtn" Content="&gt;|" Click="OnLastPageClick"
                             Style="{StaticResource SecondaryButton}" Padding="8,4"/>
                 </StackPanel>
             </Grid>
@@ -511,7 +510,6 @@
         <Border Grid.RowSpan="5" Background="#80000000" CornerRadius="8"
                 x:Name="LoadingOverlay" Visibility="Collapsed">
             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                <TextBlock Text="?" FontSize="32" HorizontalAlignment="Center"/>
                 <TextBlock Text="Loading assets..." FontSize="14" Foreground="White"
                            HorizontalAlignment="Center" Margin="0,10,0,0"/>
             </StackPanel>

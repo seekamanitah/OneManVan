@@ -9,7 +9,6 @@ using Microsoft.Win32;
 using OneManVan.Dialogs;
 using OneManVan.Shared.Models;
 using OneManVan.Shared.Models.Enums;
-using OneManVan.Shared.Models.Enums;
 using OneManVan.Services;
 
 namespace OneManVan.Pages;
@@ -188,8 +187,7 @@ public partial class ProductsDataGridPage : UserControl
         NoSelectionPanel.Visibility = Visibility.Collapsed;
         ProductDetailsPanel.Visibility = Visibility.Visible;
 
-        // Header
-        DetailCategoryIcon.Text = GetCategoryIcon(product.Category);
+        // Header (removed DetailCategoryIcon - emoji removal)
         DetailModelNumber.Text = product.ModelNumber;
         DetailManufacturer.Text = product.Manufacturer;
         DetailProductName.Text = product.ProductName ?? "";

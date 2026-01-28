@@ -43,7 +43,7 @@ public partial class HomePage : UserControl
         var dialog = new Microsoft.Win32.SaveFileDialog
         {
             Title = "Export Backup",
-            Filter = "JSON Backup|*.json|All Files|*.*",
+            Filter = "JSON Backup|*.json|ZIP Backup|*.zip|All Files|*.*",
             FileName = $"OneManVan_Backup_{DateTime.Now:yyyyMMdd_HHmmss}.json"
         };
 
@@ -51,9 +51,18 @@ public partial class HomePage : UserControl
         {
             try
             {
-                await App.BackupService.ExportToJsonAsync(dialog.FileName);
-                MessageBox.Show($"Backup saved to:\n{dialog.FileName}", "Backup Complete",
-                    MessageBoxButton.OK, MessageBoxImage.Information);
+                var result = await App.BackupService.CreateBackupAsync(dialog.FileName);
+                if (result.Success)
+                {
+                    MessageBox.Show($"Backup saved to:\n{result.FilePath}\n\nRecords: {result.RecordCount}", 
+                        "Backup Complete",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                else
+                {
+                    MessageBox.Show($"Backup failed: {result.Message}", "Error",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
             catch (Exception ex)
             {

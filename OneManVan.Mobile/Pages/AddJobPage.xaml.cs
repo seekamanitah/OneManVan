@@ -167,6 +167,16 @@ public partial class AddJobPage
                 estimatedHours = hours;
             }
 
+            // Parse financial fields
+            var laborTotal = decimal.TryParse(LaborTotalEntry.Text, out var labor) ? labor : 0;
+            var partsTotal = decimal.TryParse(PartsTotalEntry.Text, out var parts) ? parts : 0;
+            var taxRate = decimal.TryParse(TaxRateEntry.Text, out var tax) ? tax / 100 : 0.07m; // Convert % to decimal
+            var taxIncluded = TaxIncludedSwitch.IsToggled;
+            
+            var subTotal = laborTotal + partsTotal;
+            var taxAmount = taxIncluded ? 0 : subTotal * taxRate;
+            var total = subTotal + taxAmount;
+
             var job = new Job
             {
                 CustomerId = _customerHelper.SelectedCustomer.Id,
@@ -179,6 +189,13 @@ public partial class AddJobPage
                 Status = status,
                 ScheduledDate = scheduledDate,
                 EstimatedHours = estimatedHours,
+                LaborTotal = laborTotal,
+                PartsTotal = partsTotal,
+                SubTotal = subTotal,
+                TaxRate = taxRate,
+                TaxAmount = taxAmount,
+                TaxIncluded = taxIncluded,
+                Total = total,
                 InternalNotes = InternalNotesEditor.Text?.Trim(),
                 CreatedAt = DateTime.UtcNow
             };

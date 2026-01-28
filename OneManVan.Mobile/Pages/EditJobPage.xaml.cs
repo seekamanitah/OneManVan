@@ -48,6 +48,10 @@ public partial class EditJobPage : ContentPage
                 DescriptionEditor.Text = _job.Description;
                 ScheduledDatePicker.Date = _job.ScheduledDate ?? DateTime.Today;
                 EstimatedHoursEntry.Text = _job.EstimatedHours.ToString();
+                LaborTotalEntry.Text = _job.LaborTotal.ToString("F2");
+                PartsTotalEntry.Text = _job.PartsTotal.ToString("F2");
+                TaxRateEntry.Text = (_job.TaxRate * 100).ToString("F2"); // Convert decimal to %
+                TaxIncludedSwitch.IsToggled = _job.TaxIncluded;
                 PriorityPicker.SelectedIndex = (int)_job.Priority;
                 StatusPicker.SelectedIndex = (int)_job.Status;
             }
@@ -84,9 +88,20 @@ public partial class EditJobPage : ContentPage
             _job.Description = DescriptionEditor.Text?.Trim();
             _job.ScheduledDate = ScheduledDatePicker.Date;
             _job.EstimatedHours = decimal.Parse(EstimatedHoursEntry.Text ?? "0");
+            _job.LaborTotal = decimal.Parse(LaborTotalEntry.Text ?? "0");
+            _job.PartsTotal = decimal.Parse(PartsTotalEntry.Text ?? "0");
+            _job.TaxRate = decimal.Parse(TaxRateEntry.Text ?? "7.0") / 100; // Convert % to decimal
+            _job.TaxIncluded = TaxIncludedSwitch.IsToggled;
             _job.Priority = (JobPriority)PriorityPicker.SelectedIndex;
             _job.Status = (JobStatus)StatusPicker.SelectedIndex;
             _job.UpdatedAt = DateTime.UtcNow;
+            
+            // Recalculate totals
+            var subTotal = _job.LaborTotal + _job.PartsTotal;
+            var taxAmount = _job.TaxIncluded ? 0 : subTotal * _job.TaxRate;
+            _job.SubTotal = subTotal;
+            _job.TaxAmount = taxAmount;
+            _job.Total = subTotal + taxAmount;
 
             await _db.SaveChangesAsync();
         }, 

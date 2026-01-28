@@ -89,6 +89,63 @@ public class UiScaleService
     }
 
     /// <summary>
+    /// Adjusts a dialog window's size to account for UI scaling.
+    /// Call this method after ShowDialog to ensure content fits properly at all scale levels.
+    /// </summary>
+    /// <param name="dialog">The dialog window to adjust</param>
+    /// <param name="baseHeight">Optional base height. If not provided, uses current height.</param>
+    /// <param name="baseWidth">Optional base width. If not provided, uses current width.</param>
+    public void AdjustDialogForScale(Window dialog, double? baseHeight = null, double? baseWidth = null)
+    {
+        if (dialog == null) return;
+
+        var targetHeight = baseHeight ?? dialog.Height;
+        var targetWidth = baseWidth ?? dialog.Width;
+
+        // If scale is greater than 1.0, increase dialog size proportionally
+        if (CurrentScale > 1.0)
+        {
+            var scaleFactor = Math.Min(CurrentScale, 1.3); // Cap at 1.3 to avoid huge dialogs
+            
+            if (!double.IsNaN(targetHeight))
+            {
+                dialog.Height = targetHeight * scaleFactor;
+            }
+            
+            if (!double.IsNaN(targetWidth))
+            {
+                dialog.Width = targetWidth * scaleFactor;
+            }
+
+            // If dialog has min/max constraints, adjust those too
+            if (dialog.MinHeight > 0)
+            {
+                dialog.MinHeight *= scaleFactor;
+            }
+            if (dialog.MaxHeight > 0 && dialog.MaxHeight < double.PositiveInfinity)
+            {
+                dialog.MaxHeight *= scaleFactor;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Makes a dialog resizable if UI scale is above threshold.
+    /// Useful for fixed-size dialogs that might overflow at high scales.
+    /// </summary>
+    /// <param name="dialog">The dialog window to adjust</param>
+    /// <param name="scaleThreshold">Scale threshold above which to make resizable (default: 1.15)</param>
+    public void MakeDialogScaleAware(Window dialog, double scaleThreshold = 1.15)
+    {
+        if (dialog == null) return;
+
+        if (CurrentScale >= scaleThreshold && dialog.ResizeMode == ResizeMode.NoResize)
+        {
+            dialog.ResizeMode = ResizeMode.CanResize;
+        }
+    }
+
+    /// <summary>
     /// Applies the scale transform to the main window.
     /// </summary>
     private void ApplyScale(double scale)

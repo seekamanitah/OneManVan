@@ -14,6 +14,24 @@ public class Site
     public int CustomerId { get; set; }
 
     /// <summary>
+    /// Optional company owner of this site (for commercial properties).
+    /// </summary>
+    public int? CompanyId { get; set; }
+
+    /// <summary>
+    /// User-friendly name for this site (e.g., "Main Office", "Rental #1", "Smith Residence").
+    /// Helps distinguish between multiple sites under the same customer/company.
+    /// </summary>
+    [MaxLength(100)]
+    public string? SiteName { get; set; }
+
+    /// <summary>
+    /// Additional description about the location.
+    /// </summary>
+    [MaxLength(500)]
+    public string? LocationDescription { get; set; }
+
+    /// <summary>
     /// Auto-generated site number (e.g., S-0001).
     /// </summary>
     [MaxLength(20)]
@@ -176,9 +194,17 @@ public class Site
 
     public Customer Customer { get; set; } = null!;
 
+    public Company? Company { get; set; }
+
     public ICollection<Asset> Assets { get; set; } = [];
 
     // === Computed Properties ===
+
+    /// <summary>
+    /// Display name for this site (SiteName if set, otherwise address).
+    /// </summary>
+    [NotMapped]
+    public string DisplayName => !string.IsNullOrWhiteSpace(SiteName) ? SiteName : Address;
 
     [NotMapped]
     public string FullAddress

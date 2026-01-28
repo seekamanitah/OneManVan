@@ -31,7 +31,9 @@ public partial class JobKanbanPage : UserControl
     {
         private readonly Action _execute;
         public RelayCommand(Action execute) => _execute = execute;
+#pragma warning disable CS0067 // Event never used but required by ICommand interface
         public event EventHandler? CanExecuteChanged;
+#pragma warning restore CS0067
         public bool CanExecute(object? parameter) => true;
         public void Execute(object? parameter) => _execute();
     }
@@ -447,17 +449,6 @@ public partial class JobKanbanPage : UserControl
                 }
             }
         );
-        return;
-        
-        // Old code below - keeping for reference
-        var detailDialog = new Dialogs.JobDetailDialog(_dbContext, job);
-        detailDialog.ShowDialog();
-        
-        // Refresh if job was edited
-        if (detailDialog.JobWasEdited)
-        {
-            _ = LoadJobsAsync();
-        }
     }
 
     private async void OnRefreshClick(object sender, RoutedEventArgs e)

@@ -49,6 +49,11 @@ public class Invoice
     [Column(TypeName = "decimal(10,2)")]
     public decimal TaxAmount { get; set; }
 
+    /// <summary>
+    /// When true, the price already includes tax (no additional tax calculation needed).
+    /// </summary>
+    public bool TaxIncluded { get; set; } = false;
+
     [Column(TypeName = "decimal(10,2)")]
     public decimal Total { get; set; }
 
@@ -67,6 +72,12 @@ public class Invoice
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    // Soft delete properties
+    public bool IsDeleted { get; set; } = false;
+    public DateTime? DeletedAt { get; set; }
+    [MaxLength(200)]
+    public string? DeletedBy { get; set; }
+
     // Navigation properties
     public Job? Job { get; set; }
 
@@ -75,6 +86,8 @@ public class Invoice
     public Customer Customer { get; set; } = null!;
 
     public ICollection<Payment> Payments { get; set; } = [];
+    
+    public ICollection<InvoiceLineItem> LineItems { get; set; } = [];
 
     public decimal BalanceDue => Total - AmountPaid;
 

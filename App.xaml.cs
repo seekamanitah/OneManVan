@@ -4,6 +4,8 @@ using System.Windows;
 using Microsoft.EntityFrameworkCore;
 using OneManVan.Shared.Data;
 using OneManVan.Services;
+using OneManVan.Shared.Services;
+using OneManVan.Shared.Models;
 
 namespace OneManVan;
 
@@ -13,10 +15,11 @@ namespace OneManVan;
 public partial class App : Application
 {
     public static OneManVanDbContext DbContext { get; private set; } = null!;
-    public static IBackupService BackupService { get; private set; } = null!;
+    public static BackupService BackupService { get; private set; } = null!;
     public static ThemeService ThemeService { get; private set; } = null!;
     public static UiScaleService UiScaleService { get; private set; } = null!;
     public static ScheduledBackupService ScheduledBackupService { get; private set; } = null!;
+    public static ISettingsStorage SettingsStorage { get; private set; } = null!;
     public static TradeConfigurationService TradeService { get; private set; } = null!;
     public static NotificationBadgeService BadgeService => NotificationBadgeService.Instance;
     public static AppSettings Settings { get; private set; } = null!;
@@ -28,8 +31,11 @@ public partial class App : Application
         // Load settings
         Settings = LoadSettings();
 
-        // Initialize trade configuration service
-        TradeService = new TradeConfigurationService();
+        // Initialize settings storage for shared services
+        SettingsStorage = new DesktopSettingsStorage();
+        
+        // Initialize trade configuration service (now uses shared implementation)
+        TradeService = new TradeConfigurationService(SettingsStorage);
 
         // Initialize theme service
         ThemeService = new ThemeService();
@@ -39,30 +45,66 @@ public partial class App : Application
         UiScaleService = new UiScaleService();
         UiScaleService.Initialize();
 
-        // Initialize database
-        var dbPath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "OneManVan",
-            Settings.Database.LocalPath);
+        // Initialize dialog service with UI scale support
+        DialogService.Initialize(UiScaleService);
 
-        // Ensure directory exists
-        var dbDir = Path.GetDirectoryName(dbPath)!;
-        if (!Directory.Exists(dbDir))
-        {
-            Directory.CreateDirectory(dbDir);
-        }
+        // Initialize database using DatabaseConfigService
+        var configDir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "OneManVan");
+        
+        var dbConfigService = new DatabaseConfigService(configDir);
+        var dbConfig = dbConfigService.LoadConfiguration();
 
         var optionsBuilder = new DbContextOptionsBuilder<OneManVanDbContext>();
+        string? dbPath = null; // Track dbPath for SQLite mode
 
-        if (Settings.Database.Mode == "Local")
+        if (dbConfig.Type == DatabaseType.SQLite)
         {
+            // SQLite mode
+            dbPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "OneManVan",
+                dbConfig.SqliteFilePath);
+
+            // Ensure directory exists
+            var dbDir = Path.GetDirectoryName(dbPath)!;
+            if (!Directory.Exists(dbDir))
+            {
+                Directory.CreateDirectory(dbDir);
+            }
+
             optionsBuilder.UseSqlite($"Data Source={dbPath}");
         }
         else
         {
-            // Remote mode - For now, fall back to SQLite
-            // SQL Server support requires Microsoft.EntityFrameworkCore.SqlServer NuGet
+            // SQL Server mode (Note: Requires Microsoft.EntityFrameworkCore.SqlServer package)
+            var connectionString = dbConfig.GetConnectionString();
+            
+            // For now, fall back to SQLite if SQL Server package is not available
+            // TODO: Install Microsoft.EntityFrameworkCore.SqlServer package for full SQL Server support
+            dbPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "OneManVan",
+                "OneManVan.db");
+            
+            var dbDir = Path.GetDirectoryName(dbPath)!;
+            if (!Directory.Exists(dbDir))
+            {
+                Directory.CreateDirectory(dbDir);
+            }
+            
             optionsBuilder.UseSqlite($"Data Source={dbPath}");
+            
+            // Show warning that SQL Server config exists but is not yet supported
+            MessageBox.Show(
+                "SQL Server configuration detected, but full support requires additional packages.\n\n" +
+                "The app will use local SQLite for now. To enable SQL Server:\n" +
+                "1. Install Microsoft.EntityFrameworkCore.SqlServer NuGet package\n" +
+                "2. Restart the application",
+                "SQL Server Support Pending",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
         }
 
         DbContext = new OneManVanDbContext(optionsBuilder.Options);
@@ -126,7 +168,9 @@ public partial class App : Application
             DbContext.Database.EnsureCreated();
         }
 
-        BackupService = new BackupService(DbContext, dbPath);
+        // Initialize SettingsStorage for BackupService
+        var settingsStorage = new DesktopSettingsStorage();
+        BackupService = new BackupService(DbContext, settingsStorage, dbPath);
 
         // Initialize scheduled backup service
         ScheduledBackupService = new ScheduledBackupService(BackupService);
@@ -146,18 +190,9 @@ public partial class App : Application
         {
             try
             {
-            var backupDir = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "OneManVan",
-                    Settings.Backup.BackupFolder);
-
-                if (!Directory.Exists(backupDir))
-                {
-                    Directory.CreateDirectory(backupDir);
-                }
-
-                var backupPath = Path.Combine(backupDir, $"OneManVan_Backup_{DateTime.Now:yyyyMMdd_HHmmss}.json");
-                BackupService.ExportToJsonAsync(backupPath).Wait();
+                var backupPath = Path.Combine(BackupService.GetBackupDirectory(), 
+                    $"OneManVan_Backup_{DateTime.Now:yyyyMMdd_HHmmss}.json");
+                BackupService.CreateBackupAsync(backupPath).Wait();
             }
             catch
             {

@@ -18,7 +18,7 @@ public partial class AddInvoicePage
     private readonly OneManVanDbContext _db;
     private readonly CustomerSelectionHelper _customerHelper;
     private readonly LineItemDialogService _lineItemDialog;
-    private ObservableCollection<InvoiceLineItem> _lineItems = [];
+    private ObservableCollection<Shared.Models.InvoiceLineItem> _lineItems = [];
 
     public AddInvoicePage(
         OneManVanDbContext db, 
@@ -105,7 +105,7 @@ public partial class AddInvoicePage
         if (itemType == "Cancel" || string.IsNullOrWhiteSpace(itemType))
             return;
 
-        InvoiceLineItem? lineItem = null;
+        Shared.Models.InvoiceLineItem? lineItem = null;
 
         switch (itemType)
         {
@@ -128,7 +128,7 @@ public partial class AddInvoicePage
         }
     }
 
-    private async Task<InvoiceLineItem?> AddFromInventoryAsync()
+    private async Task<Shared.Models.InvoiceLineItem?> AddFromInventoryAsync()
     {
         try
         {
@@ -172,12 +172,14 @@ public partial class AddInvoicePage
                 return null;
             }
 
-            return new InvoiceLineItem
+            return new Shared.Models.InvoiceLineItem
             {
+                Source = "Inventory",
+                SourceId = selectedItem.Id,
                 Description = selectedItem.Name,
                 Quantity = qty,
                 UnitPrice = selectedItem.Price,
-                InventoryItemId = selectedItem.Id
+                DisplayOrder = _lineItems.Count
             };
         }
         catch (Exception ex)
@@ -187,7 +189,7 @@ public partial class AddInvoicePage
         }
     }
 
-    private async Task<InvoiceLineItem?> AddFromProductCatalogAsync()
+    private async Task<Shared.Models.InvoiceLineItem?> AddFromProductCatalogAsync()
     {
         try
         {
@@ -230,12 +232,14 @@ public partial class AddInvoicePage
                 return null;
             }
 
-            return new InvoiceLineItem
+            return new Shared.Models.InvoiceLineItem
             {
+                Source = "Product",
+                SourceId = selectedProduct.Id,
                 Description = selectedProduct.DisplayName,
                 Quantity = qty,
                 UnitPrice = selectedProduct.SuggestedSellPrice ?? 0,
-                ProductId = selectedProduct.Id
+                DisplayOrder = _lineItems.Count
             };
         }
         catch (Exception ex)
@@ -245,7 +249,7 @@ public partial class AddInvoicePage
         }
     }
 
-    private async Task<InvoiceLineItem?> AddManualEntryAsync()
+    private async Task<Shared.Models.InvoiceLineItem?> AddManualEntryAsync()
     {
         // Use LineItemDialogService for consistent UX
         var input = await _lineItemDialog.GetLineItemInputAsync(this);
@@ -253,17 +257,19 @@ public partial class AddInvoicePage
         if (input == null)
             return null;
 
-        return new InvoiceLineItem
+        return new Shared.Models.InvoiceLineItem
         {
+            Source = "Custom",
             Description = input.Description,
             Quantity = input.Quantity,
-            UnitPrice = input.UnitPrice
+            UnitPrice = input.UnitPrice,
+            DisplayOrder = _lineItems.Count
         };
     }
 
     private void OnRemoveLineItemClicked(object sender, EventArgs e)
     {
-        if (sender is Button button && button.BindingContext is InvoiceLineItem item)
+        if (sender is Button button && button.BindingContext is Shared.Models.InvoiceLineItem item)
         {
             _lineItems.Remove(item);
             UpdateTotals();
@@ -271,6 +277,11 @@ public partial class AddInvoicePage
     }
 
     private void OnTaxRateChanged(object sender, TextChangedEventArgs e)
+    {
+        UpdateTotals();
+    }
+
+    private void OnTaxIncludedToggled(object sender, ToggledEventArgs e)
     {
         UpdateTotals();
     }
@@ -283,8 +294,9 @@ public partial class AddInvoicePage
         if (!decimal.TryParse(TaxRateEntry.Text, out var taxRate))
             taxRate = 0;
 
-        var taxAmount = subtotal * (taxRate / 100);
-        TaxAmountLabel.Text = $"${taxAmount:N2}";
+        var taxIncluded = TaxIncludedSwitch.IsToggled;
+        var taxAmount = taxIncluded ? 0 : subtotal * (taxRate / 100);
+        TaxAmountLabel.Text = taxIncluded ? "Included" : $"${taxAmount:N2}";
 
         var total = subtotal + taxAmount;
         TotalLabel.Text = $"${total:N2}";
@@ -312,7 +324,9 @@ public partial class AddInvoicePage
             var subtotal = _lineItems.Sum(i => i.Total);
             if (!decimal.TryParse(TaxRateEntry.Text, out var taxRate))
                 taxRate = 0;
-            var taxAmount = subtotal * (taxRate / 100);
+            
+            var taxIncluded = TaxIncludedSwitch.IsToggled;
+            var taxAmount = taxIncluded ? 0 : subtotal * (taxRate / 100);
             var total = subtotal + taxAmount;
 
             // Generate invoice number
@@ -335,18 +349,30 @@ public partial class AddInvoicePage
                 Status = status,
                 InvoiceDate = InvoiceDatePicker.Date ?? DateTime.Today,
                 DueDate = DueDatePicker.Date ?? DateTime.Today.AddDays(30),
-                // Put all line items into OtherAmount for simplicity
+                // Legacy fields for backward compatibility
+                LaborAmount = 0,
+                PartsAmount = 0,
                 OtherAmount = subtotal,
                 SubTotal = subtotal,
                 TaxRate = taxRate,
                 TaxAmount = taxAmount,
+                TaxIncluded = taxIncluded,
                 Total = total,
                 Notes = $"{TitleEntry.Text.Trim()}\n\n{NotesEditor.Text?.Trim()}",
                 CreatedAt = DateTime.UtcNow
             };
 
             _db.Invoices.Add(invoice);
-            await _db.SaveChangesAsync();
+            await _db.SaveChangesAsync(); // Save invoice first to get ID
+
+            // Now save all line items with the invoice ID
+            foreach (var lineItem in _lineItems)
+            {
+                lineItem.InvoiceId = invoice.Id;
+                lineItem.CreatedAt = DateTime.UtcNow;
+                _db.InvoiceLineItems.Add(lineItem);
+            }
+            await _db.SaveChangesAsync(); // Save line items
 
             try { HapticFeedback.Default.Perform(HapticFeedbackType.Click); } catch { }
 
@@ -363,19 +389,4 @@ public partial class AddInvoicePage
     {
         await Shell.Current.GoToAsync("..");
     }
-}
-
-/// <summary>
-/// View model for invoice line items.
-/// </summary>
-public class InvoiceLineItem
-{
-    public string Description { get; set; } = string.Empty;
-    public decimal Quantity { get; set; } = 1;
-    public decimal UnitPrice { get; set; }
-    public decimal Total => Quantity * UnitPrice;
-    
-    // Optional references to source items
-    public int? InventoryItemId { get; set; }
-    public int? ProductId { get; set; }
 }

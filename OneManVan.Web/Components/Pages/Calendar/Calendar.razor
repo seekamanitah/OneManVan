@@ -1,0 +1,495 @@
+@page "/calendar"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@using OneManVan.Shared.Models.Enums
+@attribute [Authorize]
+@inject IDbContextFactory<OneManVanDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Calendar - OneManVan</PageTitle>
+
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2">Job Calendar</h1>
+                <div class="btn-group" role="group">
+                    <button class="btn btn-outline-primary" @onclick="PreviousPeriod">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                    <button class="btn btn-outline-primary" @onclick="Today">Today</button>
+                    <button class="btn btn-outline-primary" @onclick="NextPeriod">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
+                <div class="btn-group" role="group">
+                    <button class="btn @(viewMode == ViewMode.Month ? "btn-primary" : "btn-outline-primary")" @onclick="() => SetViewMode(ViewMode.Month)">Month</button>
+                    <button class="btn @(viewMode == ViewMode.Week ? "btn-primary" : "btn-outline-primary")" @onclick="() => SetViewMode(ViewMode.Week)">Week</button>
+                    <button class="btn @(viewMode == ViewMode.Day ? "btn-primary" : "btn-outline-primary")" @onclick="() => SetViewMode(ViewMode.Day)">Day</button>
+                </div>
+            </div>
+
+            <!-- Calendar View -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h4 class="mb-0">@GetPeriodTitle()</h4>
+                </div>
+                <div class="card-body p-0">
+                    @if (isLoading)
+                    {
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-primary"></div>
+                        </div>
+                    }
+                    else
+                    {
+                        @switch (viewMode)
+                        {
+                            case ViewMode.Month:
+                                <div class="calendar-month">
+                                    @RenderMonthView()
+                                </div>
+                                break;
+                            case ViewMode.Week:
+                                <div class="calendar-week">
+                                    @RenderWeekView()
+                                </div>
+                                break;
+                            case ViewMode.Day:
+                                <div class="calendar-day">
+                                    @RenderDayView()
+                                </div>
+                                break;
+                        }
+                    }
+                </div>
+            </div>
+
+            <!-- Legend -->
+            <div class="card border-0 shadow-sm mt-3">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-auto">
+                            <span class="badge" style="background-color: #007bff;">Draft</span>
+                        </div>
+                        <div class="col-auto">
+                            <span class="badge" style="background-color: #28a745;">Scheduled</span>
+                        </div>
+                        <div class="col-auto">
+                            <span class="badge" style="background-color: #ffc107; color: #000;">In Progress</span>
+                        </div>
+                        <div class="col-auto">
+                            <span class="badge" style="background-color: #17a2b8;">Completed</span>
+                        </div>
+                        <div class="col-auto">
+                            <span class="badge" style="background-color: #6c757d;">Cancelled</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .calendar-month {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 1px;
+        background: #dee2e6;
+    }
+
+    .calendar-day-header {
+        background: #f8f9fa;
+        padding: 12px;
+        text-align: center;
+        font-weight: 600;
+        border: 1px solid #dee2e6;
+    }
+
+    .calendar-day-cell {
+        background: white;
+        min-height: 120px;
+        padding: 8px;
+        border: 1px solid #dee2e6;
+        position: relative;
+    }
+
+    .calendar-day-cell.other-month {
+        background: #f8f9fa;
+        opacity: 0.6;
+    }
+
+    .calendar-day-cell.today {
+        background: #e7f3ff;
+    }
+
+    .calendar-day-number {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 4px;
+    }
+
+    .calendar-event {
+        font-size: 11px;
+        padding: 2px 6px;
+        margin-bottom: 2px;
+        border-radius: 3px;
+        cursor: pointer;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: white;
+    }
+
+    .calendar-event:hover {
+        opacity: 0.8;
+    }
+
+    .calendar-week, .calendar-day {
+        overflow-x: auto;
+    }
+
+    .time-slot {
+        border-bottom: 1px solid #dee2e6;
+        padding: 8px;
+        min-height: 60px;
+    }
+
+    .time-label {
+        font-size: 12px;
+        color: #6c757d;
+        font-weight: 600;
+    }
+</style>
+
+@code {
+    private enum ViewMode { Month, Week, Day }
+    
+    private ViewMode viewMode = ViewMode.Month;
+    private DateTime currentDate = DateTime.Today;
+    private bool isLoading = true;
+    private List<Job> jobs = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadJobsAsync();
+    }
+
+    private async Task LoadJobsAsync()
+    {
+        isLoading = true;
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            
+            var startDate = GetPeriodStart();
+            var endDate = GetPeriodEnd();
+
+            jobs = await db.Jobs
+                .Include(j => j.Customer)
+                .Where(j => j.ScheduledDate.HasValue && 
+                           j.ScheduledDate.Value >= startDate && 
+                           j.ScheduledDate.Value <= endDate)
+                .OrderBy(j => j.ScheduledDate)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading jobs: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private DateTime GetPeriodStart()
+    {
+        return viewMode switch
+        {
+            ViewMode.Month => new DateTime(currentDate.Year, currentDate.Month, 1),
+            ViewMode.Week => currentDate.AddDays(-(int)currentDate.DayOfWeek),
+            ViewMode.Day => currentDate,
+            _ => currentDate
+        };
+    }
+
+    private DateTime GetPeriodEnd()
+    {
+        return viewMode switch
+        {
+            ViewMode.Month => new DateTime(currentDate.Year, currentDate.Month, 1).AddMonths(1).AddDays(-1),
+            ViewMode.Week => currentDate.AddDays(6 - (int)currentDate.DayOfWeek),
+            ViewMode.Day => currentDate,
+            _ => currentDate
+        };
+    }
+
+    private string GetPeriodTitle()
+    {
+        return viewMode switch
+        {
+            ViewMode.Month => currentDate.ToString("MMMM yyyy"),
+            ViewMode.Week => $"{GetPeriodStart():MMM d} - {GetPeriodEnd():MMM d, yyyy}",
+            ViewMode.Day => currentDate.ToString("MMMM d, yyyy"),
+            _ => currentDate.ToString("MMMM yyyy")
+        };
+    }
+
+    private async Task PreviousPeriod()
+    {
+        currentDate = viewMode switch
+        {
+            ViewMode.Month => currentDate.AddMonths(-1),
+            ViewMode.Week => currentDate.AddDays(-7),
+            ViewMode.Day => currentDate.AddDays(-1),
+            _ => currentDate
+        };
+        await LoadJobsAsync();
+    }
+
+    private async Task NextPeriod()
+    {
+        currentDate = viewMode switch
+        {
+            ViewMode.Month => currentDate.AddMonths(1),
+            ViewMode.Week => currentDate.AddDays(7),
+            ViewMode.Day => currentDate.AddDays(1),
+            _ => currentDate
+        };
+        await LoadJobsAsync();
+    }
+
+    private async Task Today()
+    {
+        currentDate = DateTime.Today;
+        await LoadJobsAsync();
+    }
+
+    private async Task SetViewMode(ViewMode mode)
+    {
+        viewMode = mode;
+        await LoadJobsAsync();
+    }
+
+    private RenderFragment RenderMonthView() => builder =>
+    {
+        var monthStart = new DateTime(currentDate.Year, currentDate.Month, 1);
+        var monthEnd = monthStart.AddMonths(1).AddDays(-1);
+        var calendarStart = monthStart.AddDays(-(int)monthStart.DayOfWeek);
+        var calendarEnd = monthEnd.AddDays(6 - (int)monthEnd.DayOfWeek);
+
+        // Day headers
+        var dayNames = new[] { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" };
+        foreach (var dayName in dayNames)
+        {
+            builder.OpenElement(0, "div");
+            builder.AddAttribute(1, "class", "calendar-day-header");
+            builder.AddContent(2, dayName);
+            builder.CloseElement();
+        }
+
+        // Day cells
+        var currentDay = calendarStart;
+        while (currentDay <= calendarEnd)
+        {
+            var day = currentDay;
+            var isCurrentMonth = day.Month == currentDate.Month;
+            var isToday = day.Date == DateTime.Today;
+            var dayJobs = jobs.Where(j => j.ScheduledDate?.Date == day.Date).ToList();
+
+            builder.OpenElement(3, "div");
+            builder.AddAttribute(4, "class", $"calendar-day-cell {(isCurrentMonth ? "" : "other-month")} {(isToday ? "today" : "")}");
+            
+            builder.OpenElement(5, "div");
+            builder.AddAttribute(6, "class", "calendar-day-number");
+            builder.AddContent(7, day.Day);
+            builder.CloseElement();
+
+            foreach (var job in dayJobs.Take(3))
+            {
+                var jobRef = job;
+                builder.OpenElement(8, "div");
+                builder.AddAttribute(9, "class", "calendar-event");
+                builder.AddAttribute(10, "style", $"background-color: {GetJobColor(job.Status)};");
+                builder.AddAttribute(11, "onclick", EventCallback.Factory.Create(this, () => NavigateToJob(jobRef.Id)));
+                builder.AddAttribute(12, "title", $"{job.Title} - {job.Customer?.Name}");
+                builder.AddContent(13, $"{job.ScheduledDate:HH:mm} {job.Title}");
+                builder.CloseElement();
+            }
+
+            if (dayJobs.Count > 3)
+            {
+                builder.OpenElement(14, "div");
+                builder.AddAttribute(15, "class", "calendar-event");
+                builder.AddAttribute(16, "style", "background-color: #6c757d;");
+                builder.AddContent(17, $"+{dayJobs.Count - 3} more");
+                builder.CloseElement();
+            }
+
+            builder.CloseElement();
+            currentDay = currentDay.AddDays(1);
+        }
+    };
+
+    private RenderFragment RenderWeekView() => builder =>
+    {
+        var weekStart = GetPeriodStart();
+        
+        builder.OpenElement(0, "div");
+        builder.AddAttribute(1, "class", "table-responsive");
+        builder.OpenElement(2, "table");
+        builder.AddAttribute(3, "class", "table table-bordered mb-0");
+        
+        // Header
+        builder.OpenElement(4, "thead");
+        builder.OpenElement(5, "tr");
+        builder.OpenElement(6, "th");
+        builder.AddAttribute(7, "style", "width: 80px;");
+        builder.AddContent(8, "Time");
+        builder.CloseElement();
+
+        for (int i = 0; i < 7; i++)
+        {
+            var day = weekStart.AddDays(i);
+            builder.OpenElement(9, "th");
+            builder.AddAttribute(10, "class", "text-center");
+            builder.AddContent(11, day.ToString("ddd M/d"));
+            builder.CloseElement();
+        }
+        builder.CloseElement();
+        builder.CloseElement();
+
+        // Body - time slots
+        builder.OpenElement(12, "tbody");
+        for (int hour = 6; hour < 20; hour++)
+        {
+            builder.OpenElement(13, "tr");
+            builder.OpenElement(14, "td");
+            builder.AddAttribute(15, "class", "time-label");
+            builder.AddContent(16, $"{hour:00}:00");
+            builder.CloseElement();
+
+            for (int i = 0; i < 7; i++)
+            {
+                var day = weekStart.AddDays(i);
+                var dayJobs = jobs.Where(j => j.ScheduledDate?.Date == day.Date && 
+                                             j.ScheduledDate?.Hour == hour).ToList();
+                
+                builder.OpenElement(17, "td");
+                builder.AddAttribute(18, "class", "time-slot");
+                
+                foreach (var job in dayJobs)
+                {
+                    var jobRef = job;
+                    builder.OpenElement(19, "div");
+                    builder.AddAttribute(20, "class", "calendar-event mb-1");
+                    builder.AddAttribute(21, "style", $"background-color: {GetJobColor(job.Status)};");
+                    builder.AddAttribute(22, "onclick", EventCallback.Factory.Create(this, () => NavigateToJob(jobRef.Id)));
+                    builder.AddContent(23, $"{job.ScheduledDate:HH:mm} {job.Title}");
+                    builder.CloseElement();
+                }
+                
+                builder.CloseElement();
+            }
+            builder.CloseElement();
+        }
+        builder.CloseElement();
+
+        builder.CloseElement();
+        builder.CloseElement();
+    };
+
+    private RenderFragment RenderDayView() => builder =>
+    {
+        builder.OpenElement(0, "div");
+        builder.AddAttribute(1, "class", "p-3");
+
+        var dayJobs = jobs.Where(j => j.ScheduledDate?.Date == currentDate.Date)
+                         .OrderBy(j => j.ScheduledDate)
+                         .ToList();
+
+        if (!dayJobs.Any())
+        {
+            builder.OpenElement(2, "div");
+            builder.AddAttribute(3, "class", "text-center text-muted py-5");
+            builder.AddContent(4, "No jobs scheduled for this day");
+            builder.CloseElement();
+        }
+        else
+        {
+            builder.OpenElement(5, "div");
+            builder.AddAttribute(6, "class", "list-group");
+
+            foreach (var job in dayJobs)
+            {
+                var jobRef = job;
+                builder.OpenElement(7, "div");
+                builder.AddAttribute(8, "class", "list-group-item list-group-item-action");
+                builder.AddAttribute(9, "onclick", EventCallback.Factory.Create(this, () => NavigateToJob(jobRef.Id)));
+                builder.AddAttribute(10, "style", "cursor: pointer;");
+
+                builder.OpenElement(11, "div");
+                builder.AddAttribute(12, "class", "d-flex w-100 justify-content-between align-items-center");
+                
+                builder.OpenElement(13, "div");
+                builder.OpenElement(14, "h6");
+                builder.AddAttribute(15, "class", "mb-1");
+                builder.AddContent(16, job.Title);
+                builder.CloseElement();
+                
+                builder.OpenElement(17, "small");
+                builder.AddContent(18, $"{job.Customer?.Name} - {job.ScheduledDate:h:mm tt}");
+                builder.CloseElement();
+                builder.CloseElement();
+
+                builder.OpenElement(19, "span");
+                builder.AddAttribute(20, "class", "badge");
+                builder.AddAttribute(21, "style", $"background-color: {GetJobColor(job.Status)};");
+                builder.AddContent(22, job.Status.ToString());
+                builder.CloseElement();
+
+                builder.CloseElement();
+
+                if (!string.IsNullOrEmpty(job.Description))
+                {
+                    builder.OpenElement(23, "p");
+                    builder.AddAttribute(24, "class", "mb-1 small");
+                    builder.AddContent(25, job.Description);
+                    builder.CloseElement();
+                }
+
+                builder.CloseElement();
+            }
+
+            builder.CloseElement();
+        }
+
+        builder.CloseElement();
+    };
+
+    private string GetJobColor(JobStatus status)
+    {
+        return status switch
+        {
+            JobStatus.Draft => "#007bff",
+            JobStatus.Scheduled => "#28a745",
+            JobStatus.EnRoute => "#fd7e14",
+            JobStatus.InProgress => "#ffc107",
+            JobStatus.Completed => "#17a2b8",
+            JobStatus.Closed => "#6c757d",
+            JobStatus.Cancelled => "#6c757d",
+            JobStatus.OnHold => "#dc3545",
+            _ => "#6c757d"
+        };
+    }
+
+    private void NavigateToJob(int jobId)
+    {
+        Navigation.NavigateTo($"/jobs/{jobId}");
+    }
+}

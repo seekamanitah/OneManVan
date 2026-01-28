@@ -4,6 +4,7 @@ using OneManVan.Mobile.Helpers;
 using OneManVan.Shared.Data;
 using OneManVan.Shared.Models;
 using OneManVan.Shared.Models.Enums;
+using System.Collections.ObjectModel;
 
 namespace OneManVan.Mobile.Pages;
 
@@ -13,6 +14,7 @@ public partial class EditAssetPage : ContentPage
     private readonly OneManVanDbContext _db;
     private Asset? _asset;
     private int _assetId;
+    private ObservableCollection<AssetOwnerViewModel> _owners = [];
 
     public int AssetId
     {
@@ -31,6 +33,7 @@ public partial class EditAssetPage : ContentPage
     {
         InitializeComponent();
         _db = db;
+        OwnersCollection.ItemsSource = _owners;
     }
 
     private async void LoadAssetAsync()
@@ -52,6 +55,7 @@ public partial class EditAssetPage : ContentPage
             }
 
             PopulateForm();
+            await LoadOwnersAsync();
         }
         catch (Exception ex)
         {
@@ -288,7 +292,7 @@ public partial class EditAssetPage : ContentPage
     {
         if (_asset == null) return;
         
-        var choice = await DisplayActionSheet("Change Asset Location", "Cancel", null, "Site/Property", "Customer", "Clear Location");
+        var choice = await DisplayActionSheetAsync("Change Asset Location", "Cancel", null, "Site/Property", "Customer", "Clear Location");
         
         if (choice == "Site/Property")
         {
@@ -326,7 +330,7 @@ public partial class EditAssetPage : ContentPage
         }
         
         var siteOptions = sites.Select(s => $"{s.Address} ({s.Customer?.Name ?? "Unknown"})").ToArray();
-        var selected = await DisplayActionSheet("Select Site", "Cancel", null, siteOptions);
+        var selected = await DisplayActionSheetAsync("Select Site", "Cancel", null, siteOptions);
         
         if (selected != "Cancel" && !string.IsNullOrEmpty(selected))
         {
@@ -356,7 +360,7 @@ public partial class EditAssetPage : ContentPage
         }
         
         var customerOptions = customers.Select(c => c.DisplayName).ToArray();
-        var selected = await DisplayActionSheet("Select Customer", "Cancel", null, customerOptions);
+        var selected = await DisplayActionSheetAsync("Select Customer", "Cancel", null, customerOptions);
         
         if (selected != "Cancel" && !string.IsNullOrEmpty(selected))
         {
@@ -404,4 +408,271 @@ public partial class EditAssetPage : ContentPage
     {
         await Shell.Current.GoToAsync("..");
     }
+
+    private async Task LoadOwnersAsync()
+    {
+        try
+        {
+            var assetOwners = await _db.AssetOwners
+                .Where(ao => ao.AssetId == _assetId && ao.IsActive && ao.EndDate == null)
+                .ToListAsync();
+
+            _owners.Clear();
+
+            foreach (var owner in assetOwners)
+            {
+                string ownerName = "Unknown";
+                
+                if (owner.OwnerType == "Customer")
+                {
+                    var customer = await _db.Customers.FindAsync(owner.OwnerId);
+                    if (customer != null)
+                        ownerName = customer.DisplayName;
+                }
+                else if (owner.OwnerType == "Company")
+                {
+                    var company = await _db.Companies.FindAsync(owner.OwnerId);
+                    if (company != null)
+                        ownerName = company.Name;
+                }
+
+                _owners.Add(new AssetOwnerViewModel
+                {
+                    Id = owner.Id,
+                    AssetOwnerId = owner.Id,
+                    OwnerId = owner.OwnerId,
+                    OwnerType = owner.OwnerType,
+                    OwnerName = ownerName,
+                    OwnershipType = owner.OwnershipType,
+                    StartDate = owner.StartDate,
+                    Notes = owner.Notes
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Load owners error: {ex}");
+        }
+    }
+
+    private async void OnAddOwnerClicked(object sender, EventArgs e)
+    {
+        try
+        {
+            var ownerType = await DisplayActionSheetAsync(
+                "Add Owner",
+                "Cancel",
+                null,
+                "Customer",
+                "Company");
+
+            if (ownerType == "Cancel" || string.IsNullOrWhiteSpace(ownerType))
+                return;
+
+            if (ownerType == "Customer")
+            {
+                await AddCustomerOwnerAsync();
+            }
+            else if (ownerType == "Company")
+            {
+                await AddCompanyOwnerAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlertAsync("Error", $"Failed to add owner: {ex.Message}", "OK");
+        }
+    }
+
+    private async Task AddCustomerOwnerAsync()
+    {
+        var customers = await _db.Customers
+            .Where(c => c.Status == CustomerStatus.Active)
+            .OrderBy(c => c.Name)
+            .ToListAsync();
+
+        if (!customers.Any())
+        {
+            await DisplayAlertAsync("No Customers", "No active customers found.", "OK");
+            return;
+        }
+
+        var customerNames = customers.Select(c => c.DisplayName).ToArray();
+        var selected = await DisplayActionSheetAsync("Select Customer", "Cancel", null, customerNames);
+
+        if (selected == null || selected == "Cancel")
+            return;
+
+        var customer = customers.First(c => c.DisplayName == selected);
+
+        // Check if already an owner
+        if (_owners.Any(o => o.OwnerType == "Customer" && o.OwnerId == customer.Id))
+        {
+            await DisplayAlertAsync("Already Owner", "This customer is already an owner.", "OK");
+            return;
+        }
+
+        var ownershipType = await DisplayActionSheetAsync(
+            "Ownership Type",
+            "Cancel",
+            null,
+            "Primary",
+            "Shared",
+            "Leased",
+            "Managed");
+
+        if (ownershipType == "Cancel" || string.IsNullOrWhiteSpace(ownershipType))
+            return;
+
+        var assetOwner = new AssetOwner
+        {
+            AssetId = _assetId,
+            OwnerType = "Customer",
+            OwnerId = customer.Id,
+            OwnershipType = ownershipType,
+            StartDate = DateTime.UtcNow,
+            IsActive = true
+        };
+
+        _db.AssetOwners.Add(assetOwner);
+        await _db.SaveChangesAsync();
+
+        await LoadOwnersAsync();
+        try { HapticFeedback.Default.Perform(HapticFeedbackType.Click); } catch { }
+    }
+
+    private async Task AddCompanyOwnerAsync()
+    {
+        var companies = await _db.Companies
+            .Where(c => c.IsActive)
+            .OrderBy(c => c.Name)
+            .ToListAsync();
+
+        if (!companies.Any())
+        {
+            await DisplayAlertAsync("No Companies", "No active companies found. Please create a company first.", "OK");
+            return;
+        }
+
+        var companyNames = companies.Select(c => c.Name).ToArray();
+        var selected = await DisplayActionSheetAsync("Select Company", "Cancel", null, companyNames);
+
+        if (selected == null || selected == "Cancel")
+            return;
+
+        var company = companies.First(c => c.Name == selected);
+
+        // Check if already an owner
+        if (_owners.Any(o => o.OwnerType == "Company" && o.OwnerId == company.Id))
+        {
+            await DisplayAlertAsync("Already Owner", "This company is already an owner.", "OK");
+            return;
+        }
+
+        var ownershipType = await DisplayActionSheetAsync(
+            "Ownership Type",
+            "Cancel",
+            null,
+            "Primary",
+            "Shared",
+            "Leased",
+            "Managed");
+
+        if (ownershipType == "Cancel" || string.IsNullOrWhiteSpace(ownershipType))
+            return;
+
+        var assetOwner = new AssetOwner
+        {
+            AssetId = _assetId,
+            OwnerType = "Company",
+            OwnerId = company.Id,
+            OwnershipType = ownershipType,
+            StartDate = DateTime.UtcNow,
+            IsActive = true
+        };
+
+        _db.AssetOwners.Add(assetOwner);
+        await _db.SaveChangesAsync();
+
+        await LoadOwnersAsync();
+        try { HapticFeedback.Default.Perform(HapticFeedbackType.Click); } catch { }
+    }
+
+    private async void OnEditOwnerClicked(object sender, EventArgs e)
+    {
+        if (sender is Button button && button.CommandParameter is AssetOwnerViewModel ownerVM)
+        {
+            var ownershipType = await DisplayActionSheetAsync(
+                $"Change Ownership Type for {ownerVM.OwnerName}",
+                "Cancel",
+                null,
+                "Primary",
+                "Shared",
+                "Leased",
+                "Managed");
+
+            if (ownershipType == "Cancel" || string.IsNullOrWhiteSpace(ownershipType))
+                return;
+
+            try
+            {
+                var assetOwner = await _db.AssetOwners.FindAsync(ownerVM.AssetOwnerId);
+                if (assetOwner != null)
+                {
+                    assetOwner.OwnershipType = ownershipType;
+                    await _db.SaveChangesAsync();
+                    await LoadOwnersAsync();
+                    try { HapticFeedback.Default.Perform(HapticFeedbackType.Click); } catch { }
+                }
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlertAsync("Error", $"Failed to update owner: {ex.Message}", "OK");
+            }
+        }
+    }
+
+    private async void OnRemoveOwnerClicked(object sender, EventArgs e)
+    {
+        if (sender is Button button && button.CommandParameter is AssetOwnerViewModel ownerVM)
+        {
+            var confirm = await DisplayAlertAsync(
+                "Remove Owner",
+                $"Remove {ownerVM.OwnerName} as owner?",
+                "Remove",
+                "Cancel");
+
+            if (!confirm) return;
+
+            try
+            {
+                var assetOwner = await _db.AssetOwners.FindAsync(ownerVM.AssetOwnerId);
+                if (assetOwner != null)
+                {
+                    assetOwner.EndDate = DateTime.UtcNow;
+                    assetOwner.IsActive = false;
+                    await _db.SaveChangesAsync();
+                    await LoadOwnersAsync();
+                    try { HapticFeedback.Default.Perform(HapticFeedbackType.Click); } catch { }
+                }
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlertAsync("Error", $"Failed to remove owner: {ex.Message}", "OK");
+            }
+        }
+    }
+}
+
+// View model for displaying asset owners
+public class AssetOwnerViewModel
+{
+    public int Id { get; set; }
+    public int AssetOwnerId { get; set; }
+    public int OwnerId { get; set; }
+    public string OwnerType { get; set; } = string.Empty;
+    public string OwnerName { get; set; } = string.Empty;
+    public string OwnershipType { get; set; } = string.Empty;
+    public DateTime StartDate { get; set; }
+    public string? Notes { get; set; }
 }

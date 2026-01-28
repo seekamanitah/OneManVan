@@ -4,21 +4,46 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     
     <StackPanel>
-        <!-- Name -->
-        <TextBlock Text="Customer Name *" FontSize="12" FontWeight="SemiBold"
-                   Foreground="{DynamicResource TextBrush}" Margin="0,0,0,4"/>
-        <TextBox x:Name="NameTextBox"
-                 Background="{DynamicResource SurfaceBrush}"
-                 Foreground="{DynamicResource TextBrush}"
-                 BorderBrush="{DynamicResource Surface2Brush}"
-                 BorderThickness="1"
-                 Padding="10,8"
-                 FontSize="13"
-                 Margin="0,0,0,15"/>
+        <!-- Basic Information Section -->
+        <TextBlock Text="Basic Information" FontSize="14" FontWeight="Bold"
+                   Foreground="{DynamicResource PrimaryBrush}" Margin="0,0,0,10"/>
         
-        <!-- Company Name -->
-        <TextBlock Text="Company Name" FontSize="12" FontWeight="SemiBold"
-                   Foreground="{DynamicResource TextBrush}" Margin="0,0,0,4"/>
+        <!-- First Name and Last Name (Split Name) -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="First Name *" FontSize="12" FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextBrush}" Margin="0,0,0,4"/>
+                <TextBox x:Name="FirstNameTextBox"
+                         Background="{DynamicResource SurfaceBrush}"
+                         Foreground="{DynamicResource TextBrush}"
+                         BorderBrush="{DynamicResource Surface2Brush}"
+                         BorderThickness="1"
+                         Padding="10,8"
+                         FontSize="13"/>
+            </StackPanel>
+            
+            <StackPanel Grid.Column="2">
+                <TextBlock Text="Last Name *" FontSize="12" FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextBrush}" Margin="0,0,0,4"/>
+                <TextBox x:Name="LastNameTextBox"
+                         Background="{DynamicResource SurfaceBrush}"
+                         Foreground="{DynamicResource TextBrush}"
+                         BorderBrush="{DynamicResource Surface2Brush}"
+                         BorderThickness="1"
+                         Padding="10,8"
+                         FontSize="13"/>
+            </StackPanel>
+        </Grid>
+        
+        <!-- Company Name (Legacy) -->
+        <TextBlock Text="Company Name (Optional)" FontSize="12" FontWeight="SemiBold"
+                   Foreground="{DynamicResource TextBrush}" Margin="0,15,0,4"/>
         <TextBox x:Name="CompanyNameTextBox"
                  Background="{DynamicResource SurfaceBrush}"
                  Foreground="{DynamicResource TextBrush}"
@@ -27,6 +52,10 @@
                  Padding="10,8"
                  FontSize="13"
                  Margin="0,0,0,15"/>
+        
+        <!-- Contact Information Section -->
+        <TextBlock Text="Contact Information" FontSize="14" FontWeight="Bold"
+                   Foreground="{DynamicResource PrimaryBrush}" Margin="0,5,0,10"/>
         
         <!-- Email -->
         <TextBlock Text="Email" FontSize="12" FontWeight="SemiBold"
@@ -40,10 +69,45 @@
                  FontSize="13"
                  Margin="0,0,0,15"/>
         
-        <!-- Phone -->
-        <TextBlock Text="Phone" FontSize="12" FontWeight="SemiBold"
-                   Foreground="{DynamicResource TextBrush}" Margin="0,0,0,4"/>
-        <TextBox x:Name="PhoneTextBox"
+        <!-- Phone and Mobile -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="Phone" FontSize="12" FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextBrush}" Margin="0,0,0,4"/>
+                <TextBox x:Name="PhoneTextBox"
+                         Background="{DynamicResource SurfaceBrush}"
+                         Foreground="{DynamicResource TextBrush}"
+                         BorderBrush="{DynamicResource Surface2Brush}"
+                         BorderThickness="1"
+                         Padding="10,8"
+                         FontSize="13"
+                         LostFocus="PhoneTextBox_LostFocus"/>
+            </StackPanel>
+            
+            <StackPanel Grid.Column="2">
+                <TextBlock Text="Mobile" FontSize="12" FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextBrush}" Margin="0,0,0,4"/>
+                <TextBox x:Name="MobileTextBox"
+                         Background="{DynamicResource SurfaceBrush}"
+                         Foreground="{DynamicResource TextBrush}"
+                         BorderBrush="{DynamicResource Surface2Brush}"
+                         BorderThickness="1"
+                         Padding="10,8"
+                         FontSize="13"
+                         LostFocus="MobileTextBox_LostFocus"/>
+            </StackPanel>
+        </Grid>
+        
+        <!-- Website -->
+        <TextBlock Text="Website" FontSize="12" FontWeight="SemiBold"
+                   Foreground="{DynamicResource TextBrush}" Margin="0,15,0,4"/>
+        <TextBox x:Name="WebsiteTextBox"
                  Background="{DynamicResource SurfaceBrush}"
                  Foreground="{DynamicResource TextBrush}"
                  BorderBrush="{DynamicResource Surface2Brush}"
@@ -51,6 +115,70 @@
                  Padding="10,8"
                  FontSize="13"
                  Margin="0,0,0,15"/>
+        
+        <!-- Home Address -->
+        <TextBlock Text="Home Address" FontSize="12" FontWeight="SemiBold"
+                   Foreground="{DynamicResource TextBrush}" Margin="0,0,0,4"/>
+        <Grid Margin="0,0,0,15">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            
+            <TextBox x:Name="HomeAddressTextBox"
+                     Grid.Column="0"
+                     Background="{DynamicResource SurfaceBrush}"
+                     Foreground="{DynamicResource TextBrush}"
+                     BorderBrush="{DynamicResource Surface2Brush}"
+                     BorderThickness="1"
+                     Padding="10,8"
+                     FontSize="13"
+                     Height="70"
+                     TextWrapping="Wrap"
+                     AcceptsReturn="True"
+                     VerticalScrollBarVisibility="Auto"
+                     ToolTip="Enter full address for service location and navigation"/>
+            
+            <Button x:Name="NavigateButton"
+                    Grid.Column="2"
+                    Content="Navigate"
+                    Click="OnNavigateToAddressClick"
+                    Background="{DynamicResource SecondaryBrush}"
+                    Foreground="White"
+                    BorderThickness="0"
+                    Padding="15,8"
+                    FontSize="12"
+                    FontWeight="SemiBold"
+                    Cursor="Hand"
+                    ToolTip="Open address in maps"
+                    VerticalAlignment="Top">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}"
+                                            CornerRadius="4"
+                                            Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+        </Grid>
         
         <!-- Customer Type -->
         <TextBlock Text="Customer Type" FontSize="12" FontWeight="SemiBold"

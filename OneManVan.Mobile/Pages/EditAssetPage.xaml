@@ -247,6 +247,90 @@
                     </Grid>
                 </Border>
 
+                <!-- Asset Ownership Section -->
+                <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                        StrokeShape="RoundRectangle 12" 
+                        Stroke="Transparent"
+                        Padding="16">
+                    <Border.Shadow>
+                        <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="Asset Ownership" FontSize="18" FontAttributes="Bold" 
+                               TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"/>
+                        
+                        <Label Text="Owners (tap to manage)" FontSize="12" 
+                               TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                        
+                        <!-- Owners List -->
+                        <CollectionView x:Name="OwnersCollection" SelectionMode="None">
+                            <CollectionView.EmptyView>
+                                <ContentView>
+                                    <Label Text="No additional owners" 
+                                           FontSize="13" 
+                                           FontStyle="Italic"
+                                           TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"
+                                           Margin="0,4"/>
+                                </ContentView>
+                            </CollectionView.EmptyView>
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightSurface}, Dark={StaticResource DarkSurface}}"
+                                            StrokeShape="RoundRectangle 8"
+                                            Padding="12"
+                                            Margin="0,4">
+                                        <Grid ColumnDefinitions="*, Auto, Auto" ColumnSpacing="8">
+                                            <VerticalStackLayout>
+                                                <Label FontSize="14" FontAttributes="Bold">
+                                                    <Label.FormattedText>
+                                                        <FormattedString>
+                                                            <Span Text="{Binding OwnerName}"/>
+                                                            <Span Text=" (" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                                                            <Span Text="{Binding OwnershipType}" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                                                            <Span Text=")" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                                                        </FormattedString>
+                                                    </Label.FormattedText>
+                                                </Label>
+                                                <Label Text="{Binding OwnerType}" 
+                                                       FontSize="11" 
+                                                       TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                                            </VerticalStackLayout>
+                                            <Button Grid.Column="1" 
+                                                    Text="Edit"
+                                                    FontSize="12"
+                                                    Padding="8,4"
+                                                    CornerRadius="6"
+                                                    BackgroundColor="#6366F1"
+                                                    TextColor="White"
+                                                    Clicked="OnEditOwnerClicked"
+                                                    CommandParameter="{Binding .}"/>
+                                            <Button Grid.Column="2" 
+                                                    Text="Remove"
+                                                    FontSize="12"
+                                                    Padding="8,4"
+                                                    CornerRadius="6"
+                                                    BackgroundColor="{AppThemeBinding Light=#EF4444, Dark=#DC2626}"
+                                                    TextColor="White"
+                                                    Clicked="OnRemoveOwnerClicked"
+                                                    CommandParameter="{Binding .}"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+
+                        <!-- Add Owner Button -->
+                        <Button Text="+ Add Owner"
+                                BackgroundColor="Transparent"
+                                BorderColor="#6366F1"
+                                BorderWidth="2"
+                                TextColor="#6366F1"
+                                CornerRadius="8"
+                                HeightRequest="40"
+                                Clicked="OnAddOwnerClicked"/>
+                    </VerticalStackLayout>
+                </Border>
+
                 <!-- Notes -->
                 <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
                         StrokeShape="RoundRectangle 12" 

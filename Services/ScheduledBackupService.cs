@@ -1,6 +1,7 @@
 using System.IO;
 using System.Text.Json;
 using System.Timers;
+using OneManVan.Shared.Services;
 
 namespace OneManVan.Services;
 
@@ -15,7 +16,7 @@ public class ScheduledBackupService : IDisposable
         "OneManVan",
         SettingsFileName);
 
-    private readonly IBackupService _backupService;
+    private readonly BackupService _backupService;
     private System.Timers.Timer? _timer;
     private BackupScheduleSettings _settings;
 
@@ -23,7 +24,7 @@ public class ScheduledBackupService : IDisposable
 
     public BackupScheduleSettings Settings => _settings;
 
-    public ScheduledBackupService(IBackupService backupService)
+    public ScheduledBackupService(BackupService backupService)
     {
         _backupService = backupService;
         _settings = LoadSettings();
@@ -227,8 +228,6 @@ public class ScheduledBackupService : IDisposable
 
     private async Task<BackupResult> PerformBackupAsync()
     {
-        var result = new BackupResult();
-
         try
         {
             var folder = GetBackupFolder();
@@ -237,35 +236,45 @@ public class ScheduledBackupService : IDisposable
             var fileName = $"OneManVan_Backup_{timestamp}.{extension}";
             var filePath = Path.Combine(folder, fileName);
 
+            BackupResult result;
             if (_settings.UseCompression)
             {
-                await _backupService.ExportToZipAsync(filePath);
+                result = await _backupService.ExportToZipAsync(filePath);
             }
             else
             {
-                await _backupService.ExportToJsonAsync(filePath);
+                result = await _backupService.ExportToJsonAsync(filePath);
             }
 
-            // Update last backup time
-            _settings.LastBackupTime = DateTime.Now;
-            SaveSettings();
+            if (result.Success)
+            {
+                // Update last backup time
+                _settings.LastBackupTime = DateTime.Now;
+                SaveSettings();
 
-            // Cleanup old backups
-            var cleaned = CleanupOldBackups();
+                // Cleanup old backups
+                var cleaned = CleanupOldBackups();
+                
+                // Add cleanup info to message
+                if (cleaned > 0)
+                {
+                    result = BackupResult.Succeeded(
+                        result.FilePath ?? filePath, 
+                        result.RecordCount, 
+                        $"{result.Message}\nCleaned up {cleaned} old backup(s)");
+                }
 
-            result.Success = true;
-            result.FilePath = filePath;
-            result.CleanedUpCount = cleaned;
+                BackupCompleted?.Invoke(this, new BackupCompletedEventArgs(result));
+            }
 
-            BackupCompleted?.Invoke(this, new BackupCompletedEventArgs(result));
+            return result;
         }
         catch (Exception ex)
         {
-            result.Success = false;
-            result.ErrorMessage = ex.Message;
+            var result = BackupResult.Failed($"Scheduled backup failed: {ex.Message}");
+            BackupCompleted?.Invoke(this, new BackupCompletedEventArgs(result));
+            return result;
         }
-
-        return result;
     }
 
     private BackupScheduleSettings LoadSettings()
@@ -334,17 +343,6 @@ public enum BackupFrequency
     Daily,
     Weekly,
     Monthly
-}
-
-/// <summary>
-/// Result of a backup operation.
-/// </summary>
-public class BackupResult
-{
-    public bool Success { get; set; }
-    public string? FilePath { get; set; }
-    public string? ErrorMessage { get; set; }
-    public int CleanedUpCount { get; set; }
 }
 
 /// <summary>

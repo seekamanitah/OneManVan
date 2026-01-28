@@ -1,0 +1,543 @@
+@page "/jobs/new"
+@page "/jobs/{Id:int}/edit"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@using OneManVan.Shared.Models.Enums
+@attribute [Authorize]
+@inject IDbContextFactory<OneManVanDbContext> DbFactory
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<PageTitle>@(IsNew ? "New Job" : $"Edit Job") - OneManVan</PageTitle>
+
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Header -->
+            <div class="mb-4">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/jobs">Jobs</a></li>
+                        <li class="breadcrumb-item active">@(IsNew ? "New" : "Edit")</li>
+                    </ol>
+                </nav>
+                <h1 class="h2">@(IsNew ? "New Job" : $"Edit: {model.Title}")</h1>
+            </div>
+
+            @if (isLoading)
+            {
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary"></div>
+                </div>
+            }
+            else
+            {
+                <EditForm Model="@model" OnValidSubmit="HandleSubmit">
+                    <DataAnnotationsValidator />
+
+                    <!-- Basic Info -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0">Job Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label">Title *</label>
+                                    <InputText class="form-control" @bind-Value="model.Title" />
+                                    <ValidationMessage For="@(() => model.Title)" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Customer *</label>
+                                    <InputSelect class="form-select" @bind-Value="model.CustomerId">
+                                        <option value="0">Select customer...</option>
+                                        @foreach (var customer in customers)
+                                        {
+                                            <option value="@customer.Id">@customer.Name</option>
+                                        }
+                                    </InputSelect>
+                                    <ValidationMessage For="@(() => model.CustomerId)" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Site</label>
+                                    <InputSelect class="form-select" @bind-Value="model.SiteId">
+                                        <option value="">No site</option>
+                                        @foreach (var site in sites.Where(s => s.CustomerId == model.CustomerId))
+                                        {
+                                            <option value="@site.Id">@site.Address</option>
+                                        }
+                                    </InputSelect>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Job Type</label>
+                                    <InputSelect class="form-select" @bind-Value="model.JobType">
+                                        @foreach (var jt in Enum.GetValues<JobType>())
+                                        {
+                                            <option value="@jt">@jt</option>
+                                        }
+                                    </InputSelect>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Priority</label>
+                                    <InputSelect class="form-select" @bind-Value="model.Priority">
+                                        @foreach (var p in Enum.GetValues<JobPriority>())
+                                        {
+                                            <option value="@p">@p</option>
+                                        }
+                                    </InputSelect>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Description</label>
+                                    <InputTextArea class="form-control" rows="3" @bind-Value="model.Description" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Scheduling -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0">Scheduling</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Scheduled Date</label>
+                                    <InputDate class="form-control" @bind-Value="model.ScheduledDate" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Arrival Window Start</label>
+                                    <input type="time" class="form-control" 
+                                           value="@(model.ArrivalWindowStart?.ToString(@"hh\:mm"))"
+                                           @onchange="@(e => SetArrivalStart(e.Value?.ToString()))" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Arrival Window End</label>
+                                    <input type="time" class="form-control" 
+                                           value="@(model.ArrivalWindowEnd?.ToString(@"hh\:mm"))"
+                                           @onchange="@(e => SetArrivalEnd(e.Value?.ToString()))" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Status</label>
+                                    <InputSelect class="form-select" @bind-Value="model.Status">
+                                        @foreach (var s in Enum.GetValues<JobStatus>())
+                                        {
+                                            <option value="@s">@s</option>
+                                        }
+                                    </InputSelect>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Asset</label>
+                                    <InputSelect class="form-select" @bind-Value="model.AssetId">
+                                        <option value="">No asset</option>
+                                        @foreach (var asset in assets.Where(a => a.CustomerId == model.CustomerId || a.SiteId == model.SiteId))
+                                        {
+                                            <option value="@asset.Id">@(asset.AssetName ?? $"{asset.Brand} {asset.Model}")</option>
+                                        }
+                                    </InputSelect>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0">Notes</h5>
+                        </div>
+                        <div class="card-body">
+                            <InputTextArea class="form-control" rows="4" @bind-Value="model.Notes" placeholder="Job notes..." />
+                        </div>
+                    </div>
+
+                    <!-- Financial -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0">Financial</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Labor Total</label>
+                                    <InputNumber class="form-control" @bind-Value="model.LaborTotal" step="0.01" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Parts Total</label>
+                                    <InputNumber class="form-control" @bind-Value="model.PartsTotal" step="0.01" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Materials Total</label>
+                                    <InputNumber class="form-control" @bind-Value="model.MaterialTotal" step="0.01" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Tax Rate (%)</label>
+                                    <InputNumber class="form-control" @bind-Value="model.TaxRate" step="0.01" disabled="@model.TaxIncluded" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Tax Amount</label>
+                                    @if (model.TaxIncluded)
+                                    {
+                                        <input type="text" class="form-control" value="Included" disabled />
+                                    }
+                                    else
+                                    {
+                                        <InputNumber class="form-control" @bind-Value="model.TaxAmount" step="0.01" />
+                                    }
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Total</label>
+                                    <InputNumber class="form-control" @bind-Value="model.Total" step="0.01" />
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check">
+                                        <InputCheckbox class="form-check-input" @bind-Value="model.TaxIncluded" />
+                                        <label class="form-check-label">Tax Already Included in Price</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (!IsNew)
+                    {
+                        <!-- Quick Actions -->
+                        <div class="card border-0 shadow-sm mb-3">
+                            <div class="card-header bg-white border-0 py-3">
+                                <h5 class="mb-0">Quick Actions</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-flex flex-wrap gap-2">
+                                    <button type="button" class="btn btn-outline-primary" @onclick="ConvertToEstimate">
+                                        <i class="bi bi-file-text me-2"></i>Create Estimate
+                                    </button>
+                                    <button type="button" class="btn btn-outline-success" @onclick="ConvertToInvoice">
+                                        <i class="bi bi-receipt me-2"></i>Create Invoice
+                                    </button>
+                                    @if (model.Status != JobStatus.Completed)
+                                    {
+                                        <button type="button" class="btn btn-success" @onclick="@(() => SetStatus(JobStatus.Completed))">
+                                            <i class="bi bi-check-circle me-2"></i>Mark Complete
+                                        </button>
+                                    }
+                                    @if (model.Status != JobStatus.InProgress)
+                                    {
+                                        <button type="button" class="btn btn-info text-white" @onclick="@(() => SetStatus(JobStatus.InProgress))">
+                                            <i class="bi bi-play-circle me-2"></i>Start Job
+                                        </button>
+                                    }
+                                    @if (model.Status != JobStatus.Cancelled)
+                                    {
+                                        <button type="button" class="btn btn-outline-danger" @onclick="@(() => SetStatus(JobStatus.Cancelled))">
+                                            <i class="bi bi-x-circle me-2"></i>Cancel Job
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Form Actions -->
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <button type="button" class="btn btn-outline-secondary" @onclick="Cancel" disabled="@isSaving">
+                                    Cancel
+                                </button>
+                                <div class="d-flex gap-2">
+                                    @if (!IsNew)
+                                    {
+                                        <button type="button" class="btn btn-outline-danger" @onclick="DeleteJob" disabled="@isSaving">
+                                            <i class="bi bi-trash me-2"></i>Delete
+                                        </button>
+                                    }
+                                    <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                                        @if (isSaving)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-2"></span>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-check-circle me-2"></i>
+                                        }
+                                        @(IsNew ? "Create Job" : "Save Changes")
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger mt-3">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>@errorMessage
+                        </div>
+                    }
+                </EditForm>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int? Id { get; set; }
+
+    private bool IsNew => !Id.HasValue;
+    private bool isLoading = true;
+    private bool isSaving = false;
+    private string errorMessage = "";
+    private Job model = new();
+    private List<Customer> customers = new();
+    private List<Site> sites = new();
+    private List<Asset> assets = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadLookupsAsync();
+        
+        if (IsNew)
+        {
+            model = new Job
+            {
+                Status = JobStatus.Draft,
+                Priority = JobPriority.Normal,
+                JobType = JobType.ServiceCall
+            };
+            isLoading = false;
+        }
+        else
+        {
+            await LoadJobAsync();
+        }
+    }
+
+    private async Task LoadLookupsAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        
+        customers = await db.Customers
+            .Where(c => c.Status == CustomerStatus.Active)
+            .OrderBy(c => c.Name)
+            .AsNoTracking()
+            .ToListAsync();
+
+        sites = await db.Sites
+            .OrderBy(s => s.Address)
+            .AsNoTracking()
+            .ToListAsync();
+
+        assets = await db.Assets
+            .Where(a => a.Status == AssetStatus.Active)
+            .OrderBy(a => a.AssetName)
+            .AsNoTracking()
+            .ToListAsync();
+    }
+
+    private async Task LoadJobAsync()
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            
+            var job = await db.Jobs.FirstOrDefaultAsync(j => j.Id == Id!.Value);
+
+            if (job != null)
+            {
+                model = job;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load job: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void SetArrivalStart(string? value)
+    {
+        if (TimeSpan.TryParse(value, out var time))
+            model.ArrivalWindowStart = time;
+        else
+            model.ArrivalWindowStart = null;
+    }
+
+    private void SetArrivalEnd(string? value)
+    {
+        if (TimeSpan.TryParse(value, out var time))
+            model.ArrivalWindowEnd = time;
+        else
+            model.ArrivalWindowEnd = null;
+    }
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            isSaving = true;
+            errorMessage = "";
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+
+            if (IsNew)
+            {
+                // Generate job number
+                var year = DateTime.Now.Year;
+                var count = await db.Jobs.CountAsync(j => j.CreatedAt.Year == year) + 1;
+                model.JobNumber = $"J-{year}-{count:D4}";
+                
+                model.CreatedAt = DateTime.UtcNow;
+                db.Jobs.Add(model);
+            }
+            else
+            {
+                db.Jobs.Update(model);
+            }
+
+            await db.SaveChangesAsync();
+
+            Navigation.NavigateTo(IsNew ? "/jobs" : $"/jobs/{model.Id}");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to save: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task DeleteJob()
+    {
+        if (!await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to cancel this job?"))
+            return;
+
+        try
+        {
+            isSaving = true;
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+            model.Status = JobStatus.Cancelled;
+            db.Jobs.Update(model);
+            await db.SaveChangesAsync();
+
+            Navigation.NavigateTo("/jobs");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to cancel: {ex.Message}";
+            isSaving = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        if (IsNew)
+            Navigation.NavigateTo("/jobs");
+        else
+            Navigation.NavigateTo($"/jobs/{Id}");
+    }
+
+    private async Task SetStatus(JobStatus newStatus)
+    {
+        try
+        {
+            model.Status = newStatus;
+            
+            if (newStatus == JobStatus.InProgress && !model.StartedAt.HasValue)
+            {
+                model.StartedAt = DateTime.UtcNow;
+            }
+            else if (newStatus == JobStatus.Completed && !model.CompletedAt.HasValue)
+            {
+                model.CompletedAt = DateTime.UtcNow;
+            }
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+            db.Jobs.Update(model);
+            await db.SaveChangesAsync();
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to update status: {ex.Message}";
+        }
+    }
+
+    private async Task ConvertToEstimate()
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            
+            // Create new estimate from job
+            var estimate = new Estimate
+            {
+                Title = $"EST-{DateTime.Now:yyyyMMddHHmmss}",
+                CustomerId = model.CustomerId,
+                SiteId = model.SiteId,
+                AssetId = model.AssetId,
+                Description = model.Description,
+                Notes = $"Created from Job: {model.JobNumber}\n\n{model.Notes}",
+                Status = EstimateStatus.Draft,
+                CreatedAt = DateTime.UtcNow,
+                SubTotal = model.SubTotal,
+                TaxRate = model.TaxRate * 100, // Convert decimal to percentage
+                TaxAmount = model.TaxAmount,
+                TaxIncluded = model.TaxIncluded,
+                Total = model.Total
+            };
+
+            db.Estimates.Add(estimate);
+            await db.SaveChangesAsync();
+
+            Navigation.NavigateTo($"/estimates/{estimate.Id}/edit");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to create estimate: {ex.Message}";
+        }
+    }
+
+    private async Task ConvertToInvoice()
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            
+            // Create new invoice from job
+            var invoice = new Invoice
+            {
+                InvoiceNumber = $"INV-{DateTime.Now:yyyyMMddHHmmss}",
+                CustomerId = model.CustomerId,
+                JobId = model.Id,
+                Status = InvoiceStatus.Draft,
+                InvoiceDate = DateTime.Today,
+                DueDate = DateTime.Today.AddDays(30),
+                LaborAmount = model.LaborTotal,
+                PartsAmount = model.PartsTotal,
+                OtherAmount = model.MaterialTotal,
+                SubTotal = model.SubTotal,
+                TaxRate = model.TaxRate * 100, // Convert decimal to percentage
+                TaxAmount = model.TaxAmount,
+                TaxIncluded = model.TaxIncluded,
+                Total = model.Total,
+                Notes = $"Invoice for Job: {model.JobNumber}\n\n{model.Notes}"
+            };
+
+            db.Invoices.Add(invoice);
+            await db.SaveChangesAsync();
+
+            Navigation.NavigateTo($"/invoices/{invoice.Id}/edit");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to create invoice: {ex.Message}";
+        }
+    }
+}

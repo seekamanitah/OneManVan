@@ -1,0 +1,333 @@
+@page "/customers/{Id:int}"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@using OneManVan.Shared.Utilities
+@attribute [Authorize]
+@inject IDbContextFactory<OneManVanDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>@(customer?.Name ?? "Customer") - TradeFlow</PageTitle>
+
+<div class="container-fluid py-4">
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else if (customer == null)
+    {
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            Customer not found
+        </div>
+    }
+    else
+    {
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-start mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/customers">Customers</a></li>
+                        <li class="breadcrumb-item active">@customer.Name</li>
+                    </ol>
+                </nav>
+                <div class="d-flex align-items-center">
+                    <div class="avatar-circle bg-primary bg-opacity-10 text-primary me-3" style="width: 60px; height: 60px; font-size: 24px;">
+                        @customer.Name?.Substring(0, 1).ToUpper()
+                    </div>
+                    <div>
+                        <h1 class="h2 mb-1">@customer.Name</h1>
+                        <div class="d-flex gap-2">
+                            <span class="badge bg-secondary">@customer.CustomerNumber</span>
+                            <span class="badge @GetStatusBadgeClass(customer.Status)">@customer.Status</span>
+                            <span class="badge bg-info">@customer.CustomerType</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary" @onclick="GoBack">
+                    <i class="bi bi-arrow-left me-2"></i>Back
+                </button>
+                <button class="btn btn-primary" @onclick="EditCustomer">
+                    <i class="bi bi-pencil me-2"></i>Edit
+                </button>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <!-- Contact Information -->
+            <div class="col-md-8">
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0">Contact Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            @if (!string.IsNullOrEmpty(customer.Email))
+                            {
+                                <div class="col-md-6">
+                                    <label class="text-muted small d-block mb-1">Email</label>
+                                    <a href="mailto:@customer.Email" class="text-decoration-none">
+                                        <i class="bi bi-envelope me-2"></i>@customer.Email
+                                    </a>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(customer.Phone))
+                            {
+                                <div class="col-md-6">
+                                    <label class="text-muted small d-block mb-1">Phone</label>
+                                    <a href="tel:@customer.Phone" class="text-decoration-none">
+                                        <i class="bi bi-telephone me-2"></i>@PhoneNumberFormatter.Format(customer.Phone)
+                                    </a>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(customer.Mobile))
+                            {
+                                <div class="col-md-6">
+                                    <label class="text-muted small d-block mb-1">Mobile</label>
+                                    <a href="tel:@customer.Mobile" class="text-decoration-none">
+                                        <i class="bi bi-phone me-2"></i>@PhoneNumberFormatter.Format(customer.Mobile)
+                                    </a>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(customer.SecondaryEmail))
+                            {
+                                <div class="col-md-6">
+                                    <label class="text-muted small d-block mb-1">Secondary Email</label>
+                                    <a href="mailto:@customer.SecondaryEmail" class="text-decoration-none">
+                                        <i class="bi bi-envelope me-2"></i>@customer.SecondaryEmail
+                                    </a>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(customer.HomeAddress))
+                            {
+                                <div class="col-12">
+                                    <label class="text-muted small d-block mb-1">Home Address</label>
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <span><i class="bi bi-geo-alt me-2"></i>@customer.HomeAddress</span>
+                                        <a href="@GetMapsUrl(customer.HomeAddress)" target="_blank" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-map me-1"></i>Directions
+                                        </a>
+                                    </div>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(customer.CompanyName))
+                            {
+                                <div class="col-md-6">
+                                    <label class="text-muted small d-block mb-1">Company</label>
+                                    <span><i class="bi bi-building me-2"></i>@customer.CompanyName</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Jobs -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-0 py-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Recent Jobs</h5>
+                            <button class="btn btn-sm btn-primary" @onclick="CreateJob">
+                                <i class="bi bi-plus-circle me-1"></i>New Job
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (new List<Job>()?.Any() == true)
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Job #</th>
+                                            <th>Title</th>
+                                            <th>Scheduled</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var job in new List<Job>().OrderByDescending(j => j.CreatedAt).Take(10))
+                                        {
+                                            <tr>
+                                                <td><span class="badge bg-secondary">@job.JobNumber</span></td>
+                                                <td>@job.Title</td>
+                                                <td>@job.ScheduledDate?.ToString("MMM dd, yyyy")</td>
+                                                <td><span class="badge @GetJobStatusBadge(job.Status)">@job.Status</span></td>
+                                                <td>
+                                                    <a href="/jobs/@job.Id" class="btn btn-sm btn-outline-primary">View</a>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-4 text-muted">
+                                <i class="bi bi-briefcase fs-3 mb-2 d-block"></i>
+                                <p class="mb-2">No jobs yet</p>
+                                <button class="btn btn-sm btn-primary" @onclick="CreateJob">
+                                    Create First Job
+                                </button>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-md-4">
+                <!-- Quick Stats -->
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0">Quick Stats</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                            <span class="text-muted">Total Jobs</span>
+                            <span class="h4 mb-0">@(new List<Job>()?.Count ?? 0)</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                            <span class="text-muted">Invoices</span>
+                            <span class="h4 mb-0">@(new List<Invoice>()?.Count ?? 0)</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                            <span class="text-muted">Assets</span>
+                            <span class="h4 mb-0">@(customer.Assets?.Count ?? 0)</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted">Sites</span>
+                            <span class="h4 mb-0">@(customer.Sites?.Count ?? 0)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Customer Info -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0">Details</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="text-muted small d-block mb-1">Payment Terms</label>
+                            <span>@customer.PaymentTerms</span>
+                        </div>
+                        <div class="mb-3">
+                            <label class="text-muted small d-block mb-1">Preferred Contact</label>
+                            <span>@customer.PreferredContact</span>
+                        </div>
+                        <div class="mb-3">
+                            <label class="text-muted small d-block mb-1">Created</label>
+                            <span>@customer.CreatedAt.ToString("MMM dd, yyyy")</span>
+                        </div>
+                        @if (!string.IsNullOrEmpty(customer.Notes))
+                        {
+                            <div>
+                                <label class="text-muted small d-block mb-1">Notes</label>
+                                <p class="small mb-0">@customer.Notes</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .avatar-circle {
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private bool isLoading = true;
+    private Customer? customer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCustomerAsync();
+    }
+
+    private async Task LoadCustomerAsync()
+    {
+        try
+        {
+            isLoading = true;
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+            
+            customer = await db.Customers
+                
+                
+                .Include(c => c.Assets)
+                .Include(c => c.Sites)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == Id);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/customers");
+    }
+
+    private void EditCustomer()
+    {
+        Navigation.NavigateTo($"/customers/{Id}/edit");
+    }
+
+    private void CreateJob()
+    {
+        Navigation.NavigateTo($"/jobs/new?customerId={Id}");
+    }
+
+    private string GetStatusBadgeClass(CustomerStatus status)
+    {
+        return status switch
+        {
+            CustomerStatus.Active => "bg-success",
+            CustomerStatus.Inactive => "bg-secondary",
+            CustomerStatus.Prospect => "bg-info",
+            CustomerStatus.VIP => "bg-warning",
+            _ => "bg-secondary"
+        };
+    }
+
+    private string GetJobStatusBadge(JobStatus status)
+    {
+        return status switch
+        {
+            JobStatus.Scheduled => "bg-info",
+            JobStatus.InProgress => "bg-warning",
+            JobStatus.Completed => "bg-success",
+            JobStatus.Cancelled => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+
+    private string GetMapsUrl(string address)
+    {
+        var encoded = Uri.EscapeDataString(address);
+        return $"https://www.google.com/maps/search/?api=1&query={encoded}";
+    }
+}

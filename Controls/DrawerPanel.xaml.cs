@@ -46,7 +46,7 @@ public partial class DrawerPanel : UserControl
         set => CancelButton.Content = value;
     }
 
-    public UIElement? Content
+    public new UIElement? Content
     {
         get => DrawerContent.Content as UIElement;
         set => DrawerContent.Content = value;

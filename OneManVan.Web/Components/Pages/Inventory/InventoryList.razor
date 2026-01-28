@@ -1,0 +1,311 @@
+@page "/inventory"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@using OneManVan.Shared.Models.Enums
+@attribute [Authorize]
+@inject IDbContextFactory<OneManVanDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Inventory - OneManVan</PageTitle>
+
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-0">Inventory</h1>
+            <p class="text-muted mb-0">Manage parts and supplies</p>
+        </div>
+        <div class="d-flex gap-2">
+            <ExportButton EntityType="inventory" />
+            <button class="btn btn-primary" @onclick="CreateInventory">
+                <i class="bi bi-plus-circle me-2"></i>Add Item
+            </button>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row g-3 mb-3">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <small class="text-muted d-block">Total Items</small>
+                    <h3 class="mb-0">@totalItems</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <small class="text-muted d-block">Low Stock</small>
+                    <h3 class="mb-0 text-warning">@lowStockCount</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <small class="text-muted d-block">Out of Stock</small>
+                    <h3 class="mb-0 text-danger">@outOfStockCount</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <small class="text-muted d-block">Total Value</small>
+                    <h3 class="mb-0">@totalValue.ToString("C")</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" class="form-control border-start-0" 
+                               placeholder="Search inventory..." 
+                               @bind="searchText" 
+                               @bind:event="oninput"
+                               @onkeyup="OnSearchChanged" />
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" @bind="filterCategory" @bind:after="ApplyFilters">
+                        <option value="">All Categories</option>
+                        @foreach (var cat in Enum.GetValues<InventoryCategory>())
+                        {
+                            <option value="@cat">@cat</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" @bind="filterStockLevel" @bind:after="ApplyFilters">
+                        <option value="">All Stock Levels</option>
+                        <option value="low">Low Stock</option>
+                        <option value="out">Out of Stock</option>
+                        <option value="ok">In Stock</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inventory List -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            @if (isLoading)
+            {
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary"></div>
+                    <p class="mt-2 text-muted">Loading inventory...</p>
+                </div>
+            }
+            else if (filteredItems.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Name</th>
+                                <th>SKU</th>
+                                <th>Category</th>
+                                <th class="text-center">Qty</th>
+                                <th class="text-end">Cost</th>
+                                <th class="text-end">Price</th>
+                                <th>Status</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in filteredItems)
+                            {
+                                <tr style="cursor: pointer;" @onclick="@(() => ViewItem(item.Id))">
+                                    <td>
+                                        <div class="fw-semibold">@item.Name</div>
+                                        @if (!string.IsNullOrEmpty(item.Location))
+                                        {
+                                            <small class="text-muted">@item.Location</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(item.Sku))
+                                        {
+                                            <span class="badge bg-secondary">@item.Sku</span>
+                                        }
+                                    </td>
+                                    <td>@item.Category</td>
+                                    <td class="text-center @GetQuantityClass(item)">
+                                        @item.QuantityOnHand @item.Unit
+                                    </td>
+                                    <td class="text-end">@item.Cost.ToString("C")</td>
+                                    <td class="text-end">@item.Price.ToString("C")</td>
+                                    <td>
+                                        <span class="badge @GetStatusBadgeClass(item)">
+                                            @GetStatusText(item)
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="btn-group btn-group-sm" @onclick:stopPropagation="true">
+                                            <button class="btn btn-outline-primary" @onclick="@(() => ViewItem(item.Id))">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            <button class="btn btn-outline-secondary" @onclick="@(() => EditItem(item.Id))">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card-footer bg-white border-top">
+                    <small class="text-muted">
+                        Showing @filteredItems.Count of @allItems.Count items
+                    </small>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-boxes fs-1 text-muted mb-3 d-block"></i>
+                    <h5>No inventory items found</h5>
+                    <p class="text-muted mb-3">Add your first inventory item</p>
+                    <button class="btn btn-primary" @onclick="CreateInventory">
+                        <i class="bi bi-plus-circle me-2"></i>Add Item
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool isLoading = true;
+    private List<InventoryItem> allItems = new();
+    private List<InventoryItem> filteredItems = new();
+    
+    private string searchText = "";
+    private string filterCategory = "";
+    private string filterStockLevel = "";
+    
+    private int totalItems = 0;
+    private int lowStockCount = 0;
+    private int outOfStockCount = 0;
+    private decimal totalValue = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadInventoryAsync();
+    }
+
+    private async Task LoadInventoryAsync()
+    {
+        try
+        {
+            isLoading = true;
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+            
+            allItems = await db.InventoryItems
+                .Where(i => i.IsActive)
+                .OrderBy(i => i.Name)
+                .AsNoTracking()
+                .ToListAsync();
+
+            // Calculate stats
+            totalItems = allItems.Count;
+            lowStockCount = allItems.Count(i => i.IsLowStock && !i.IsOutOfStock);
+            outOfStockCount = allItems.Count(i => i.IsOutOfStock);
+            totalValue = allItems.Sum(i => i.QuantityOnHand * i.Cost);
+
+            ApplyFilters();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void ApplyFilters()
+    {
+        var query = allItems.AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(searchText))
+        {
+            var search = searchText.ToLower();
+            query = query.Where(i =>
+                i.Name.ToLower().Contains(search) ||
+                (i.Sku?.ToLower().Contains(search) ?? false) ||
+                (i.PartNumber?.ToLower().Contains(search) ?? false) ||
+                (i.Description?.ToLower().Contains(search) ?? false));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filterCategory) && Enum.TryParse<InventoryCategory>(filterCategory, out var category))
+        {
+            query = query.Where(i => i.Category == category);
+        }
+
+        if (!string.IsNullOrWhiteSpace(filterStockLevel))
+        {
+            query = filterStockLevel switch
+            {
+                "low" => query.Where(i => i.IsLowStock && !i.IsOutOfStock),
+                "out" => query.Where(i => i.IsOutOfStock),
+                "ok" => query.Where(i => !i.IsLowStock),
+                _ => query
+            };
+        }
+
+        filteredItems = query.ToList();
+    }
+
+    private void OnSearchChanged(KeyboardEventArgs e)
+    {
+        ApplyFilters();
+    }
+
+    private void CreateInventory()
+    {
+        Navigation.NavigateTo("/inventory/new");
+    }
+
+    private void ViewItem(int id)
+    {
+        Navigation.NavigateTo($"/inventory/{id}");
+    }
+
+    private void EditItem(int id)
+    {
+        Navigation.NavigateTo($"/inventory/{id}/edit");
+    }
+
+    private string GetQuantityClass(InventoryItem item)
+    {
+        if (item.IsOutOfStock) return "text-danger fw-bold";
+        if (item.IsLowStock) return "text-warning fw-semibold";
+        return "";
+    }
+
+    private string GetStatusBadgeClass(InventoryItem item)
+    {
+        if (item.IsOutOfStock) return "bg-danger";
+        if (item.IsLowStock) return "bg-warning";
+        return "bg-success";
+    }
+
+    private string GetStatusText(InventoryItem item)
+    {
+        if (item.IsOutOfStock) return "Out of Stock";
+        if (item.IsLowStock) return "Low Stock";
+        return "In Stock";
+    }
+}

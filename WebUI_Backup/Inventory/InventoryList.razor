@@ -1,0 +1,383 @@
+@page "/inventory"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@attribute [Authorize]
+@inject IDbContextFactory<OneManVanDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Inventory - TradeFlow</PageTitle>
+
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-0">Inventory</h1>
+            <p class="text-muted mb-0">Manage stock levels and product inventory</p>
+        </div>
+        <button class="btn btn-primary" @onclick="CreateInventoryItem">
+            <i class="bi bi-plus-circle me-2"></i>Add Inventory
+        </button>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" class="form-control border-start-0" 
+                               placeholder="Search inventory..." 
+                               @bind="searchText" 
+                               @bind:event="oninput"
+                               @onkeyup="OnSearchChanged" />
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" @bind="filterLocation">
+                        <option value="">All Locations</option>
+                        @foreach (var location in allLocations)
+                        {
+                            <option value="@location">@location</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" @bind="filterStockLevel">
+                        <option value="">All Stock Levels</option>
+                        <option value="low">Low Stock</option>
+                        <option value="out">Out of Stock</option>
+                        <option value="normal">Normal Stock</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-outline-secondary w-100" @onclick="ApplyFilters">
+                        <i class="bi bi-funnel me-2"></i>Filter
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inventory List -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            @if (isLoading)
+            {
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary"></div>
+                    <p class="mt-2 text-muted">Loading inventory...</p>
+                </div>
+            }
+            else if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger m-3">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>@errorMessage
+                </div>
+            }
+            else if (filteredInventory.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th @onclick='@(() => SortBy("ProductName"))' style="cursor: pointer;">
+                                    Product
+                                    @if (sortColumn == "ProductName")
+                                    {
+                                        <i class="bi @(sortAscending ? "bi-arrow-up" : "bi-arrow-down")"></i>
+                                    }
+                                </th>
+                                <th>Location</th>
+                                <th @onclick='@(() => SortBy("Quantity"))' style="cursor: pointer;">
+                                    Stock
+                                    @if (sortColumn == "Quantity")
+                                    {
+                                        <i class="bi @(sortAscending ? "bi-arrow-up" : "bi-arrow-down")"></i>
+                                    }
+                                </th>
+                                <th>Reorder Point</th>
+                                <th>Status</th>
+                                <th>Last Updated</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in filteredInventory)
+                            {
+                                <tr style="cursor: pointer;" @onclick="@(() => ViewInventory(item.Id))">
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-circle bg-warning bg-opacity-10 text-warning me-2">
+                                                <i class="bi bi-boxes"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-semibold">@item.Product?.Name</div>
+                                                @if (!string.IsNullOrEmpty(item.Product?.SKU))
+                                                {
+                                                    <small class="text-muted">SKU: @item.Product.SKU</small>
+                                                }
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>@(item.Location ?? "—")</td>
+                                    <td>
+                                        <span class="@GetStockQuantityClass(item)">
+                                            @item.Quantity
+                                        </span>
+                                    </td>
+                                    <td>@item.ReorderPoint</td>
+                                    <td>
+                                        <span class="badge @GetStockStatusBadge(item)">
+                                            @GetStockStatus(item)
+                                        </span>
+                                    </td>
+                                    <td>@item.LastStockUpdate?.ToString("MMM dd, yyyy")</td>
+                                    <td class="text-end">
+                                        <div class="btn-group btn-group-sm" @onclick:stopPropagation="true">
+                                            <button class="btn btn-outline-primary" @onclick="@(() => ViewInventory(item.Id))">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            <button class="btn btn-outline-secondary" @onclick="@(() => EditInventory(item.Id))">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button class="btn btn-outline-success" @onclick="@(() => AdjustStock(item.Id))">
+                                                <i class="bi bi-plus-slash-minus"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card-footer bg-white border-top">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted">
+                                Showing @filteredInventory.Count of @allInventory.Count items
+                            </small>
+                            <span class="mx-2">|</span>
+                            <small class="text-danger">@lowStockCount Low Stock</small>
+                            <span class="mx-2">|</span>
+                            <small class="text-secondary">@outOfStockCount Out of Stock</small>
+                        </div>
+                        @if (filteredInventory.Count < allInventory.Count)
+                        {
+                            <button class="btn btn-sm btn-outline-primary" @onclick="LoadMore">
+                                Load More
+                            </button>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-boxes fs-1 text-muted mb-3 d-block"></i>
+                    <h5>No inventory items found</h5>
+                    <p class="text-muted mb-3">Start tracking your product inventory</p>
+                    <button class="btn btn-primary" @onclick="CreateInventoryItem">
+                        <i class="bi bi-plus-circle me-2"></i>Add Inventory
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .avatar-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 16px;
+    }
+</style>
+
+@code {
+private bool isLoading = true;
+private string errorMessage = "";
+private List<InventoryItem> allInventory = new();
+private List<InventoryItem> filteredInventory = new();
+    private List<string> allLocations = new();
+    
+    private string searchText = "";
+    private string filterLocation = "";
+    private string filterStockLevel = "";
+    private string sortColumn = "ProductName";
+    private bool sortAscending = true;
+    private int displayCount = 50;
+    private int lowStockCount = 0;
+    private int outOfStockCount = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadInventoryAsync();
+    }
+
+    private async Task LoadInventoryAsync()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = "";
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+            
+            allInventory = await db.Inventory
+                .Include(i => i.Product)
+                .AsNoTracking()
+                .ToListAsync();
+
+            // Get unique locations
+            allLocations = allInventory
+                .Where(i => !string.IsNullOrEmpty(i.Location))
+                .Select(i => i.Location!)
+                .Distinct()
+                .OrderBy(l => l)
+                .ToList();
+
+            // Calculate stats
+            lowStockCount = allInventory.Count(i => i.Quantity <= i.ReorderPoint && i.Quantity > 0);
+            outOfStockCount = allInventory.Count(i => i.Quantity == 0);
+
+            ApplyFilters();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load inventory: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void ApplyFilters()
+    {
+        var query = allInventory.AsEnumerable();
+
+        // Search filter
+        if (!string.IsNullOrWhiteSpace(searchText))
+        {
+            var search = searchText.ToLower();
+            query = query.Where(i =>
+                (i.Product?.Name?.ToLower().Contains(search) ?? false) ||
+                (i.Product?.SKU?.ToLower().Contains(search) ?? false) ||
+                (i.Location?.ToLower().Contains(search) ?? false));
+        }
+
+        // Location filter
+        if (!string.IsNullOrWhiteSpace(filterLocation))
+        {
+            query = query.Where(i => i.Location == filterLocation);
+        }
+
+        // Stock level filter
+        if (!string.IsNullOrWhiteSpace(filterStockLevel))
+        {
+            query = filterStockLevel switch
+            {
+                "low" => query.Where(i => i.Quantity <= i.ReorderPoint && i.Quantity > 0),
+                "out" => query.Where(i => i.Quantity == 0),
+                "normal" => query.Where(i => i.Quantity > i.ReorderPoint),
+                _ => query
+            };
+        }
+
+        // Sorting
+        query = sortColumn switch
+        {
+            "ProductName" => sortAscending 
+                ? query.OrderBy(i => i.Product?.Name) 
+                : query.OrderByDescending(i => i.Product?.Name),
+            "Quantity" => sortAscending 
+                ? query.OrderBy(i => i.Quantity) 
+                : query.OrderByDescending(i => i.Quantity),
+            _ => query.OrderBy(i => i.Product?.Name)
+        };
+
+        filteredInventory = query.Take(displayCount).ToList();
+    }
+
+    private void OnSearchChanged(KeyboardEventArgs e)
+    {
+        ApplyFilters();
+    }
+
+    private void SortBy(string column)
+    {
+        if (sortColumn == column)
+        {
+            sortAscending = !sortAscending;
+        }
+        else
+        {
+            sortColumn = column;
+            sortAscending = true;
+        }
+        ApplyFilters();
+    }
+
+    private void LoadMore()
+    {
+        displayCount += 50;
+        ApplyFilters();
+    }
+
+    private void CreateInventoryItem()
+    {
+        Navigation.NavigateTo("/inventory/new");
+    }
+
+    private void ViewInventory(int id)
+    {
+        Navigation.NavigateTo($"/inventory/{id}");
+    }
+
+    private void EditInventory(int id)
+    {
+        Navigation.NavigateTo($"/inventory/{id}/edit");
+    }
+
+    private void AdjustStock(int id)
+    {
+        Navigation.NavigateTo($"/inventory/{id}/adjust");
+    }
+
+    private string GetStockQuantityClass(InventoryItem item)
+    {
+        if (item.Quantity == 0)
+            return "text-danger fw-bold";
+        if (item.Quantity <= item.ReorderPoint)
+            return "text-warning fw-semibold";
+        return "";
+    }
+
+    private string GetStockStatusBadge(InventoryItem item)
+    {
+        if (item.Quantity == 0)
+            return "bg-danger";
+        if (item.Quantity <= item.ReorderPoint)
+            return "bg-warning";
+        return "bg-success";
+    }
+
+    private string GetStockStatus(InventoryItem item)
+    {
+        if (item.Quantity == 0)
+            return "Out of Stock";
+        if (item.Quantity <= item.ReorderPoint)
+            return "Low Stock";
+        return "In Stock";
+    }
+}

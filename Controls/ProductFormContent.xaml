@@ -28,6 +28,40 @@
                  FontSize="13"
                  Margin="0,0,0,15"/>
         
+        <!-- Serial Number -->
+        <TextBlock Text="Serial Number (Optional)" FontSize="12" FontWeight="SemiBold"
+                   Foreground="{DynamicResource TextBrush}" Margin="0,0,0,4"/>
+        <Grid Margin="0,0,0,15">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBox x:Name="SerialNumberTextBox"
+                     Grid.Column="0"
+                     Background="{DynamicResource SurfaceBrush}"
+                     Foreground="{DynamicResource TextBrush}"
+                     BorderBrush="{DynamicResource Surface2Brush}"
+                     BorderThickness="1"
+                     Padding="10,8"
+                     FontSize="13"
+                     LostFocus="OnSerialNumberLostFocus"/>
+            <Border Grid.Column="1"
+                    x:Name="SerialValidationIndicator"
+                    Width="28"
+                    Height="28"
+                    CornerRadius="14"
+                    Background="#10B981"
+                    Margin="8,0,0,0"
+                    Visibility="Collapsed">
+                <TextBlock Text="?" 
+                           FontSize="16" 
+                           FontWeight="Bold"
+                           Foreground="White"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"/>
+            </Border>
+        </Grid>
+        
         <!-- Product Name -->
         <TextBlock Text="Product Name" FontSize="12" FontWeight="SemiBold"
                    Foreground="{DynamicResource TextBrush}" Margin="0,0,0,4"/>

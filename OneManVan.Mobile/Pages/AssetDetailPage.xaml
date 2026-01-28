@@ -40,6 +40,41 @@
                     <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,2" Radius="4" Opacity="0.1"/>
                 </Border.Shadow>
                 <VerticalStackLayout Spacing="12">
+                    <Label Text="Basic Information" 
+                           FontSize="18" 
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"/>
+
+                    <!-- Asset Name -->
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Asset Name" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                        <Entry x:Name="AssetNameEntry"
+                               Placeholder="Friendly name (e.g., Main Building AC)"
+                               Text="{Binding Asset.AssetName}"
+                               FontSize="16"/>
+                    </VerticalStackLayout>
+
+                    <!-- Description -->
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Description" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                        <Editor x:Name="DescriptionEditor"
+                                Placeholder="Asset description"
+                                Text="{Binding Asset.Description}"
+                                HeightRequest="80"
+                                FontSize="16"/>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Equipment Information Section -->
+            <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                    StrokeShape="RoundRectangle 12" 
+                    Padding="16"
+                    Stroke="Transparent">
+                <Border.Shadow>
+                    <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,2" Radius="4" Opacity="0.1"/>
+                </Border.Shadow>
+                <VerticalStackLayout Spacing="12">
                     <Label Text="Equipment Information" 
                            FontSize="18" 
                            FontAttributes="Bold"
@@ -61,6 +96,15 @@
                                    FontSize="16"/>
                         </VerticalStackLayout>
                     </Grid>
+
+                    <!-- Location -->
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Location" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                        <Entry x:Name="LocationEntry"
+                               Placeholder="e.g., Rooftop, Basement"
+                               Text="{Binding Asset.Location}"
+                               FontSize="16"/>
+                    </VerticalStackLayout>
 
                     <VerticalStackLayout Spacing="4">
                         <Label Text="Install Date" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
@@ -160,6 +204,24 @@
                            FontSize="18" 
                            FontAttributes="Bold"
                            TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"/>
+
+                    <!-- IsWarrantiedBySEHVAC Checkbox -->
+                    <HorizontalStackLayout Spacing="8">
+                        <CheckBox x:Name="IsWarrantiedBySEHVACCheckBox"
+                                  IsChecked="{Binding Asset.IsWarrantiedBySEHVAC}"/>
+                        <Label Text="Warrantied by SEHVAC" 
+                               FontSize="14"
+                               VerticalOptions="Center"
+                               TextColor="{AppThemeBinding Light={StaticResource LightText}, Dark={StaticResource DarkText}}"/>
+                    </HorizontalStackLayout>
+
+                    <!-- Warranty Expiration -->
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Warranty Expiration" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                        <DatePicker x:Name="WarrantyExpirationPicker"
+                                    Date="{Binding WarrantyExpirationDate}"
+                                    FontSize="16"/>
+                    </VerticalStackLayout>
 
                     <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
                         <VerticalStackLayout Spacing="4">

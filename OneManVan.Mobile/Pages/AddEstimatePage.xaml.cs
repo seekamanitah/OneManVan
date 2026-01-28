@@ -113,11 +113,17 @@ public partial class AddEstimatePage
         if (!decimal.TryParse(TaxRateEntry.Text, out var taxRate))
             taxRate = 0;
 
-        var taxAmount = subtotal * (taxRate / 100);
-        TaxAmountLabel.Text = $"${taxAmount:N2}";
+        var taxIncluded = TaxIncludedSwitch.IsToggled;
+        var taxAmount = taxIncluded ? 0 : subtotal * (taxRate / 100);
+        TaxAmountLabel.Text = taxIncluded ? "Included" : $"${taxAmount:N2}";
 
         var total = subtotal + taxAmount;
         TotalLabel.Text = $"${total:N2}";
+    }
+
+    private void OnTaxIncludedToggled(object sender, ToggledEventArgs e)
+    {
+        UpdateTotals();
     }
 
     private async void OnSaveClicked(object sender, EventArgs e)
@@ -140,7 +146,9 @@ public partial class AddEstimatePage
             var subtotal = _lineItems.Sum(i => i.Total);
             if (!decimal.TryParse(TaxRateEntry.Text, out var taxRate))
                 taxRate = 0;
-            var taxAmount = subtotal * (taxRate / 100);
+            
+            var taxIncluded = TaxIncludedSwitch.IsToggled;
+            var taxAmount = taxIncluded ? 0 : subtotal * (taxRate / 100);
             var total = subtotal + taxAmount;
 
             var estimate = new Estimate
@@ -152,6 +160,7 @@ public partial class AddEstimatePage
                 SubTotal = subtotal,
                 TaxRate = taxRate,
                 TaxAmount = taxAmount,
+                TaxIncluded = taxIncluded,
                 Total = total,
                 Notes = NotesEditor.Text?.Trim(),
                 Terms = TermsEditor.Text?.Trim(),

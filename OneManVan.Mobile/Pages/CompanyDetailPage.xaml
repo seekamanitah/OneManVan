@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="OneManVan.Mobile.Pages.CompanyDetailPage"
+             Title="Company Details"
+             BackgroundColor="{AppThemeBinding Light={StaticResource LightBackground}, Dark={StaticResource DarkBackground}}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="16">
+            
+            <!-- Company Info Card -->
+            <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}"
+                    StrokeShape="RoundRectangle 12"
+                    Padding="16">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Company Information" 
+                           FontSize="18" 
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"/>
+                    
+                    <!-- Company Name -->
+                    <Grid ColumnDefinitions="Auto, *" ColumnSpacing="8">
+                        <Label Grid.Column="0" 
+                               Text="Name:"
+                               FontSize="14"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                        <Label Grid.Column="1" 
+                               x:Name="NameLabel"
+                               FontSize="14"
+                               TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"/>
+                    </Grid>
+
+                    <!-- Legal Name -->
+                    <Grid ColumnDefinitions="Auto, *" ColumnSpacing="8" x:Name="LegalNameGrid">
+                        <Label Grid.Column="0" 
+                               Text="Legal Name:"
+                               FontSize="14"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                        <Label Grid.Column="1" 
+                               x:Name="LegalNameLabel"
+                               FontSize="14"
+                               TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"/>
+                    </Grid>
+
+                    <!-- Company Type -->
+                    <Grid ColumnDefinitions="Auto, *" ColumnSpacing="8">
+                        <Label Grid.Column="0" 
+                               Text="Type:"
+                               FontSize="14"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                        <Label Grid.Column="1" 
+                               x:Name="CompanyTypeLabel"
+                               FontSize="14"
+                               TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"/>
+                    </Grid>
+
+                    <!-- Industry -->
+                    <Grid ColumnDefinitions="Auto, *" ColumnSpacing="8" x:Name="IndustryGrid">
+                        <Label Grid.Column="0" 
+                               Text="Industry:"
+                               FontSize="14"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                        <Label Grid.Column="1" 
+                               x:Name="IndustryLabel"
+                               FontSize="14"
+                               TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"/>
+                    </Grid>
+
+                    <!-- Status -->
+                    <Grid ColumnDefinitions="Auto, Auto" ColumnSpacing="8">
+                        <Label Grid.Column="0" 
+                               Text="Status:"
+                               FontSize="14"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                        <Border Grid.Column="1"
+                                x:Name="StatusBadge"
+                                StrokeShape="RoundRectangle 10"
+                                Padding="8,4">
+                            <Label x:Name="StatusLabel"
+                                   FontSize="11"
+                                   FontAttributes="Bold"
+                                   TextColor="White"/>
+                        </Border>
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Contact Info Card -->
+            <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}"
+                    StrokeShape="RoundRectangle 12"
+                    Padding="16">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Contact Information" 
+                           FontSize="18" 
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"/>
+
+                    <!-- Phone -->
+                    <Grid ColumnDefinitions="Auto, *" ColumnSpacing="8" x:Name="PhoneGrid">
+                        <Label Grid.Column="0" 
+                               Text="Phone:"
+                               FontSize="14"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                        <Label Grid.Column="1" 
+                               x:Name="PhoneLabel"
+                               FontSize="14"
+                               TextColor="#6366F1"
+                               TextDecorations="Underline">
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnPhoneTapped"/>
+                            </Label.GestureRecognizers>
+                        </Label>
+                    </Grid>
+
+                    <!-- Email -->
+                    <Grid ColumnDefinitions="Auto, *" ColumnSpacing="8" x:Name="EmailGrid">
+                        <Label Grid.Column="0" 
+                               Text="Email:"
+                               FontSize="14"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                        <Label Grid.Column="1" 
+                               x:Name="EmailLabel"
+                               FontSize="14"
+                               TextColor="#6366F1"
+                               TextDecorations="Underline">
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnEmailTapped"/>
+                            </Label.GestureRecognizers>
+                        </Label>
+                    </Grid>
+
+                    <!-- Website -->
+                    <Grid ColumnDefinitions="Auto, *" ColumnSpacing="8" x:Name="WebsiteGrid">
+                        <Label Grid.Column="0" 
+                               Text="Website:"
+                               FontSize="14"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                        <Label Grid.Column="1" 
+                               x:Name="WebsiteLabel"
+                               FontSize="14"
+                               TextColor="#6366F1"
+                               TextDecorations="Underline">
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnWebsiteTapped"/>
+                            </Label.GestureRecognizers>
+                        </Label>
+                    </Grid>
+
+                    <!-- Tax ID -->
+                    <Grid ColumnDefinitions="Auto, *" ColumnSpacing="8" x:Name="TaxIdGrid">
+                        <Label Grid.Column="0" 
+                               Text="Tax ID:"
+                               FontSize="14"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                        <Label Grid.Column="1" 
+                               x:Name="TaxIdLabel"
+                               FontSize="14"
+                               TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"/>
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Billing Address Card -->
+            <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}"
+                    StrokeShape="RoundRectangle 12"
+                    Padding="16"
+                    x:Name="BillingAddressCard">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Billing Address" 
+                           FontSize="18" 
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"/>
+                    
+                    <Label x:Name="BillingAddressLabel"
+                           FontSize="14"
+                           TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"/>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Notes Card -->
+            <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}"
+                    StrokeShape="RoundRectangle 12"
+                    Padding="16"
+                    x:Name="NotesCard">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Notes" 
+                           FontSize="18" 
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"/>
+                    
+                    <Label x:Name="NotesLabel"
+                           FontSize="14"
+                           TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"/>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Action Buttons -->
+            <Grid ColumnDefinitions="*, *" ColumnSpacing="12">
+                <Button Grid.Column="0"
+                        Text="Edit"
+                        BackgroundColor="#6366F1"
+                        TextColor="White"
+                        FontSize="16"
+                        FontAttributes="Bold"
+                        HeightRequest="48"
+                        CornerRadius="12"
+                        Clicked="OnEditClicked"/>
+                
+                <Button Grid.Column="1"
+                        Text="Delete"
+                        BackgroundColor="{AppThemeBinding Light=#EF4444, Dark=#DC2626}"
+                        TextColor="White"
+                        FontSize="16"
+                        FontAttributes="Bold"
+                        HeightRequest="48"
+                        CornerRadius="12"
+                        Clicked="OnDeleteClicked"/>
+            </Grid>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

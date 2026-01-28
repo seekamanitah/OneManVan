@@ -1,0 +1,366 @@
+@page "/customers"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@using OneManVan.Shared.Models.Enums
+@using OneManVan.Shared.Utilities
+@attribute [Authorize]
+@inject IDbContextFactory<OneManVanDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Customers - TradeFlow</PageTitle>
+
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-0">Customers</h1>
+            <p class="text-muted mb-0">Manage your customer database</p>
+        </div>
+        <button class="btn btn-primary" @onclick="CreateCustomer">
+            <i class="bi bi-plus-circle me-2"></i>Add Customer
+        </button>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" class="form-control border-start-0" 
+                               placeholder="Search customers..." 
+                               @bind="searchText" 
+                               @bind:event="oninput"
+                               @onkeyup="OnSearchChanged" />
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" @bind="filterType">
+                        <option value="">All Types</option>
+                        <option value="Residential">Residential</option>
+                        <option value="Commercial">Commercial</option>
+                        <option value="PropertyManager">Property Manager</option>
+                        <option value="Government">Government</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" @bind="filterStatus">
+                        <option value="">All Status</option>
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                        <option value="Prospect">Prospect</option>
+                        <option value="VIP">VIP</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-outline-secondary w-100" @onclick="ApplyFilters">
+                        <i class="bi bi-funnel me-2"></i>Filter
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customer List -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            @if (isLoading)
+            {
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Loading customers...</p>
+                </div>
+            }
+            else if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger m-3" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    @errorMessage
+                </div>
+            }
+            else if (filteredCustomers.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th @onclick='@(() => SortBy("CustomerNumber"))' style="cursor: pointer;">
+                                    Customer # 
+                                    @if (sortColumn == "CustomerNumber")
+                                    {
+                                        <i class="bi @(sortAscending ? "bi-arrow-up" : "bi-arrow-down")"></i>
+                                    }
+                                </th>
+                                <th @onclick='@(() => SortBy("Name"))' style="cursor: pointer;">
+                                    Name
+                                    @if (sortColumn == "Name")
+                                    {
+                                        <i class="bi @(sortAscending ? "bi-arrow-up" : "bi-arrow-down")"></i>
+                                    }
+                                </th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Jobs</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var customer in filteredCustomers)
+                            {
+                                <tr style="cursor: pointer;" @onclick="@(() => ViewCustomer(customer.Id))">
+                                    <td>
+                                        <span class="badge bg-secondary">@customer.CustomerNumber</span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-circle bg-primary bg-opacity-10 text-primary me-2">
+                                                @customer.Name?.Substring(0, 1).ToUpper()
+                                            </div>
+                                            <div>
+                                                <div class="fw-semibold">@customer.Name</div>
+                                                @if (!string.IsNullOrEmpty(customer.CompanyName))
+                                                {
+                                                    <small class="text-muted">@customer.CompanyName</small>
+                                                }
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(customer.Email))
+                                        {
+                                            <a href="mailto:@customer.Email" class="text-decoration-none" @onclick:stopPropagation="true">
+                                                @customer.Email
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">—</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(customer.Phone))
+                                        {
+                                            <a href="tel:@customer.Phone" class="text-decoration-none" @onclick:stopPropagation="true">
+                                                @PhoneNumberFormatter.Format(customer.Phone)
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">—</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">@customer.CustomerType</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge @GetStatusBadgeClass(customer.Status)">
+                                            @customer.Status
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="text-muted">@(new List<Job>()?.Count ?? 0)</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="btn-group btn-group-sm" @onclick:stopPropagation="true">
+                                            <button class="btn btn-outline-primary" @onclick="@(() => ViewCustomer(customer.Id))">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            <button class="btn btn-outline-secondary" @onclick="@(() => EditCustomer(customer.Id))">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="card-footer bg-white border-top">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            Showing @filteredCustomers.Count of @allCustomers.Count customers
+                        </small>
+                        @if (filteredCustomers.Count < allCustomers.Count)
+                        {
+                            <button class="btn btn-sm btn-outline-primary" @onclick="LoadMore">
+                                Load More
+                            </button>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-people fs-1 text-muted mb-3 d-block"></i>
+                    <h5>No customers found</h5>
+                    <p class="text-muted mb-3">Get started by adding your first customer</p>
+                    <button class="btn btn-primary" @onclick="CreateCustomer">
+                        <i class="bi bi-plus-circle me-2"></i>Add Customer
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .avatar-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 14px;
+    }
+</style>
+
+@code {
+    private bool isLoading = true;
+    private string errorMessage = "";
+    private List<Customer> allCustomers = new();
+    private List<Customer> filteredCustomers = new();
+    
+    private string searchText = "";
+    private string filterType = "";
+    private string filterStatus = "";
+    private string sortColumn = "Name";
+    private bool sortAscending = true;
+    private int displayCount = 50;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCustomersAsync();
+    }
+
+    private async Task LoadCustomersAsync()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = "";
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+            
+            allCustomers = await db.Customers
+                
+                .AsNoTracking()
+                .ToListAsync();
+
+            ApplyFilters();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load customers: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void ApplyFilters()
+    {
+        var query = allCustomers.AsEnumerable();
+
+        // Search filter
+        if (!string.IsNullOrWhiteSpace(searchText))
+        {
+            var search = searchText.ToLower();
+            query = query.Where(c =>
+                (c.Name?.ToLower().Contains(search) ?? false) ||
+                (c.Email?.ToLower().Contains(search) ?? false) ||
+                (c.Phone?.Contains(search) ?? false) ||
+                (c.CompanyName?.ToLower().Contains(search) ?? false) ||
+                (c.CustomerNumber?.ToLower().Contains(search) ?? false));
+        }
+
+        // Type filter
+        if (!string.IsNullOrWhiteSpace(filterType))
+        {
+            var type = Enum.Parse<CustomerType>(filterType);
+            query = query.Where(c => c.CustomerType == type);
+        }
+
+        // Status filter
+        if (!string.IsNullOrWhiteSpace(filterStatus))
+        {
+            var status = Enum.Parse<CustomerStatus>(filterStatus);
+            query = query.Where(c => c.Status == status);
+        }
+
+        // Sorting
+        query = sortColumn switch
+        {
+            "CustomerNumber" => sortAscending ? query.OrderBy(c => c.CustomerNumber) : query.OrderByDescending(c => c.CustomerNumber),
+            "Name" => sortAscending ? query.OrderBy(c => c.Name) : query.OrderByDescending(c => c.Name),
+            _ => query.OrderBy(c => c.Name)
+        };
+
+        filteredCustomers = query.Take(displayCount).ToList();
+    }
+
+    private void OnSearchChanged(KeyboardEventArgs e)
+    {
+        ApplyFilters();
+    }
+
+    private void SortBy(string column)
+    {
+        if (sortColumn == column)
+        {
+            sortAscending = !sortAscending;
+        }
+        else
+        {
+            sortColumn = column;
+            sortAscending = true;
+        }
+        ApplyFilters();
+    }
+
+    private void LoadMore()
+    {
+        displayCount += 50;
+        ApplyFilters();
+    }
+
+    private void CreateCustomer()
+    {
+        Navigation.NavigateTo("/customers/new");
+    }
+
+    private void ViewCustomer(int id)
+    {
+        Navigation.NavigateTo($"/customers/{id}");
+    }
+
+    private void EditCustomer(int id)
+    {
+        Navigation.NavigateTo($"/customers/{id}/edit");
+    }
+
+    private string GetStatusBadgeClass(CustomerStatus status)
+    {
+        return status switch
+        {
+            CustomerStatus.Active => "bg-success",
+            CustomerStatus.Inactive => "bg-secondary",
+            CustomerStatus.Lead => "bg-info",
+            CustomerStatus.VIP => "bg-warning",
+            _ => "bg-secondary"
+        };
+    }
+}

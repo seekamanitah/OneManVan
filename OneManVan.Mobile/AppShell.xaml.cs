@@ -1,4 +1,4 @@
-﻿using OneManVan.Mobile.Pages;
+using OneManVan.Mobile.Pages;
 
 namespace OneManVan.Mobile;
 
@@ -35,6 +35,11 @@ public partial class AppShell : Shell
 		Routing.RegisterRoute("AddProduct", typeof(AddProductPage));
 		Routing.RegisterRoute("EditProduct", typeof(EditProductPage));
 		Routing.RegisterRoute("TestRunner", typeof(MobileTestRunnerPage));
+		
+		// Company routes
+		Routing.RegisterRoute("CompanyDetail", typeof(CompanyDetailPage));
+		Routing.RegisterRoute("AddCompany", typeof(AddCompanyPage));
+		Routing.RegisterRoute("EditCompany", typeof(EditCompanyPage));
 		
 		// Schema and sync routes
 		Routing.RegisterRoute("SchemaEditor", typeof(SchemaEditorPage));
@@ -78,7 +83,10 @@ public partial class AppShell : Shell
 		{
 			MainThread.BeginInvokeOnMainThread(async () =>
 			{
-				await Current.GoToAsync("//Home");
+				if (Current != null)
+				{
+					await Current.GoToAsync("//Home");
+				}
 			});
 			return true; // Handled
 		}

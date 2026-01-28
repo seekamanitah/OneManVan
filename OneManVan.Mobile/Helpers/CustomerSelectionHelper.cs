@@ -59,7 +59,7 @@ public class CustomerSelectionHelper
     /// </summary>
     public static void UpdateCustomerUI(Customer customer, Label nameLabel, VisualElement? detailsPanel = null)
     {
-        nameLabel.Text = customer.DisplayName;
+        nameLabel.Text = customer?.DisplayName ?? "Unknown Customer";
         nameLabel.TextColor = Color.FromArgb("#333333");
         
         if (detailsPanel != null)

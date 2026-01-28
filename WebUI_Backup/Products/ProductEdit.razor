@@ -1,0 +1,317 @@
+@page "/products/new"
+@page "/products/{Id:int}/edit"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@attribute [Authorize]
+@inject IDbContextFactory<OneManVanDbContext> DbFactory
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<PageTitle>@(IsNew ? "New Product" : "Edit Product") - TradeFlow</PageTitle>
+
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="mb-4">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/products">Products</a></li>
+                        <li class="breadcrumb-item active">@(IsNew ? "New" : "Edit")</li>
+                    </ol>
+                </nav>
+                <h1 class="h2">@(IsNew ? "Add New Product" : $"Edit {model.Name}")</h1>
+            </div>
+
+            @if (isLoading)
+            {
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary"></div>
+                </div>
+            }
+            else
+            {
+                <EditForm Model="@model" OnValidSubmit="HandleSubmit">
+                    <DataAnnotationsValidator />
+
+                    <!-- Basic Information -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0">Basic Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label">Product Name *</label>
+                                    <InputText class="form-control" @bind-Value="model.Name" />
+                                    <ValidationMessage For="@(() => model.Name)" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">SKU</label>
+                                    <InputText class="form-control" @bind-Value="model.SKU" placeholder="Optional" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Category</label>
+                                    <InputSelect class="form-select" @bind-Value="model.Category">
+                                        <option value="">Select category...</option>
+                                        <option value="HVAC">HVAC</option>
+                                        <option value="Plumbing">Plumbing</option>
+                                        <option value="Electrical">Electrical</option>
+                                        <option value="Tools">Tools</option>
+                                        <option value="Parts">Parts</option>
+                                        <option value="Other">Other</option>
+                                    </InputSelect>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Description</label>
+                                    <InputTextArea class="form-control" rows="3" @bind-Value="model.Description" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Manufacturer Information -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0">Manufacturer Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Manufacturer</label>
+                                    <InputText class="form-control" @bind-Value="model.Manufacturer" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Model Number</label>
+                                    <InputText class="form-control" @bind-Value="model.Model" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pricing -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0">Pricing</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Sale Price *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <InputNumber class="form-control" @bind-Value="model.Price" step="0.01" />
+                                    </div>
+                                    <ValidationMessage For="@(() => model.Price)" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Cost</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <InputNumber class="form-control" @bind-Value="model.Cost" step="0.01" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Serial Number & Warranty -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0">Serial Number & Warranty</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <div class="form-check">
+                                        <InputCheckbox class="form-check-input" @bind-Value="model.RequiresSerial" id="requiresSerial" />
+                                        <label class="form-check-label" for="requiresSerial">
+                                            Requires Serial Number Tracking
+                                        </label>
+                                    </div>
+                                    <small class="text-muted">Enable if this product has unique serial numbers that need to be tracked</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Warranty Period (Months)</label>
+                                    <InputNumber class="form-control" @bind-Value="model.WarrantyMonths" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Warranty Registration URL</label>
+                                    <InputText class="form-control" @bind-Value="model.ManufacturerWarrantyUrl" placeholder="https://..." />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0">Additional Notes</h5>
+                        </div>
+                        <div class="card-body">
+                            <InputTextArea class="form-control" rows="4" @bind-Value="model.Notes" 
+                                           placeholder="Add any additional notes about this product..." />
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <button type="button" class="btn btn-outline-secondary" @onclick="Cancel" disabled="@isSaving">
+                                    Cancel
+                                </button>
+                                <div class="d-flex gap-2">
+                                    @if (!IsNew)
+                                    {
+                                        <button type="button" class="btn btn-outline-danger" @onclick="DeleteProduct" disabled="@isSaving">
+                                            <i class="bi bi-trash me-2"></i>Delete
+                                        </button>
+                                    }
+                                    <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                                        @if (isSaving)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-2"></span>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-check-circle me-2"></i>
+                                        }
+                                        @(IsNew ? "Create Product" : "Save Changes")
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger mt-3">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>@errorMessage
+                        </div>
+                    }
+                </EditForm>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int? Id { get; set; }
+
+    private bool IsNew => !Id.HasValue;
+    private bool isLoading = true;
+    private bool isSaving = false;
+    private string errorMessage = "";
+    private Product model = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (IsNew)
+        {
+            model = new Product
+            {
+                RequiresSerial = false,
+                Price = 0
+            };
+            isLoading = false;
+        }
+        else
+        {
+            await LoadProductAsync();
+        }
+    }
+
+    private async Task LoadProductAsync()
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            
+            var product = await db.Products.FindAsync(Id!.Value);
+            if (product != null)
+            {
+                model = product;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load product: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            isSaving = true;
+            errorMessage = "";
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+
+            if (IsNew)
+            {
+                model.CreatedAt = DateTime.UtcNow;
+                db.Products.Add(model);
+            }
+            else
+            {
+                model.ModifiedAt = DateTime.UtcNow;
+                db.Products.Update(model);
+            }
+
+            await db.SaveChangesAsync();
+
+            // Navigate back to product list or detail
+            Navigation.NavigateTo(IsNew ? "/products" : $"/products/{model.Id}");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to save product: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task DeleteProduct()
+    {
+        if (!await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this product?"))
+            return;
+
+        try
+        {
+            isSaving = true;
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+            db.Products.Remove(model);
+            await db.SaveChangesAsync();
+
+            Navigation.NavigateTo("/products");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to delete product: {ex.Message}";
+            isSaving = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        if (IsNew)
+        {
+            Navigation.NavigateTo("/products");
+        }
+        else
+        {
+            Navigation.NavigateTo($"/products/{Id}");
+        }
+    }
+}

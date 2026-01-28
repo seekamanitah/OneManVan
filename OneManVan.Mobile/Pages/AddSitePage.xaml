@@ -27,6 +27,46 @@
                     </VerticalStackLayout>
                 </Border>
 
+                <!-- Site Information -->
+                <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                        StrokeShape="RoundRectangle 12" 
+                        Stroke="Transparent"
+                        Padding="16">
+                    <Border.Shadow>
+                        <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="Site Information" 
+                               FontSize="18" 
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"/>
+
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Site Name (Optional)" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Entry x:Name="SiteNameEntry" 
+                                   Placeholder="e.g., Main Office, Rental #1, North Location"/>
+                            <Label Text="Friendly name to distinguish this site" 
+                                   FontSize="11" 
+                                   TextColor="{AppThemeBinding Light={StaticResource LightTextTertiary}, Dark={StaticResource DarkTextTertiary}}"/>
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Location Description (Optional)" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Editor x:Name="LocationDescriptionEditor"
+                                    Placeholder="Additional details about this location..."
+                                    HeightRequest="80"/>
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Company (Optional)" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Picker x:Name="CompanyPicker" Title="Select Company"/>
+                            <Label Text="Link this site to a company" 
+                                   FontSize="11" 
+                                   TextColor="{AppThemeBinding Light={StaticResource LightTextTertiary}, Dark={StaticResource DarkTextTertiary}}"/>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+
                 <!-- Address -->
                 <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
                         StrokeShape="RoundRectangle 12" 

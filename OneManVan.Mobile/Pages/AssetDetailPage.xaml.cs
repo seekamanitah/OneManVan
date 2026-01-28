@@ -33,6 +33,7 @@ public partial class AssetDetailPage : ContentPage
     // Date values
     public DateTime InstallDate { get; set; } = DateTime.Today;
     public DateTime WarrantyStartDate { get; set; } = DateTime.Today;
+    public DateTime WarrantyExpirationDate { get; set; } = DateTime.Today.AddYears(10);
 
     // Photo
     public bool HasPhoto => !string.IsNullOrEmpty(Asset.PhotoPath);
@@ -110,6 +111,16 @@ public partial class AssetDetailPage : ContentPage
                 // Set dates
                 InstallDate = asset.InstallDate ?? DateTime.Today;
                 WarrantyStartDate = asset.WarrantyStartDate ?? DateTime.Today;
+                
+                // Load WarrantyExpiration
+                if (asset.WarrantyExpiration.HasValue)
+                {
+                    WarrantyExpirationDate = asset.WarrantyExpiration.Value;
+                }
+                else
+                {
+                    WarrantyExpirationDate = DateTime.Today.AddYears(10);
+                }
             }
         }
         else
@@ -135,6 +146,7 @@ public partial class AssetDetailPage : ContentPage
         OnPropertyChanged(nameof(SeerRating));
         OnPropertyChanged(nameof(InstallDate));
         OnPropertyChanged(nameof(WarrantyStartDate));
+        OnPropertyChanged(nameof(WarrantyExpirationDate));
         OnPropertyChanged(nameof(HasPhoto));
         OnPropertyChanged(nameof(PhotoSource));
         OnPropertyChanged(nameof(WarrantyStatusText));
@@ -170,6 +182,7 @@ public partial class AssetDetailPage : ContentPage
             Asset.SeerRating = (decimal)SeerRating;
             Asset.InstallDate = InstallDate;
             Asset.WarrantyStartDate = WarrantyStartDate;
+            Asset.WarrantyExpiration = WarrantyExpirationDate;
 
             if (_assetId == 0)
             {

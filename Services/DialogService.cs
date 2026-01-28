@@ -4,9 +4,39 @@ namespace OneManVan.Services;
 
 /// <summary>
 /// Service for displaying consistent dialog boxes throughout the application.
+/// Includes UI scale awareness for better accessibility.
 /// </summary>
 public static class DialogService
 {
+    private static UiScaleService? _uiScaleService;
+
+    /// <summary>
+    /// Initializes the dialog service with UI scale support.
+    /// Call this during app startup.
+    /// </summary>
+    /// <param name="uiScaleService">The UI scale service instance</param>
+    public static void Initialize(UiScaleService uiScaleService)
+    {
+        _uiScaleService = uiScaleService;
+    }
+
+    /// <summary>
+    /// Prepares a custom dialog window for display by applying UI scale adjustments.
+    /// Call this before ShowDialog() to ensure the dialog handles UI scaling properly.
+    /// </summary>
+    /// <param name="dialog">The dialog window to prepare</param>
+    /// <param name="baseHeight">Optional base height (defaults to current Height)</param>
+    /// <param name="baseWidth">Optional base width (defaults to current Width)</param>
+    public static void PrepareDialog(Window dialog, double? baseHeight = null, double? baseWidth = null)
+    {
+        if (_uiScaleService == null) return;
+
+        // Adjust dialog size for current UI scale
+        _uiScaleService.AdjustDialogForScale(dialog, baseHeight, baseWidth);
+        
+        // Make non-resizable dialogs resizable at high scales to prevent overflow
+        _uiScaleService.MakeDialogScaleAware(dialog);
+    }
     /// <summary>
     /// Shows a confirmation dialog for destructive actions.
     /// </summary>

@@ -3,6 +3,8 @@ using OneManVan.Mobile.Helpers;
 using OneManVan.Mobile.Services;
 using OneManVan.Mobile.Theme;
 using OneManVan.Shared.Data;
+using OneManVan.Shared.Models;
+using OneManVan.Shared.Services;
 
 namespace OneManVan.Mobile.Pages;
 
@@ -12,6 +14,8 @@ public partial class SettingsPage : ContentPage
     private readonly MobileBackupService _backupService;
     private readonly CsvExportImportService _csvService;
     private readonly TradeConfigurationService _tradeService;
+    private readonly DatabaseConfigService _dbConfigService;
+    private readonly DatabaseManagementService _dbManagementService;
     private CancellationTokenSource? _cts;
 
     public SettingsPage(IDbContextFactory<OneManVanDbContext> dbFactory, MobileBackupService backupService, CsvExportImportService csvService, TradeConfigurationService tradeService)
@@ -21,6 +25,13 @@ public partial class SettingsPage : ContentPage
         _backupService = backupService;
         _csvService = csvService;
         _tradeService = tradeService;
+        
+        // Initialize database config service
+        var configDir = FileSystem.AppDataDirectory;
+        _dbConfigService = new DatabaseConfigService(configDir);
+        
+        // Initialize database management service
+        _dbManagementService = new DatabaseManagementService();
     }
 
     protected override async void OnAppearing()
@@ -33,9 +44,11 @@ public partial class SettingsPage : ContentPage
         try
         {
             LoadTradeInfo();
+            LoadDatabaseConfiguration();
             await LoadSettingsAsync();
             await LoadDatabaseStatsAsync(_cts.Token);
             await LoadBackupInfoAsync();
+            await LoadDatabaseStatsMobileAsync();
         }
         catch (OperationCanceledException)
         {
@@ -371,105 +384,18 @@ public partial class SettingsPage : ContentPage
 
     #region Full Data Export/Import
 
+    // TODO: Re-implement with shared CsvExportImportService
+    /*
     private async void OnExportAllDataClicked(object sender, EventArgs e)
     {
-        try
-        {
-            var confirm = await DisplayAlertAsync(
-                "Export All Data",
-                "This will export ALL your data (Customers, Sites, Assets, Jobs, Estimates, Invoices, Inventory, Products, Service Agreements) to a single file.\n\nContinue?",
-                "Export",
-                "Cancel");
-
-            if (!confirm) return;
-
-            var result = await _csvService.ExportAllDataAsync();
-            if (result.Success)
-            {
-                try { HapticFeedback.Default.Perform(HapticFeedbackType.Click); } catch { }
-
-                var share = await DisplayAlertAsync(
-                    "Export Complete!",
-                    $"Exported {result.RecordCount} total records across all categories.\n\nThe file can be opened and edited in Excel. Re-import to update your data.\n\nWould you like to share the file?",
-                    "Share",
-                    "Done");
-
-                if (share)
-                {
-                    await _csvService.ShareCsvAsync(result.FilePath!);
-                }
-            }
-            else
-            {
-                await DisplayAlertAsync("Export Failed", result.Message, "OK");
-            }
-        }
-        catch (Exception ex)
-        {
-            await DisplayAlertAsync("Error", $"Export failed: {ex.Message}", "OK");
-        }
+        await DisplayAlertAsync("Coming Soon", "Full data export is being re-implemented. Use individual exports for now.", "OK");
     }
 
     private async void OnImportAllDataClicked(object sender, EventArgs e)
     {
-        try
-        {
-            var confirm = await DisplayAlertAsync(
-                "Import All Data",
-                "This will import data from a full export file. Existing records with matching names will be UPDATED, new records will be ADDED.\n\nThis action cannot be undone. Make sure you have a backup first.\n\nContinue?",
-                "Import",
-                "Cancel");
-
-            if (!confirm) return;
-
-            // Let user pick a file
-            var fileResult = await FilePicker.PickAsync(new PickOptions
-            {
-                FileTypes = new FilePickerFileType(new Dictionary<DevicePlatform, IEnumerable<string>>
-                {
-                    { DevicePlatform.Android, new[] { "text/csv", "text/comma-separated-values", "application/csv", "*/*" } },
-                    { DevicePlatform.iOS, new[] { "public.comma-separated-values-text", "public.text" } },
-                    { DevicePlatform.WinUI, new[] { ".csv", ".txt" } }
-                }),
-                PickerTitle = "Select All Data Export File"
-            });
-
-            if (fileResult == null) return;
-
-            var result = await _csvService.ImportAllDataAsync(fileResult.FullPath);
-
-            if (result.Success)
-            {
-                try { HapticFeedback.Default.Perform(HapticFeedbackType.Click); } catch { }
-
-                var message = $"Import completed!\n\n" +
-                    $"Records added: {result.Inserted}\n" +
-                    $"Records updated: {result.Updated}\n" +
-                    $"Total processed: {result.TotalProcessed}";
-
-                if (result.Errors.Any())
-                {
-                    message += $"\n\nWarnings: {result.Errors.Count}";
-                }
-
-                await DisplayAlertAsync("Import Complete", message, "OK");
-
-                // Refresh database stats
-                await LoadDatabaseStatsAsync();
-            }
-            else
-            {
-                var errorMsg = result.Errors.Any() 
-                    ? string.Join("\n", result.Errors.Take(5)) 
-                    : "Unknown error occurred";
-                await DisplayAlertAsync("Import Failed", errorMsg, "OK");
-            }
-        }
-        catch (Exception ex)
-        {
-            await DisplayAlertAsync("Error", $"Import failed: {ex.Message}", "OK");
-        }
+        await DisplayAlertAsync("Coming Soon", "Full data import is being re-implemented. Use individual imports for now.", "OK");
     }
+    */
 
     #endregion
 
@@ -490,7 +416,8 @@ public partial class SettingsPage : ContentPage
                 
                 if (share)
                 {
-                    await _csvService.ShareCsvAsync(result.FilePath!);
+                    // TODO: Re-implement file sharing
+                    // await _csvService.ShareCsvAsync(result.FilePath!);
                 }
             }
             else
@@ -519,7 +446,8 @@ public partial class SettingsPage : ContentPage
                 
                 if (share)
                 {
-                    await _csvService.ShareCsvAsync(result.FilePath!);
+                    // TODO: Re-implement file sharing
+                    // await _csvService.ShareCsvAsync(result.FilePath!);
                 }
             }
             else
@@ -548,7 +476,8 @@ public partial class SettingsPage : ContentPage
                 
                 if (share)
                 {
-                    await _csvService.ShareCsvAsync(result.FilePath!);
+                    // TODO: Re-implement file sharing
+                    // await _csvService.ShareCsvAsync(result.FilePath!);
                 }
             }
             else
@@ -564,31 +493,8 @@ public partial class SettingsPage : ContentPage
 
     private async void OnExportJobsCsvClicked(object sender, EventArgs e)
     {
-        try
-        {
-            var result = await _csvService.ExportJobsAsync();
-            if (result.Success)
-            {
-                try { HapticFeedback.Default.Perform(HapticFeedbackType.Click); } catch { }
-                
-                var share = await DisplayAlertAsync("Export Complete", 
-                    $"Exported {result.RecordCount} jobs.\n\nWould you like to share the file?", 
-                    "Share", "Done");
-                
-                if (share)
-                {
-                    await _csvService.ShareCsvAsync(result.FilePath!);
-                }
-            }
-            else
-            {
-                await DisplayAlertAsync("Export Failed", result.Message, "OK");
-            }
-        }
-        catch (Exception ex)
-        {
-            await DisplayAlertAsync("Error", $"Export failed: {ex.Message}", "OK");
-        }
+        // TODO: Re-implement ExportJobsAsync
+        await DisplayAlertAsync("Coming Soon", "Job export is being re-implemented.", "OK");
     }
 
     #endregion
@@ -597,96 +503,14 @@ public partial class SettingsPage : ContentPage
 
     private async void OnImportCustomersCsvClicked(object sender, EventArgs e)
     {
-        try
-        {
-            var csvFiles = await _csvService.GetExportedFilesAsync();
-            var customerFiles = csvFiles.Where(f => f.FileName.StartsWith("Customers_")).ToList();
-
-            if (!customerFiles.Any())
-            {
-                await DisplayAlertAsync("No Files", "No customer CSV files found in exports folder.", "OK");
-                return;
-            }
-
-            var options = customerFiles.Select(f => $"{f.FileName} ({f.CreatedAt:MMM dd})").ToArray();
-            var selected = await DisplayActionSheetAsync("Select CSV to Import", "Cancel", null, options);
-
-            if (selected == "Cancel" || selected == null)
-                return;
-
-            var selectedIndex = Array.IndexOf(options, selected);
-            if (selectedIndex < 0 || selectedIndex >= customerFiles.Count)
-                return;
-
-            var file = customerFiles[selectedIndex];
-            var result = await _csvService.ImportCustomersAsync(file.FilePath);
-
-            if (result.Success)
-            {
-                try { HapticFeedback.Default.Perform(HapticFeedbackType.Click); } catch { }
-                _cts?.Cancel();
-                _cts = new CancellationTokenSource();
-                await LoadDatabaseStatsAsync(_cts.Token);
-                await DisplayAlertAsync("Import Complete", 
-                    $"Inserted: {result.Inserted}\nUpdated: {result.Updated}", 
-                    "OK");
-            }
-            else
-            {
-                await DisplayAlertAsync("Import Failed", string.Join("\n", result.Errors), "OK");
-            }
-        }
-        catch (Exception ex)
-        {
-            await DisplayAlertAsync("Error", $"Import failed: {ex.Message}", "OK");
-        }
+        // TODO: Re-implement with GetExportedFilesAsync or file picker
+        await DisplayAlertAsync("Coming Soon", "CSV import is being re-implemented.", "OK");
     }
 
     private async void OnImportInventoryCsvClicked(object sender, EventArgs e)
     {
-        try
-        {
-            var csvFiles = await _csvService.GetExportedFilesAsync();
-            var inventoryFiles = csvFiles.Where(f => f.FileName.StartsWith("Inventory_")).ToList();
-
-            if (!inventoryFiles.Any())
-            {
-                await DisplayAlertAsync("No Files", "No inventory CSV files found in exports folder.", "OK");
-                return;
-            }
-
-            var options = inventoryFiles.Select(f => $"{f.FileName} ({f.CreatedAt:MMM dd})").ToArray();
-            var selected = await DisplayActionSheetAsync("Select CSV to Import", "Cancel", null, options);
-
-            if (selected == "Cancel" || selected == null)
-                return;
-
-            var selectedIndex = Array.IndexOf(options, selected);
-            if (selectedIndex < 0 || selectedIndex >= inventoryFiles.Count)
-                return;
-
-            var file = inventoryFiles[selectedIndex];
-            var result = await _csvService.ImportInventoryAsync(file.FilePath);
-
-            if (result.Success)
-            {
-                try { HapticFeedback.Default.Perform(HapticFeedbackType.Click); } catch { }
-                _cts?.Cancel();
-                _cts = new CancellationTokenSource();
-                await LoadDatabaseStatsAsync(_cts.Token);
-                await DisplayAlertAsync("Import Complete", 
-                    $"Inserted: {result.Inserted}\nUpdated: {result.Updated}", 
-                    "OK");
-            }
-            else
-            {
-                await DisplayAlertAsync("Import Failed", string.Join("\n", result.Errors), "OK");
-            }
-        }
-        catch (Exception ex)
-        {
-            await DisplayAlertAsync("Error", $"Import failed: {ex.Message}", "OK");
-        }
+        // TODO: Re-implement with GetExportedFilesAsync or file picker
+        await DisplayAlertAsync("Coming Soon", "CSV import is being re-implemented.", "OK");
     }
 
     #endregion
@@ -754,4 +578,385 @@ public partial class SettingsPage : ContentPage
     {
         await Shell.Current.GoToAsync("SchemaEditor");
     }
+
+    #region Database Configuration
+
+    private void LoadDatabaseConfiguration()
+    {
+        try
+        {
+            var config = _dbConfigService.LoadConfiguration();
+
+            DatabaseTypePicker.SelectedIndex = config.Type == DatabaseType.SQLite ? 0 : 1;
+
+            if (config.Type == DatabaseType.SqlServer)
+            {
+                ServerAddressMobileEntry.Text = config.ServerAddress ?? "";
+                ServerPortMobileEntry.Text = config.ServerPort.ToString();
+                DatabaseNameMobileEntry.Text = config.DatabaseName;
+                UsernameMobileEntry.Text = config.Username ?? "";
+                PasswordMobileEntry.Text = config.Password ?? "";
+                TrustCertificateMobileCheck.IsChecked = config.TrustServerCertificate;
+            }
+
+            UpdateCurrentConfigMobile();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Failed to load database configuration: {ex.Message}");
+        }
+    }
+
+    private void OnDatabaseTypeChanged(object sender, EventArgs e)
+    {
+        var isLocal = DatabaseTypePicker.SelectedIndex == 0;
+        SqlServerMobilePanel.IsVisible = !isLocal;
+        LocalModeDescription.IsVisible = isLocal;
+        RemoteModeDescription.IsVisible = !isLocal;
+        UpdateCurrentConfigMobile();
+    }
+
+    private async void OnTestConnectionMobileClicked(object sender, EventArgs e)
+    {
+        ConnectionStatusMobileLabel.IsVisible = false;
+
+        var config = BuildConfigFromMobileUI();
+        
+        var validation = config.Validate();
+        if (!validation.IsValid)
+        {
+            ConnectionStatusMobileLabel.Text = $"? {validation.ErrorMessage}";
+            ConnectionStatusMobileLabel.TextColor = Colors.Red;
+            ConnectionStatusMobileLabel.IsVisible = true;
+            return;
+        }
+
+        var button = sender as Button;
+        if (button == null) return;
+        var originalText = button.Text;
+        button.Text = "Testing...";
+        button.IsEnabled = false;
+
+        try
+        {
+            // For SQLite, test file access
+            if (config.Type == DatabaseType.SQLite)
+            {
+                var connectionString = config.GetConnectionString(FileSystem.AppDataDirectory);
+                var optionsBuilder = new DbContextOptionsBuilder<OneManVanDbContext>();
+                optionsBuilder.UseSqlite(connectionString);
+
+                await using var context = new OneManVanDbContext(optionsBuilder.Options);
+                var canConnect = await context.Database.CanConnectAsync();
+
+                if (canConnect)
+                {
+                    ConnectionStatusMobileLabel.Text = "? SQLite database accessible!";
+                    ConnectionStatusMobileLabel.TextColor = Colors.Green;
+                }
+                else
+                {
+                    ConnectionStatusMobileLabel.Text = "? Unable to access SQLite database";
+                    ConnectionStatusMobileLabel.TextColor = Colors.Red;
+                }
+            }
+            else
+            {
+                // For SQL Server, just show validation success
+                ConnectionStatusMobileLabel.Text = "? Configuration is valid. Save and restart to connect.";
+                ConnectionStatusMobileLabel.TextColor = Colors.Green;
+            }
+
+            ConnectionStatusMobileLabel.IsVisible = true;
+        }
+        catch (Exception ex)
+        {
+            ConnectionStatusMobileLabel.Text = $"? Test failed: {ex.Message}";
+            ConnectionStatusMobileLabel.TextColor = Colors.Red;
+            ConnectionStatusMobileLabel.IsVisible = true;
+        }
+        finally
+        {
+            button.Text = originalText;
+            button.IsEnabled = true;
+        }
+    }
+
+    private async void OnSaveDatabaseConfigMobileClicked(object sender, EventArgs e)
+    {
+        var newConfig = BuildConfigFromMobileUI();
+        
+        var validation = newConfig.Validate();
+        if (!validation.IsValid)
+        {
+            await DisplayAlertAsync("Validation Error", validation.ErrorMessage, "OK");
+            return;
+        }
+
+        if (!_dbConfigService.HasConfigurationChanged(newConfig))
+        {
+            await DisplayAlertAsync("No Changes", "Configuration has not changed.", "OK");
+            return;
+        }
+
+        var confirm = await DisplayAlertAsync(
+            "Restart Required",
+            "Changing database configuration requires restarting the app. Continue?",
+            "Restart",
+            "Cancel");
+
+        if (!confirm) return;
+
+        try
+        {
+            _dbConfigService.SaveConfiguration(newConfig);
+
+            // Display success message
+            await DisplayAlertAsync("Configuration Saved", 
+                "Database configuration saved. The app will restart now.", 
+                "OK");
+
+            // Restart app
+            Application.Current?.Quit();
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlertAsync("Error", $"Failed to save: {ex.Message}", "OK");
+        }
+    }
+
+    private void OnShowPasswordMobileClicked(object sender, EventArgs e)
+    {
+        PasswordMobileEntry.IsPassword = !PasswordMobileEntry.IsPassword;
+        ShowPasswordMobileButton.Text = PasswordMobileEntry.IsPassword ? "Show" : "Hide";
+    }
+
+    private DatabaseConfig BuildConfigFromMobileUI()
+    {
+        var config = new DatabaseConfig();
+
+        if (DatabaseTypePicker.SelectedIndex == 1) // SQL Server
+        {
+            config.Type = DatabaseType.SqlServer;
+            config.ServerAddress = ServerAddressMobileEntry.Text?.Trim();
+            config.ServerPort = int.TryParse(ServerPortMobileEntry.Text, out var port) ? port : 1433;
+            config.DatabaseName = DatabaseNameMobileEntry.Text?.Trim() ?? "OneManVanFSM";
+            config.Username = UsernameMobileEntry.Text?.Trim();
+            config.Password = PasswordMobileEntry.Text;
+            config.TrustServerCertificate = TrustCertificateMobileCheck.IsChecked;
+        }
+        else
+        {
+            config.Type = DatabaseType.SQLite;
+        }
+
+        return config;
+    }
+
+    private void UpdateCurrentConfigMobile()
+    {
+        try
+        {
+            var config = _dbConfigService.GetCurrentConfiguration();
+            CurrentConfigMobileLabel.Text = 
+                $"{config.Type}\n{config.GetDisplayConnectionString(FileSystem.AppDataDirectory)}";
+        }
+        catch (Exception ex)
+        {
+            CurrentConfigMobileLabel.Text = $"Error: {ex.Message}";
+        }
+    }
+
+    #endregion
+
+    #region Database Management (Mobile)
+
+    private async Task LoadDatabaseStatsMobileAsync()
+    {
+        try
+        {
+            await using var context = await _dbFactory.CreateDbContextAsync();
+            var stats = await _dbManagementService.GetDatabaseStatsAsync(context);
+            
+            DatabaseStatsMobileLabel.Text = $"Customers: {stats.CustomerCount} | Companies: {stats.CompanyCount}\n" +
+                                            $"Assets: {stats.AssetCount} | Products: {stats.ProductCount}\n" +
+                                            $"Jobs: {stats.JobCount} | Estimates: {stats.EstimateCount}\n" +
+                                            $"Invoices: {stats.InvoiceCount} | Service Agreements: {stats.ServiceAgreementCount}\n" +
+                                            $"Total Records: {stats.TotalRecords}";
+        }
+        catch (Exception ex)
+        {
+            DatabaseStatsMobileLabel.Text = $"Error: {ex.Message}";
+        }
+    }
+
+    private async void OnRefreshDatabaseStatsMobileClicked(object sender, EventArgs e)
+    {
+        await LoadDatabaseStatsMobileAsync();
+        await DisplayAlertAsync("Success", "Statistics refreshed!", "OK");
+    }
+
+    private async void OnSeedDemoDataMobileClicked(object sender, EventArgs e)
+    {
+        var confirm = await DisplayAlertAsync(
+            "Seed Demo Data",
+            "This will add demo data:\n\n" +
+            "• 5 Customers\n" +
+            "• 3 Companies\n" +
+            "• 4 Assets\n" +
+            "• 4 Products\n" +
+            "• 3 Jobs\n" +
+            "• 2 Estimates\n" +
+            "• 2 Invoices\n" +
+            "• 1 Service Agreement\n\n" +
+            "Continue?",
+            "Yes",
+            "Cancel");
+
+        if (!confirm) return;
+
+        try
+        {
+            var button = sender as Button;
+            if (button != null)
+            {
+                button.Text = "Seeding...";
+                button.IsEnabled = false;
+            }
+
+            await using var context = await _dbFactory.CreateDbContextAsync();
+            var success = await _dbManagementService.SeedDemoDataAsync(context);
+
+            if (button != null)
+            {
+                button.Text = "Seed Demo Data";
+                button.IsEnabled = true;
+            }
+
+            if (success)
+            {
+                await DisplayAlertAsync("Success", "Demo data seeded successfully!", "OK");
+                await LoadDatabaseStatsMobileAsync();
+            }
+            else
+            {
+                await DisplayAlertAsync("Information", "Failed to seed. Database may already contain data.", "OK");
+            }
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlertAsync("Error", $"Failed to seed: {ex.Message}", "OK");
+        }
+    }
+
+    private async void OnClearAllDataMobileClicked(object sender, EventArgs e)
+    {
+        var confirm = await DisplayAlertAsync(
+            "Clear All Data",
+            "WARNING: This will delete ALL data!\n\n" +
+            "This includes customers, companies, assets, products, jobs, estimates, invoices, and service agreements.\n\n" +
+            "THIS CANNOT BE UNDONE!\n\n" +
+            "Continue?",
+            "Yes, Delete All",
+            "Cancel");
+
+        if (!confirm) return;
+
+        try
+        {
+            var button = sender as Button;
+            if (button != null)
+            {
+                button.Text = "Clearing...";
+                button.IsEnabled = false;
+            }
+
+            await using var context = await _dbFactory.CreateDbContextAsync();
+            var success = await _dbManagementService.ClearAllDataAsync(context);
+
+            if (button != null)
+            {
+                button.Text = "Clear All Data";
+                button.IsEnabled = true;
+            }
+
+            if (success)
+            {
+                await DisplayAlertAsync("Success", "All data cleared successfully!", "OK");
+                await LoadDatabaseStatsMobileAsync();
+            }
+            else
+            {
+                await DisplayAlertAsync("Error", "Failed to clear data.", "OK");
+            }
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlertAsync("Error", $"Failed to clear: {ex.Message}", "OK");
+        }
+    }
+
+    private async void OnResetDatabaseMobileClicked(object sender, EventArgs e)
+    {
+        var confirm = await DisplayAlertAsync(
+            "Reset Database",
+            "CRITICAL WARNING!\n\n" +
+            "This will COMPLETELY ERASE the database and recreate it fresh.\n\n" +
+            "ALL DATA WILL BE LOST!\n\n" +
+            "THIS CANNOT BE UNDONE!\n\n" +
+            "Are you absolutely sure?",
+            "Yes, Reset",
+            "Cancel");
+
+        if (!confirm) return;
+
+        // Final confirmation
+        var finalConfirm = await DisplayAlertAsync(
+            "Final Warning",
+            "This is your FINAL WARNING!\n\n" +
+            "The database will be completely erased.\n\n" +
+            "Continue?",
+            "Yes, I'm Sure",
+            "Cancel");
+
+        if (!finalConfirm) return;
+
+        try
+        {
+            var button = sender as Button;
+            if (button != null)
+            {
+                button.Text = "Resetting...";
+                button.IsEnabled = false;
+            }
+
+            await using var context = await _dbFactory.CreateDbContextAsync();
+            var success = await _dbManagementService.ResetDatabaseAsync(context);
+
+            if (success)
+            {
+                await DisplayAlertAsync("Success", 
+                    "Database reset successfully!\n\nThe app will now restart.", 
+                    "OK");
+                
+                // Restart app
+                Application.Current?.Quit();
+            }
+            else
+            {
+            if (button != null)
+            {
+                button.Text = "Reset Database";
+                button.IsEnabled = true;
+            }
+                await DisplayAlertAsync("Error", "Failed to reset database.", "OK");
+            }
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlertAsync("Error", $"Failed to reset: {ex.Message}", "OK");
+        }
+    }
+
+    #endregion
 }

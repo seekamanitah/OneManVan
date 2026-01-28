@@ -212,6 +212,58 @@
                     <Border.Shadow>
                         <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,2" Radius="4" Opacity="0.1"/>
                     </Border.Shadow>
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="Financial Details (Optional)" 
+                               FontSize="18" 
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource Primary}"/>
+
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                            <VerticalStackLayout Spacing="4">
+                                <Label Text="Labor Total" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                                <Entry x:Name="LaborTotalEntry" 
+                                       Placeholder="0.00"
+                                       Keyboard="Numeric"
+                                       Text="0.00"/>
+                            </VerticalStackLayout>
+                            <VerticalStackLayout Grid.Column="1" Spacing="4">
+                                <Label Text="Parts Total" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                                <Entry x:Name="PartsTotalEntry" 
+                                       Placeholder="0.00"
+                                       Keyboard="Numeric"
+                                       Text="0.00"/>
+                            </VerticalStackLayout>
+                        </Grid>
+
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Tax Rate (%)" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Entry x:Name="TaxRateEntry" 
+                                   Placeholder="7.0"
+                                   Keyboard="Numeric"
+                                   Text="7.0"/>
+                        </VerticalStackLayout>
+
+                        <!-- Tax Included Toggle -->
+                        <HorizontalStackLayout Spacing="8">
+                            <Switch x:Name="TaxIncludedSwitch" 
+                                    OnColor="{StaticResource Primary}"
+                                    ThumbColor="White"/>
+                            <Label Text="Tax Already Included in Price" 
+                                   FontSize="14" 
+                                   TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"
+                                   VerticalOptions="Center"/>
+                        </HorizontalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Internal Notes -->
+                <Border BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                        StrokeShape="RoundRectangle 12" 
+                        Stroke="Transparent"
+                        Padding="16">
+                    <Border.Shadow>
+                        <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
                     <VerticalStackLayout Spacing="4">
                         <Label Text="Internal Notes" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
                         <Editor x:Name="InternalNotesEditor"

@@ -185,6 +185,11 @@ public class Job
     [Column(TypeName = "decimal(10,2)")]
     public decimal TaxAmount { get; set; }
 
+    /// <summary>
+    /// When true, the price already includes tax (no additional tax calculation needed).
+    /// </summary>
+    public bool TaxIncluded { get; set; } = false;
+
     [Column(TypeName = "decimal(10,2)")]
     public decimal Total { get; set; }
 

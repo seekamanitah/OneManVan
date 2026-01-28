@@ -1,0 +1,296 @@
+@page "/assets"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@attribute [Authorize]
+@inject IDbContextFactory<OneManVanDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Assets - TradeFlow</PageTitle>
+
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-0">Assets</h1>
+            <p class="text-muted mb-0">Track installed equipment and assets</p>
+        </div>
+        <button class="btn btn-primary" @onclick="CreateAsset">
+            <i class="bi bi-plus-circle me-2"></i>Add Asset
+        </button>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" class="form-control border-start-0" 
+                               placeholder="Search assets..." 
+                               @bind="searchText" 
+                               @bind:event="oninput"
+                               @onkeyup="OnSearchChanged" />
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" @bind="filterRegistered">
+                        <option value="">All Assets</option>
+                        <option value="true">Registered</option>
+                        <option value="false">Unregistered</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" @bind="filterHasWarranty">
+                        <option value="">All Warranties</option>
+                        <option value="true">Under Warranty</option>
+                        <option value="false">No Warranty</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-outline-secondary w-100" @onclick="ApplyFilters">
+                        <i class="bi bi-funnel me-2"></i>Filter
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Asset List -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            @if (isLoading)
+            {
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary"></div>
+                    <p class="mt-2 text-muted">Loading assets...</p>
+                </div>
+            }
+            else if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger m-3">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>@errorMessage
+                </div>
+            }
+            else if (filteredAssets.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Serial Number</th>
+                                <th>Product</th>
+                                <th>Customer</th>
+                                <th>Location</th>
+                                <th>Install Date</th>
+                                <th>Warranty</th>
+                                <th>Status</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var asset in filteredAssets)
+                            {
+                                <tr style="cursor: pointer;" @onclick="@(() => ViewAsset(asset.Id))">
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(asset.Serial))
+                                        {
+                                            <span class="badge bg-dark">@asset.Serial</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">—</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <div class="fw-semibold">@asset.Brand + " " + asset.Model?.Name</div>
+                                            @if (!string.IsNullOrEmpty(asset.Brand + " " + asset.Model?))
+                                            {
+                                                <small class="text-muted">@asset.Brand + " " + asset.Model</small>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td>@asset.Customer?.Name</td>
+                                    <td>@(asset.Location ?? "—")</td>
+                                    <td>@asset.InstallDate?.ToString("MMM dd, yyyy")</td>
+                                    <td>
+                                        @if (asset.WarrantyExpiration.HasValue)
+                                        {
+                                            if (asset.WarrantyExpiration > DateTime.Now)
+                                            {
+                                                <span class="badge bg-success">Active</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">Expired</span>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">—</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (asset.IsRegisteredOnline)
+                                        {
+                                            <span class="badge bg-success">Registered</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning">Unregistered</span>
+                                        }
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="btn-group btn-group-sm" @onclick:stopPropagation="true">
+                                            <button class="btn btn-outline-primary" @onclick="@(() => ViewAsset(asset.Id))">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            <button class="btn btn-outline-secondary" @onclick="@(() => EditAsset(asset.Id))">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card-footer bg-white border-top">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            Showing @filteredAssets.Count of @allAssets.Count assets
+                        </small>
+                        @if (filteredAssets.Count < allAssets.Count)
+                        {
+                            <button class="btn btn-sm btn-outline-primary" @onclick="LoadMore">
+                                Load More
+                            </button>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-tools fs-1 text-muted mb-3 d-block"></i>
+                    <h5>No assets found</h5>
+                    <p class="text-muted mb-3">Start tracking installed equipment</p>
+                    <button class="btn btn-primary" @onclick="CreateAsset">
+                        <i class="bi bi-plus-circle me-2"></i>Add Asset
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool isLoading = true;
+    private string errorMessage = "";
+    private List<Asset> allAssets = new();
+    private List<Asset> filteredAssets = new();
+    
+    private string searchText = "";
+    private string filterRegistered = "";
+    private string filterHasWarranty = "";
+    private int displayCount = 50;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAssetsAsync();
+    }
+
+    private async Task LoadAssetsAsync()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = "";
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+            
+            allAssets = await db.Assets
+                
+                .Include(a => a.Customer)
+                .AsNoTracking()
+                .ToListAsync();
+
+            ApplyFilters();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load assets: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void ApplyFilters()
+    {
+        var query = allAssets.AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(searchText))
+        {
+            var search = searchText.ToLower();
+            query = query.Where(a =>
+                (a.Serial?.ToLower().Contains(search) ?? false) ||
+                (a.Product?.Name?.ToLower().Contains(search) ?? false) ||
+                (a.Customer?.Name?.ToLower().Contains(search) ?? false) ||
+                (a.Location?.ToLower().Contains(search) ?? false));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filterRegistered))
+        {
+            var registered = bool.Parse(filterRegistered);
+            query = query.Where(a => a.IsRegisteredOnline == registered);
+        }
+
+        if (!string.IsNullOrWhiteSpace(filterHasWarranty))
+        {
+            var hasWarranty = bool.Parse(filterHasWarranty);
+            if (hasWarranty)
+            {
+                query = query.Where(a => a.WarrantyExpiration.HasValue && a.WarrantyExpiration > DateTime.Now);
+            }
+            else
+            {
+                query = query.Where(a => !a.WarrantyExpiration.HasValue || a.WarrantyExpiration <= DateTime.Now);
+            }
+        }
+
+        filteredAssets = query.Take(displayCount).ToList();
+    }
+
+    private void OnSearchChanged(KeyboardEventArgs e)
+    {
+        ApplyFilters();
+    }
+
+    private void LoadMore()
+    {
+        displayCount += 50;
+        ApplyFilters();
+    }
+
+    private void CreateAsset()
+    {
+        Navigation.NavigateTo("/assets/new");
+    }
+
+    private void ViewAsset(int id)
+    {
+        Navigation.NavigateTo($"/assets/{id}");
+    }
+
+    private void EditAsset(int id)
+    {
+        Navigation.NavigateTo($"/assets/{id}/edit");
+    }
+}

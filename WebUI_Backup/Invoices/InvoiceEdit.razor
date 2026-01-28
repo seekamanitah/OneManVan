@@ -1,0 +1,458 @@
+@page "/invoices/new"
+@page "/invoices/{Id:int}/edit"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@using OneManVan.Shared.Models.Enums
+@attribute [Authorize]
+@inject IDbContextFactory<OneManVanDbContext> DbFactory
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<PageTitle>@(IsNew ? "New Invoice" : "Edit Invoice") - TradeFlow</PageTitle>
+
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Header -->
+            <div class="mb-4">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/invoices">Invoices</a></li>
+                        <li class="breadcrumb-item active">@(IsNew ? "New" : "Edit")</li>
+                    </ol>
+                </nav>
+                <h1 class="h2">@(IsNew ? "Create Invoice" : $"Edit Invoice: {model.InvoiceNumber}")</h1>
+            </div>
+
+            @if (isLoading)
+            {
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary"></div>
+                </div>
+            }
+            else
+            {
+                <EditForm Model="@model" OnValidSubmit="HandleSubmit">
+                    <DataAnnotationsValidator />
+
+                    <!-- Customer & Dates -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0">Invoice Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label">Customer *</label>
+                                    <select class="form-select" @bind="model.CustomerId">
+                                        <option value="0">Select customer...</option>
+                                        @foreach (var customer in customers)
+                                        {
+                                            <option value="@customer.Id">@customer.Name</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Invoice Date *</label>
+                                    <InputDate class="form-control" @bind-Value="model.InvoiceDate" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Due Date</label>
+                                    <InputDate class="form-control" @bind-Value="model.DueDate" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Status</label>
+                                    <InputSelect class="form-select" @bind-Value="model.Status">
+                                        <option value="@InvoiceStatus.Draft">Draft</option>
+                                        <option value="@InvoiceStatus.Sent">Sent</option>
+                                        <option value="@InvoiceStatus.Paid">Paid</option>
+                                    </InputSelect>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Payment Terms</label>
+                                    <InputText class="form-control" @bind-Value="model.Terms" placeholder="Net 30" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Related Job (Optional)</label>
+                                    <select class="form-select" @bind="model.JobId">
+                                        <option value="">None</option>
+                                        @foreach (var job in jobs)
+                                        {
+                                            <option value="@job.Id">@job.JobNumber - @job.Title</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Line Items -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Line Items</h5>
+                            <button type="button" class="btn btn-sm btn-primary" @onclick="AddLineItem">
+                                <i class="bi bi-plus-circle me-1"></i>Add Item
+                            </button>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 40%;">Description</th>
+                                            <th style="width: 15%;" class="text-center">Quantity</th>
+                                            <th style="width: 15%;" class="text-end">Unit Price</th>
+                                            <th style="width: 20%;" class="text-end">Total</th>
+                                            <th style="width: 10%;"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @if (lineItems.Any())
+                                        {
+                                            @for (int i = 0; i < lineItems.Count; i++)
+                                            {
+                                                var item = lineItems[i];
+                                                var index = i;
+                                                <tr>
+                                                    <td>
+                                                        <input type="text" class="form-control form-control-sm" @bind="item.Description" placeholder="Item description" />
+                                                    </td>
+                                                    <td>
+                                                        <input type="number" class="form-control form-control-sm text-center" @bind="item.Quantity" @bind:event="oninput" @onchange="CalculateTotals" min="0" step="1" />
+                                                    </td>
+                                                    <td>
+                                                        <input type="number" class="form-control form-control-sm text-end" @bind="item.UnitPrice" @bind:event="oninput" @onchange="CalculateTotals" min="0" step="0.01" />
+                                                    </td>
+                                                    <td class="text-end align-middle">
+                                                        <span class="fw-semibold">@((item.Quantity * item.UnitPrice).ToString("C"))</span>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <button type="button" class="btn btn-sm btn-outline-danger" @onclick="@(() => RemoveLineItem(index))">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <tr>
+                                                <td colspan="5" class="text-center py-4 text-muted">
+                                                    No line items. Click "Add Item" to get started.
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                    @if (lineItems.Any())
+                                    {
+                                        <tfoot class="table-light">
+                                            <tr>
+                                                <td colspan="3" class="text-end fw-semibold">Subtotal:</td>
+                                                <td class="text-end fw-semibold">@model.SubTotal.ToString("C")</td>
+                                                <td></td>
+                                            </tr>
+                                            <tr>
+                                                <td colspan="2" class="text-end">Tax:</td>
+                                                <td>
+                                                    <input type="number" class="form-control form-control-sm text-end" @bind="model.TaxAmount" @bind:event="oninput" @onchange="CalculateTotals" min="0" step="0.01" />
+                                                </td>
+                                                <td class="text-end">@model.TaxAmountAmount.ToString("C")</td>
+                                                <td></td>
+                                            </tr>
+                                            <tr class="fw-bold">
+                                                <td colspan="3" class="text-end">Total:</td>
+                                                <td class="text-end">@model.Total.ToString("C")</td>
+                                                <td></td>
+                                            </tr>
+                                        </tfoot>
+                                    }
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0">Notes</h5>
+                        </div>
+                        <div class="card-body">
+                            <InputTextArea class="form-control" rows="4" @bind-Value="model.Notes" 
+                                           placeholder="Add any notes or payment instructions..." />
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <button type="button" class="btn btn-outline-secondary" @onclick="Cancel" disabled="@isSaving">
+                                    Cancel
+                                </button>
+                                <div class="d-flex gap-2">
+                                    @if (!IsNew)
+                                    {
+                                        <button type="button" class="btn btn-outline-danger" @onclick="DeleteInvoice" disabled="@isSaving">
+                                            <i class="bi bi-trash me-2"></i>Delete
+                                        </button>
+                                    }
+                                    <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                                        @if (isSaving)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-2"></span>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-check-circle me-2"></i>
+                                        }
+                                        @(IsNew ? "Create Invoice" : "Save Changes")
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger mt-3">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>@errorMessage
+                        </div>
+                    }
+                </EditForm>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int? Id { get; set; }
+
+    private bool IsNew => !Id.HasValue;
+    private bool isLoading = true;
+    private bool isSaving = false;
+    private string errorMessage = "";
+    private Invoice model = new();
+    private List<Customer> customers = new();
+    private List<Job> jobs = new();
+    private List<InvoiceLineItem> lineItems = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDropdownsAsync();
+
+        if (IsNew)
+        {
+            // Check for jobId query parameter
+            var uri = new Uri(Navigation.Uri);
+            var queryParams = System.Web.HttpUtility.ParseQueryString(uri.Query);
+            if (int.TryParse(queryParams["jobId"], out int jobId))
+            {
+                model.JobId = jobId;
+            }
+
+            model = new Invoice
+            {
+                InvoiceDate = DateTime.Now,
+                Status = InvoiceStatus.Draft,
+                Terms = "Net 30",
+                Balance = 0
+            };
+            lineItems = new List<InvoiceLineItem>();
+            isLoading = false;
+        }
+        else
+        {
+            await LoadInvoiceAsync();
+        }
+    }
+
+    private async Task LoadDropdownsAsync()
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            
+            customers = await db.Customers
+                .Where(c => c.Status == CustomerStatus.Active)
+                .OrderBy(c => c.Name)
+                .AsNoTracking()
+                .ToListAsync();
+
+            jobs = await db.Jobs
+                .Where(j => j.Status != JobStatus.Cancelled)
+                .OrderByDescending(j => j.ScheduledDate)
+                .Take(50)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load data: {ex.Message}";
+        }
+    }
+
+    private async Task LoadInvoiceAsync()
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            
+            var invoice = await db.Invoices
+                .Include(i => i.LineItems)
+                .FirstOrDefaultAsync(i => i.Id == Id!.Value);
+
+            if (invoice != null)
+            {
+                model = invoice;
+                lineItems = invoice.LineItems?.ToList() ?? new List<InvoiceLineItem>();
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load invoice: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void AddLineItem()
+    {
+        lineItems.Add(new InvoiceLineItem
+        {
+            Quantity = 1,
+            UnitPrice = 0
+        });
+    }
+
+    private void RemoveLineItem(int index)
+    {
+        if (index >= 0 && index < lineItems.Count)
+        {
+            lineItems.RemoveAt(index);
+            CalculateTotals();
+        }
+    }
+
+    private void CalculateTotals()
+    {
+        model.SubTotal = lineItems.Sum(item => item.Quantity * item.UnitPrice);
+        model.Total = model.SubTotal + model.TaxAmount;
+        model.BalanceDue = model.Total;
+        StateHasChanged();
+    }
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            isSaving = true;
+            errorMessage = "";
+
+            // Validate
+            if (model.CustomerId == 0)
+            {
+                errorMessage = "Please select a customer";
+                return;
+            }
+
+            if (!lineItems.Any())
+            {
+                errorMessage = "Please add at least one line item";
+                return;
+            }
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+
+            if (IsNew)
+            {
+                // Generate invoice number
+                var maxNumber = await db.Invoices
+                    .Where(i => i.InvoiceNumber != null && i.InvoiceNumber.StartsWith("INV-"))
+                    .Select(i => i.InvoiceNumber)
+                    .ToListAsync();
+
+                var nextNumber = 1;
+                if (maxNumber.Any())
+                {
+                    nextNumber = maxNumber
+                        .Select(n => int.TryParse(n?.Substring(4), out int num) ? num : 0)
+                        .DefaultIfEmpty(0)
+                        .Max() + 1;
+                }
+                model.InvoiceNumber = $"INV-{nextNumber:D4}";
+                model.CreatedAt = DateTime.UtcNow;
+
+                // Add line items
+                model.LineItems = lineItems;
+
+                db.Invoices.Add(model);
+            }
+            else
+            {
+                // model.ModifiedAt = DateTime.UtcNow;
+
+                // Remove old line items and add new ones
+                var existingLineItems = await db.InvoiceLineItems.Where(li => li.InvoiceId == model.Id).ToListAsync();
+                db.InvoiceLineItems.RemoveRange(existingLineItems);
+
+                foreach (var item in lineItems)
+                {
+                    item.InvoiceId = model.Id;
+                    db.InvoiceLineItems.Add(item);
+                }
+
+                db.Invoices.Update(model);
+            }
+
+            await db.SaveChangesAsync();
+
+            Navigation.NavigateTo(IsNew ? "/invoices" : $"/invoices/{model.Id}");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to save invoice: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task DeleteInvoice()
+    {
+        if (!await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this invoice?"))
+            return;
+
+        try
+        {
+            isSaving = true;
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+            db.Invoices.Remove(model);
+            await db.SaveChangesAsync();
+
+            Navigation.NavigateTo("/invoices");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to delete invoice: {ex.Message}";
+            isSaving = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        if (IsNew)
+        {
+            Navigation.NavigateTo("/invoices");
+        }
+        else
+        {
+            Navigation.NavigateTo($"/invoices/{Id}");
+        }
+    }
+}

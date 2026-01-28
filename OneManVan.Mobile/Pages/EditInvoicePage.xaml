@@ -17,6 +17,16 @@
             <Entry x:Name="PartsAmountEntry" Placeholder="Parts Amount" Keyboard="Numeric"/>
             <Entry x:Name="TaxRateEntry" Placeholder="Tax Rate %" Keyboard="Numeric"/>
             
+            <!-- Tax Included Toggle -->
+            <HorizontalStackLayout Spacing="8" Margin="0,8">
+                <Switch x:Name="TaxIncludedSwitch" 
+                        OnColor="{StaticResource Primary}"
+                        ThumbColor="White"/>
+                <Label Text="Tax Already Included in Price" 
+                       FontSize="14" 
+                       VerticalOptions="Center"/>
+            </HorizontalStackLayout>
+            
             <Picker x:Name="StatusPicker" Title="Status">
                 <Picker.Items>
                     <x:String>Draft</x:String>

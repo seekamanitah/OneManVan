@@ -10,7 +10,10 @@
             <ActivityIndicator x:Name="LoadingIndicator" IsRunning="False" IsVisible="False"/>
 
             <!-- Header -->
-            <Frame>
+            <Border Stroke="{AppThemeBinding Light=#E0E0E0, Dark=#404040}"
+                    StrokeShape="RoundRectangle 8"
+                    Padding="16"
+                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#2C2C2C}">
                 <VerticalStackLayout Spacing="8">
                     <Label x:Name="NameLabel" FontSize="20" FontAttributes="Bold"/>
                     <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
@@ -22,19 +25,32 @@
                     </Grid>
                     <Label x:Name="DescriptionLabel" TextColor="Gray" FontSize="13"/>
                 </VerticalStackLayout>
-            </Frame>
+            </Border>
 
             <!-- Stock Warning -->
-            <Frame x:Name="LowStockWarning" BackgroundColor="{DynamicResource WarningSurface}" IsVisible="False">
+            <Border x:Name="LowStockWarning" 
+                    Stroke="{AppThemeBinding Light=#FFD700, Dark=#FF8C00}"
+                    StrokeShape="RoundRectangle 8"
+                    Padding="12"
+                    BackgroundColor="{AppThemeBinding Light=#FFF9E6, Dark=#4D3800}" 
+                    IsVisible="False">
                 <Label Text="Low Stock - Below reorder point" TextColor="{DynamicResource Warning}"/>
-            </Frame>
+            </Border>
 
-            <Frame x:Name="OutOfStockWarning" BackgroundColor="{DynamicResource ErrorSurface}" IsVisible="False">
+            <Border x:Name="OutOfStockWarning" 
+                    Stroke="{AppThemeBinding Light=#FF6B6B, Dark=#CC0000}"
+                    StrokeShape="RoundRectangle 8"
+                    Padding="12"
+                    BackgroundColor="{AppThemeBinding Light=#FFEBEE, Dark=#5C1A1A}" 
+                    IsVisible="False">
                 <Label Text="Out of Stock" TextColor="{DynamicResource Error}"/>
-            </Frame>
+            </Border>
 
             <!-- Stock & Pricing -->
-            <Frame>
+            <Border Stroke="{AppThemeBinding Light=#E0E0E0, Dark=#404040}"
+                    StrokeShape="RoundRectangle 8"
+                    Padding="16"
+                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#2C2C2C}">
                 <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="*,*" RowSpacing="12" ColumnSpacing="12">
                     <Label Text="Quantity" Grid.Row="0" Grid.Column="0" FontAttributes="Bold"/>
                     <Label x:Name="QuantityLabel" Grid.Row="1" Grid.Column="0" FontSize="18" FontAttributes="Bold"/>
@@ -48,10 +64,13 @@
                     <Label Text="Margin" Grid.Row="2" Grid.Column="1" FontAttributes="Bold"/>
                     <Label x:Name="MarginLabel" Grid.Row="3" Grid.Column="1" FontSize="18"/>
                 </Grid>
-            </Frame>
+            </Border>
 
             <!-- Location & Supplier -->
-            <Frame>
+            <Border Stroke="{AppThemeBinding Light=#E0E0E0, Dark=#404040}"
+                    StrokeShape="RoundRectangle 8"
+                    Padding="16"
+                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#2C2C2C}">
                 <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="*,*" RowSpacing="8" ColumnSpacing="12">
                     <Label Text="Location" Grid.Row="0" Grid.Column="0" TextColor="Gray" FontSize="12"/>
                     <Label x:Name="LocationLabel" Grid.Row="1" Grid.Column="0"/>
@@ -62,10 +81,13 @@
                     <Label Text="Last Restocked" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" TextColor="Gray" FontSize="12"/>
                     <Label x:Name="LastRestockedLabel" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"/>
                 </Grid>
-            </Frame>
+            </Border>
 
             <!-- Recent Activity -->
-            <Frame>
+            <Border Stroke="{AppThemeBinding Light=#E0E0E0, Dark=#404040}"
+                    StrokeShape="RoundRectangle 8"
+                    Padding="16"
+                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#2C2C2C}">
                 <VerticalStackLayout Spacing="8">
                     <Label Text="Recent Activity" FontAttributes="Bold" FontSize="16"/>
                     <CollectionView x:Name="LogsCollection">
@@ -87,7 +109,7 @@
                         </CollectionView.ItemTemplate>
                     </CollectionView>
                 </VerticalStackLayout>
-            </Frame>
+            </Border>
 
             <!-- Action Buttons -->
             <Button Text="Adjust Stock" 

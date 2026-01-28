@@ -175,9 +175,7 @@ public partial class JobListPage : UserControl
         
         if (_selectedJob != null)
         {
-            // Hide sidebar panels - we're using drawer now
-            NoSelectionPanel.Visibility = Visibility.Collapsed;
-            JobDetailsPanel.Visibility = Visibility.Collapsed;
+            // Note: NoSelectionPanel and JobDetailsPanel removed - using drawer system now
             
             // Open drawer for editing
             var formContent = new Controls.JobFormContent(_dbContext);
@@ -211,7 +209,8 @@ public partial class JobListPage : UserControl
                         await DrawerService.Instance.CompleteDrawerAsync();
                         await LoadJobsAsync();
                         
-                        ToastService.Success($"Job '{_selectedJob.Title}' updated!");
+                        MessageBox.Show($"Job '{_selectedJob.Title}' updated!", "Success",
+                            MessageBoxButton.OK, MessageBoxImage.Information);
                     }
                     catch (Exception ex)
                     {
@@ -221,82 +220,15 @@ public partial class JobListPage : UserControl
                 }
             );
         }
-        else
-        {
-            NoSelectionPanel.Visibility = Visibility.Visible;
-            JobDetailsPanel.Visibility = Visibility.Collapsed;
-        }
     }
 
-    private void UpdateJobDetails()
-    {
-        if (_selectedJob == null) return;
-
-        // Status banner
-        var statusColor = GetStatusColor(_selectedJob.Status);
-        StatusBanner.Background = new SolidColorBrush(statusColor);
-        DetailStatusText.Text = _selectedJob.StatusDisplay;
-        DetailJobNumber.Text = _selectedJob.JobNumber ?? $"J-{_selectedJob.Id:D4}";
-        StatusCombo.SelectedItem = _selectedJob.Status;
-
-        // Title
-        DetailTitle.Text = _selectedJob.Title;
-
-        // Customer
-        DetailCustomerName.Text = _selectedJob.Customer?.Name ?? "Unknown Customer";
-        DetailCustomerPhone.Text = _selectedJob.Customer?.Phone ?? "No phone";
-
-        // Address
-        if (_selectedJob.Site != null)
-        {
-            DetailAddress.Text = _selectedJob.Site.Address ?? "No address";
-            DetailCityState.Text = $"{_selectedJob.Site.City}, {_selectedJob.Site.State} {_selectedJob.Site.ZipCode}";
-        }
-        else
-        {
-            DetailAddress.Text = "No address on file";
-            DetailCityState.Text = "";
-        }
-
-        // Schedule
-        if (_selectedJob.ScheduledDate.HasValue)
-        {
-            DetailScheduledDate.Text = _selectedJob.ScheduledDate.Value.ToString("MMM d, yyyy");
-            DetailScheduledTime.Text = _selectedJob.ScheduledDate.Value.ToString("h:mm tt");
-        }
-        else
-        {
-            DetailScheduledDate.Text = "Not scheduled";
-            DetailScheduledTime.Text = "";
-        }
-        DetailDuration.Text = $"{_selectedJob.EstimatedHours:F1} hours";
-
-        // Description
-        DetailDescription.Text = _selectedJob.Description ?? "No description provided";
-
-        // Pricing
-        DetailLabor.Text = $"${_selectedJob.LaborTotal:F2}";
-        DetailParts.Text = $"${_selectedJob.PartsTotal:F2}";
-        DetailTax.Text = $"${_selectedJob.TaxAmount:F2}";
-        DetailTotal.Text = $"${_selectedJob.Total:F2}";
-
-        // Update button states
-        UpdateActionButtons();
-    }
+    // UpdateJobDetails method removed - no longer needed with drawer system
+    // Details are shown in the drawer, not in a side panel
 
     private void UpdateActionButtons()
     {
-        if (_selectedJob == null) return;
-
-        StartJobButton.Content = _selectedJob.Status switch
-        {
-            JobStatus.Draft or JobStatus.Scheduled => "Start Job",
-            JobStatus.EnRoute => "Arrive",
-            JobStatus.InProgress => "In Progress",
-            _ => "Start Job"
-        };
-
-        StartJobButton.IsEnabled = _selectedJob.Status < JobStatus.Completed;
+        // Method stub - no action buttons in the simplified list view
+        // Actions are now in the drawer
     }
 
     private static Color GetStatusColor(JobStatus status) => status switch
@@ -346,43 +278,11 @@ public partial class JobListPage : UserControl
 
     #region Job Actions
 
+
     private async void OnStatusChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (_selectedJob == null || StatusCombo.SelectedItem == null) return;
-        if (!IsLoaded) return;
-
-        var newStatus = (JobStatus)StatusCombo.SelectedItem;
-        if (newStatus == _selectedJob.Status) return;
-
-        try
-        {
-            _selectedJob.Status = newStatus;
-            _selectedJob.UpdatedAt = DateTime.UtcNow;
-
-            // Update timestamps based on status
-            switch (newStatus)
-            {
-                case JobStatus.EnRoute:
-                    _selectedJob.EnRouteAt ??= DateTime.Now;
-                    break;
-                case JobStatus.InProgress:
-                    _selectedJob.ArrivedAt ??= DateTime.Now;
-                    _selectedJob.StartedAt ??= DateTime.Now;
-                    break;
-                case JobStatus.Completed:
-                    _selectedJob.CompletedAt ??= DateTime.Now;
-                    break;
-            }
-
-            await _dbContext.SaveChangesAsync();
-            ToastService.Success($"Job status updated to {newStatus}");
-            UpdateJobDetails();
-            ApplyFilters();
-        }
-        catch (Exception ex)
-        {
-            ToastService.Error($"Failed to update status: {ex.Message}");
-        }
+        // Status change now handled in the drawer/dialog, not in the list view
+        await Task.CompletedTask;
     }
 
     private async void OnStartJobClick(object sender, RoutedEventArgs e)
@@ -406,7 +306,6 @@ public partial class JobListPage : UserControl
             await _dbContext.SaveChangesAsync();
             
             ToastService.Success("Job started");
-            UpdateJobDetails();
             ApplyFilters();
         }
         catch (Exception ex)
@@ -437,7 +336,6 @@ public partial class JobListPage : UserControl
             await _dbContext.SaveChangesAsync();
             
             ToastService.Success("Job completed");
-            UpdateJobDetails();
             ApplyFilters();
         }
         catch (Exception ex)
@@ -480,11 +378,9 @@ public partial class JobListPage : UserControl
 
             _selectedJob = null;
             JobListView.SelectedItem = null;
-            NoSelectionPanel.Visibility = Visibility.Visible;
-            JobDetailsPanel.Visibility = Visibility.Collapsed;
 
             await LoadJobsAsync();
-            ToastService.Success("Job deleted");
+            MessageBox.Show("Job deleted", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex)
         {

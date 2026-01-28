@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using OneManVan.Mobile.Pages;
 using OneManVan.Mobile.Services;
+using OneManVan.Shared.Services;
 
 namespace OneManVan.Mobile;
 

@@ -1,0 +1,301 @@
+@page "/jobs/{Id:int}"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@using OneManVan.Shared.Models.Enums
+@attribute [Authorize]
+@inject IDbContextFactory<OneManVanDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>@(job?.Title ?? "Job") - OneManVan</PageTitle>
+
+<div class="container-fluid py-4">
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary"></div>
+        </div>
+    }
+    else if (job == null)
+    {
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>Job not found
+        </div>
+    }
+    else
+    {
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-start mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/jobs">Jobs</a></li>
+                        <li class="breadcrumb-item active">@(job.JobNumber ?? $"Job #{job.Id}")</li>
+                    </ol>
+                </nav>
+                <div class="d-flex align-items-center">
+                    <div class="avatar-circle bg-primary bg-opacity-10 text-primary me-3" style="width: 60px; height: 60px; font-size: 24px;">
+                        <i class="bi bi-briefcase"></i>
+                    </div>
+                    <div>
+                        <h1 class="h2 mb-1">@job.Title</h1>
+                        @if (!string.IsNullOrEmpty(job.JobNumber))
+                        {
+                            <span class="badge bg-secondary me-1">@job.JobNumber</span>
+                        }
+                        <span class="badge @GetStatusBadge()">@job.Status</span>
+                        <span class="badge @GetPriorityBadge()">@job.Priority</span>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary" @onclick="GoBack">
+                    <i class="bi bi-arrow-left me-2"></i>Back
+                </button>
+                <button class="btn btn-primary" @onclick="EditJob">
+                    <i class="bi bi-pencil me-2"></i>Edit
+                </button>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <!-- Main Info -->
+            <div class="col-md-8">
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0">Job Details</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Job Type</label>
+                                <span>@job.JobType</span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Priority</label>
+                                <span class="badge @GetPriorityBadge()">@job.Priority</span>
+                            </div>
+                            @if (!string.IsNullOrEmpty(job.Description))
+                            {
+                                <div class="col-12">
+                                    <label class="text-muted small d-block mb-1">Description</label>
+                                    <p class="mb-0">@job.Description</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Schedule -->
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0">Schedule</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Scheduled Date</label>
+                                <span>@(job.ScheduledDate?.ToString("MMM dd, yyyy") ?? "Not scheduled")</span>
+                            </div>
+                            @if (job.ArrivalWindowStart.HasValue || job.ArrivalWindowEnd.HasValue)
+                            {
+                                <div class="col-md-6">
+                                    <label class="text-muted small d-block mb-1">Arrival Window</label>
+                                    <span>
+                                        @(job.ArrivalWindowStart?.ToString(@"hh\:mm") ?? "-")
+                                        - @(job.ArrivalWindowEnd?.ToString(@"hh\:mm") ?? "-")
+                                    </span>
+                                </div>
+                            }
+                            @if (job.RequestedDate.HasValue)
+                            {
+                                <div class="col-md-6">
+                                    <label class="text-muted small d-block mb-1">Customer Requested</label>
+                                    <span>@job.RequestedDate.Value.ToString("MMM dd, yyyy")</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notes -->
+                @if (!string.IsNullOrEmpty(job.Notes))
+                {
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0">Notes</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-0">@job.Notes</p>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-md-4">
+                <!-- Customer Info -->
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0">Customer</h5>
+                    </div>
+                    <div class="card-body">
+                        @if (job.Customer != null)
+                        {
+                            <a href="/customers/@job.CustomerId" class="text-decoration-none">
+                                <div class="fw-semibold">@job.Customer.Name</div>
+                            </a>
+                            @if (!string.IsNullOrEmpty(job.Customer.Phone))
+                            {
+                                <div class="text-muted small mt-1">@job.Customer.Phone</div>
+                            }
+                            @if (!string.IsNullOrEmpty(job.Customer.Email))
+                            {
+                                <div class="text-muted small">@job.Customer.Email</div>
+                            }
+                        }
+                        else
+                        {
+                            <span class="text-muted">No customer</span>
+                        }
+                    </div>
+                </div>
+
+                <!-- Site Info -->
+                @if (job.Site != null)
+                {
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0">Service Location</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="fw-semibold">@job.Site.Address</div>
+                            @if (!string.IsNullOrEmpty(job.Site.City))
+                            {
+                                <div class="text-muted small">@job.Site.City, @job.Site.State @job.Site.ZipCode</div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- Asset Info -->
+                @if (job.Asset != null)
+                {
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0">Asset</h5>
+                        </div>
+                        <div class="card-body">
+                            <a href="/assets/@job.AssetId" class="text-decoration-none">
+                                <div class="fw-semibold">@(job.Asset.AssetName ?? $"{job.Asset.Brand} {job.Asset.Model}")</div>
+                            </a>
+                            <div class="text-muted small">Serial: @job.Asset.Serial</div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Actions -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-primary" @onclick="EditJob">
+                                <i class="bi bi-pencil me-2"></i>Edit Job
+                            </button>
+                            @if (job.Status == JobStatus.Completed)
+                            {
+                                <button class="btn btn-outline-success" @onclick="CreateInvoice">
+                                    <i class="bi bi-receipt me-2"></i>Create Invoice
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .avatar-circle {
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private bool isLoading = true;
+    private Job? job;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadJobAsync();
+    }
+
+    private async Task LoadJobAsync()
+    {
+        try
+        {
+            isLoading = true;
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+            
+            job = await db.Jobs
+                .Include(j => j.Customer)
+                .Include(j => j.Site)
+                .Include(j => j.Asset)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(j => j.Id == Id);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/jobs");
+    }
+
+    private void EditJob()
+    {
+        Navigation.NavigateTo($"/jobs/{Id}/edit");
+    }
+
+    private void CreateInvoice()
+    {
+        Navigation.NavigateTo($"/invoices/new?jobId={Id}");
+    }
+
+    private string GetStatusBadge()
+    {
+        return job?.Status switch
+        {
+            JobStatus.Draft => "bg-secondary",
+            JobStatus.Scheduled => "bg-info",
+            JobStatus.InProgress => "bg-primary",
+            JobStatus.Completed => "bg-success",
+            JobStatus.Cancelled => "bg-danger",
+            JobStatus.OnHold => "bg-warning",
+            _ => "bg-secondary"
+        };
+    }
+
+    private string GetPriorityBadge()
+    {
+        return job?.Priority switch
+        {
+            JobPriority.Low => "bg-secondary",
+            JobPriority.Normal => "bg-info",
+            JobPriority.High => "bg-warning",
+            JobPriority.Urgent => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+}

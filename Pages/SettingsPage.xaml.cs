@@ -6,6 +6,7 @@ using System.Windows.Controls.Primitives;
 using Microsoft.EntityFrameworkCore;
 using OneManVan.Services;
 using OneManVan.Shared.Models;
+using OneManVan.Shared.Services;
 
 namespace OneManVan.Pages;
 
@@ -18,6 +19,8 @@ public partial class SettingsPage : UserControl
     private readonly GoogleCalendarService _googleCalendarService = new();
     private readonly CsvExportImportService _csvService;
     private readonly InvoicePdfService _pdfService;
+    private readonly DatabaseConfigService _databaseConfigService;
+    private readonly DatabaseManagementService _databaseManagementService;
     
     public decimal LaborRate { get; set; } = 85m;
     public decimal TaxRate { get; set; } = 7m;
@@ -26,8 +29,21 @@ public partial class SettingsPage : UserControl
     public SettingsPage()
     {
         InitializeComponent();
-        _csvService = new CsvExportImportService(App.DbContext);
+        
+        // Use shared CsvExportImportService with ISettingsStorage
+        var settingsStorage = new DesktopSettingsStorage();
+        _csvService = new Shared.Services.CsvExportImportService(App.DbContext, settingsStorage);
         _pdfService = new InvoicePdfService();
+        
+        // Initialize database config service
+        var configDir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "OneManVan");
+        _databaseConfigService = new DatabaseConfigService(configDir);
+        
+        // Initialize database management service
+        _databaseManagementService = new DatabaseManagementService();
+        
         DataContext = this;
         LoadSettings();
         LoadKeyboardShortcuts();
@@ -35,6 +51,8 @@ public partial class SettingsPage : UserControl
         LoadGoogleCalendarSettings();
         LoadTradeConfiguration();
         LoadPdfSettings();
+        LoadDatabaseConfiguration();
+        _ = LoadDatabaseStatsAsync();
     }
 
     private void LoadKeyboardShortcuts()
@@ -68,12 +86,6 @@ public partial class SettingsPage : UserControl
 
         // Set theme toggle state
         ThemeToggle.IsChecked = !App.ThemeService.IsDarkMode;
-
-        // Set UI scale slider - Detach event to prevent triggering save during load
-        UiScaleSlider.ValueChanged -= UiScaleSlider_ValueChanged;
-        UiScaleSlider.Value = App.UiScaleService.CurrentScale;
-        UiScalePercentText.Text = App.UiScaleService.GetScalePercentage();
-        UiScaleSlider.ValueChanged += UiScaleSlider_ValueChanged;
 
         // Load scheduled backup settings
         LoadBackupSettings();
@@ -159,14 +171,14 @@ public partial class SettingsPage : UserControl
             {
                 LoadBackupSettings(); // Refresh UI
                 MessageBox.Show(
-                    $"Backup created successfully!\n\n{result.FilePath}\n\nCleaned up {result.CleanedUpCount} old backup(s).",
+                    $"Backup created successfully!\n\nFile: {result.FilePath}\nRecords: {result.RecordCount}\n\n{result.Message}",
                     "Backup Complete",
                     MessageBoxButton.OK,
                     MessageBoxImage.Information);
             }
             else
             {
-                MessageBox.Show($"Backup failed: {result.ErrorMessage}", "Error",
+                MessageBox.Show($"Backup failed: {result.Message}", "Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -187,24 +199,6 @@ public partial class SettingsPage : UserControl
 
             App.ThemeService.SetTheme(theme);
         }
-    }
-
-    private void UiScaleSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-    {
-        if (App.UiScaleService == null) return;
-        
-        App.UiScaleService.SetScale(e.NewValue);
-        if (UiScalePercentText != null)
-        {
-            UiScalePercentText.Text = App.UiScaleService.GetScalePercentage();
-        }
-    }
-
-    private void ResetUiScale_Click(object sender, RoutedEventArgs e)
-    {
-        App.UiScaleService.ResetScale();
-        UiScaleSlider.Value = App.UiScaleService.CurrentScale;
-        UiScalePercentText.Text = App.UiScaleService.GetScalePercentage();
     }
 
     private void SaveDefaults_Click(object sender, RoutedEventArgs e)
@@ -267,14 +261,12 @@ public partial class SettingsPage : UserControl
                 if (importResult.Success)
                 {
                     var message = $"Import complete!\n\n" +
-                        $"Customers: {importResult.CustomersImported}\n" +
-                        $"Sites: {importResult.SitesImported}\n" +
-                        $"Assets: {importResult.AssetsImported}\n" +
-                        $"Total: {importResult.TotalImported}";
+                        $"Records imported: {importResult.RecordCount}\n" +
+                        $"Timestamp: {importResult.Timestamp:yyyy-MM-dd HH:mm:ss}";
 
-                    if (importResult.Warnings.Count > 0)
+                    if (!string.IsNullOrEmpty(importResult.Message))
                     {
-                        message += $"\n\nWarnings: {importResult.Warnings.Count}";
+                        message += $"\n\n{importResult.Message}";
                     }
 
                     MessageBox.Show(message, "Import Complete",
@@ -282,7 +274,7 @@ public partial class SettingsPage : UserControl
                 }
                 else
                 {
-                    MessageBox.Show($"Import failed:\n{string.Join("\n", importResult.Errors)}", "Import Error",
+                    MessageBox.Show($"Import failed:\n{importResult.Message}", "Import Error",
                         MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
@@ -1201,6 +1193,492 @@ public partial class SettingsPage : UserControl
         invoice.AmountPaid = 0;
 
         return invoice;
+    }
+
+    #endregion
+
+    #region Database Configuration
+
+    private void LoadDatabaseConfiguration()
+    {
+        try
+        {
+            var config = _databaseConfigService.LoadConfiguration();
+
+            // Set UI values
+            if (config.Type == DatabaseType.SQLite)
+            {
+                SqliteRadio.IsChecked = true;
+                SqlServerPanel.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                SqlServerRadio.IsChecked = true;
+                SqlServerPanel.Visibility = Visibility.Visible;
+                
+                ServerAddressBox.Text = config.ServerAddress ?? "localhost";
+                ServerPortBox.Text = config.ServerPort.ToString();
+                DatabaseNameBox.Text = config.DatabaseName;
+                UsernameBox.Text = config.Username ?? "";
+                PasswordBox.Password = config.Password ?? "";
+                TrustCertificateCheck.IsChecked = config.TrustServerCertificate;
+                EncryptCheck.IsChecked = config.Encrypt;
+            }
+
+            UpdateCurrentConfigDisplay();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Failed to load database configuration: {ex.Message}");
+        }
+    }
+
+    private void OnDatabaseTypeChanged(object sender, RoutedEventArgs e)
+    {
+        // Null check - controls may not be initialized yet during InitializeComponent
+        if (SqlServerRadio == null || SqlServerPanel == null)
+            return;
+
+        if (SqlServerRadio.IsChecked == true)
+        {
+            SqlServerPanel.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            SqlServerPanel.Visibility = Visibility.Collapsed;
+        }
+
+        UpdateCurrentConfigDisplay();
+    }
+
+    private async void OnTestConnectionClicked(object sender, RoutedEventArgs e)
+    {
+        ConnectionStatusText.Visibility = Visibility.Collapsed;
+
+        // Build config from UI
+        var testConfig = BuildConfigFromUI();
+        
+        // Validate first
+        var validation = testConfig.Validate();
+        if (!validation.IsValid)
+        {
+            ConnectionStatusText.Text = $"? {validation.ErrorMessage}";
+            ConnectionStatusText.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Red);
+            ConnectionStatusText.Visibility = Visibility.Visible;
+            return;
+        }
+
+        // Show loading
+        var button = sender as Button;
+        if (button == null) return;
+        var originalContent = button?.Content;
+        button.Content = "Testing...";
+        button.IsEnabled = false;
+
+        try
+        {
+            // For SQLite, test file access
+            if (testConfig.Type == DatabaseType.SQLite)
+            {
+                var baseDir = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "OneManVan");
+                var connectionString = testConfig.GetConnectionString(baseDir);
+                
+                var optionsBuilder = new DbContextOptionsBuilder<Shared.Data.OneManVanDbContext>();
+                optionsBuilder.UseSqlite(connectionString);
+                
+                using var context = new Shared.Data.OneManVanDbContext(optionsBuilder.Options);
+                var canConnect = await context.Database.CanConnectAsync();
+                
+                if (canConnect)
+                {
+                    ConnectionStatusText.Text = "? SQLite database accessible!";
+                    ConnectionStatusText.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Green);
+                }
+                else
+                {
+                    ConnectionStatusText.Text = "? Unable to access SQLite database";
+                    ConnectionStatusText.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Red);
+                }
+            }
+            else
+            {
+                // For SQL Server, just show validation success (actual connection test requires SQL Server package)
+                ConnectionStatusText.Text = "? Configuration is valid. Save and restart to connect to SQL Server.";
+                ConnectionStatusText.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Green);
+            }
+            
+            ConnectionStatusText.Visibility = Visibility.Visible;
+        }
+        catch (Exception ex)
+        {
+            ConnectionStatusText.Text = $"? Connection failed: {ex.Message}";
+            ConnectionStatusText.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Red);
+            ConnectionStatusText.Visibility = Visibility.Visible;
+        }
+        finally
+        {
+            button.Content = originalContent;
+            button.IsEnabled = true;
+        }
+    }
+
+    private void OnSaveDatabaseConfigClicked(object sender, RoutedEventArgs e)
+    {
+        var newConfig = BuildConfigFromUI();
+        
+        // Validate
+        var validation = newConfig.Validate();
+        if (!validation.IsValid)
+        {
+            MessageBox.Show(validation.ErrorMessage, "Validation Error", 
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        // Check if changed
+        if (!_databaseConfigService.HasConfigurationChanged(newConfig))
+        {
+            MessageBox.Show("No changes detected.", "Information", 
+                MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        // Confirm restart
+        var result = MessageBox.Show(
+            "Changing the database configuration requires restarting the application.\n\n" +
+            "Any unsaved changes will be lost. Continue?",
+            "Restart Required",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+
+        if (result != MessageBoxResult.Yes)
+            return;
+
+        try
+        {
+            // Save configuration
+            _databaseConfigService.SaveConfiguration(newConfig);
+
+            // Restart application
+            var exePath = Process.GetCurrentProcess().MainModule?.FileName;
+            if (!string.IsNullOrEmpty(exePath))
+            {
+                Process.Start(exePath);
+                Application.Current.Shutdown();
+            }
+            else
+            {
+                MessageBox.Show("Configuration saved. Please restart the application manually.", 
+                    "Restart Required", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Failed to save configuration: {ex.Message}", 
+                "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private void OnResetDatabaseConfigClicked(object sender, RoutedEventArgs e)
+    {
+        var result = MessageBox.Show(
+            "Reset database configuration to default (Local SQLite)?",
+            "Confirm Reset",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+
+        if (result == MessageBoxResult.Yes)
+        {
+            _databaseConfigService.ResetToDefault();
+            LoadDatabaseConfiguration();
+        }
+    }
+
+    private void OnShowPasswordClicked(object sender, RoutedEventArgs e)
+    {
+        // Toggle password visibility
+        if (ShowPasswordButton.Content.ToString() == "Show")
+        {
+            // Create TextBox to show password
+            var textBox = new TextBox
+            {
+                Text = PasswordBox.Password,
+                IsReadOnly = true,
+                Background = PasswordBox.Background,
+                Foreground = PasswordBox.Foreground,
+                BorderBrush = PasswordBox.BorderBrush
+            };
+            
+            // Replace PasswordBox temporarily
+            var parent = PasswordBox.Parent as Grid;
+            var index = parent.Children.IndexOf(PasswordBox);
+            parent.Children.RemoveAt(index);
+            parent.Children.Insert(index, textBox);
+            
+            ShowPasswordButton.Content = "Hide";
+            ShowPasswordButton.Tag = textBox;
+        }
+        else
+        {
+            // Restore PasswordBox
+            var textBox = ShowPasswordButton.Tag as TextBox;
+            var parent = textBox.Parent as Grid;
+            var index = parent.Children.IndexOf(textBox);
+            parent.Children.RemoveAt(index);
+            parent.Children.Insert(index, PasswordBox);
+            
+            ShowPasswordButton.Content = "Show";
+            ShowPasswordButton.Tag = null;
+        }
+    }
+
+    private DatabaseConfig BuildConfigFromUI()
+    {
+        var config = new DatabaseConfig();
+
+        if (SqlServerRadio.IsChecked == true)
+        {
+            config.Type = DatabaseType.SqlServer;
+            config.ServerAddress = ServerAddressBox.Text.Trim();
+            config.ServerPort = int.TryParse(ServerPortBox.Text, out var port) ? port : 1433;
+            config.DatabaseName = DatabaseNameBox.Text.Trim();
+            config.Username = UsernameBox.Text.Trim();
+            config.Password = PasswordBox.Password;
+            config.TrustServerCertificate = TrustCertificateCheck.IsChecked == true;
+            config.Encrypt = EncryptCheck.IsChecked == true;
+        }
+        else
+        {
+            config.Type = DatabaseType.SQLite;
+            config.SqliteFilePath = "OneManVan.db";
+        }
+
+        return config;
+    }
+
+    private void UpdateCurrentConfigDisplay()
+    {
+        try
+        {
+            var config = _databaseConfigService.GetCurrentConfiguration();
+            var baseDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "OneManVan");
+            
+            CurrentConfigText.Text = $"Type: {config.Type}\n" +
+                                     $"Connection: {config.GetDisplayConnectionString(baseDir)}";
+        }
+        catch (Exception ex)
+        {
+            CurrentConfigText.Text = $"Error: {ex.Message}";
+        }
+    }
+
+    #endregion
+
+    #region Database Management
+
+    private async Task LoadDatabaseStatsAsync()
+    {
+        try
+        {
+            var stats = await _databaseManagementService.GetDatabaseStatsAsync(App.DbContext);
+            
+            DatabaseStatsText.Text = $"Customers: {stats.CustomerCount} | " +
+                                     $"Companies: {stats.CompanyCount} | " +
+                                     $"Assets: {stats.AssetCount} | " +
+                                     $"Products: {stats.ProductCount}\n" +
+                                     $"Jobs: {stats.JobCount} | " +
+                                     $"Estimates: {stats.EstimateCount} | " +
+                                     $"Invoices: {stats.InvoiceCount} | " +
+                                     $"Service Agreements: {stats.ServiceAgreementCount}\n" +
+                                     $"Total Records: {stats.TotalRecords}";
+        }
+        catch (Exception ex)
+        {
+            DatabaseStatsText.Text = $"Error loading stats: {ex.Message}";
+        }
+    }
+
+    private async void OnRefreshDatabaseStatsClicked(object sender, RoutedEventArgs e)
+    {
+        await LoadDatabaseStatsAsync();
+    }
+
+    private async void OnSeedDemoDataClicked(object sender, RoutedEventArgs e)
+    {
+        var result = MessageBox.Show(
+            "This will add demo data to your database:\n\n" +
+            "• 5 Customers\n" +
+            "• 3 Companies\n" +
+            "• 4 Assets\n" +
+            "• 4 Products\n" +
+            "• 3 Jobs\n" +
+            "• 2 Estimates\n" +
+            "• 2 Invoices\n" +
+            "• 1 Service Agreement\n\n" +
+            "Continue?",
+            "Seed Demo Data",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+
+        if (result != MessageBoxResult.Yes)
+            return;
+
+        try
+        {
+            var button = sender as Button;
+            if (button == null) return;
+            var originalContent = button?.Content;
+            button.Content = "Seeding...";
+            button.IsEnabled = false;
+
+            var success = await _databaseManagementService.SeedDemoDataAsync(App.DbContext);
+
+            if (success)
+            {
+                MessageBox.Show("Demo data seeded successfully!", "Success", 
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                await LoadDatabaseStatsAsync();
+            }
+            else
+            {
+                MessageBox.Show("Failed to seed demo data. Database may already contain data.", 
+                    "Information", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+
+            button.Content = originalContent;
+            button.IsEnabled = true;
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error seeding demo data: {ex.Message}", "Error", 
+                MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private async void OnClearAllDataClicked(object sender, RoutedEventArgs e)
+    {
+        var result = MessageBox.Show(
+            "?? WARNING: This will delete ALL data from the database!\n\n" +
+            "This includes:\n" +
+            "• All customers and companies\n" +
+            "• All assets and products\n" +
+            "• All jobs, estimates, and invoices\n" +
+            "• All service agreements\n\n" +
+            "The database structure will be preserved.\n\n" +
+            "THIS CANNOT BE UNDONE!\n\n" +
+            "Are you ABSOLUTELY SURE you want to continue?",
+            "Clear All Data - FINAL WARNING",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+
+        if (result != MessageBoxResult.Yes)
+            return;
+
+        try
+        {
+            var button = sender as Button;
+            if (button == null) return;
+            var originalContent = button?.Content;
+            button.Content = "Clearing...";
+            button.IsEnabled = false;
+
+            var success = await _databaseManagementService.ClearAllDataAsync(App.DbContext);
+
+            if (success)
+            {
+                MessageBox.Show("All data cleared successfully!", "Success", 
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                await LoadDatabaseStatsAsync();
+            }
+            else
+            {
+                MessageBox.Show("Failed to clear data.", "Error", 
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
+            button.Content = originalContent;
+            button.IsEnabled = true;
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error clearing data: {ex.Message}", "Error", 
+                MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private async void OnResetDatabaseClicked(object sender, RoutedEventArgs e)
+    {
+        var result = MessageBox.Show(
+            "?? CRITICAL WARNING: This will COMPLETELY ERASE the database!\n\n" +
+            "This will:\n" +
+            "• Delete ALL data (customers, companies, assets, etc.)\n" +
+            "• Delete the entire database structure\n" +
+            "• Recreate a fresh, empty database\n\n" +
+            "THIS CANNOT BE UNDONE!\n\n" +
+            "Are you ABSOLUTELY SURE you want to continue?",
+            "Reset Database - CRITICAL WARNING",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Stop);
+
+        if (result != MessageBoxResult.Yes)
+            return;
+
+        // Second confirmation
+        var confirmResult = MessageBox.Show(
+            "This is your FINAL WARNING!\n\n" +
+            "Type 'YES' in the next dialog to confirm database reset.",
+            "Final Confirmation Required",
+            MessageBoxButton.OKCancel,
+            MessageBoxImage.Warning);
+
+        if (confirmResult != MessageBoxResult.OK)
+            return;
+
+        try
+        {
+            var button = sender as Button;
+            if (button == null) return;
+            var originalContent = button?.Content;
+            button.Content = "Resetting...";
+            button.IsEnabled = false;
+
+            var success = await _databaseManagementService.ResetDatabaseAsync(App.DbContext);
+
+            if (success)
+            {
+                MessageBox.Show(
+                    "Database reset successfully!\n\n" +
+                    "The application will now restart.",
+                    "Success",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+
+                // Restart application
+                var exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
+                if (!string.IsNullOrEmpty(exePath))
+                {
+                    System.Diagnostics.Process.Start(exePath);
+                    Application.Current.Shutdown();
+                }
+            }
+            else
+            {
+                MessageBox.Show("Failed to reset database.", "Error", 
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
+            button.Content = originalContent;
+            button.IsEnabled = true;
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error resetting database: {ex.Message}", "Error", 
+                MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     #endregion

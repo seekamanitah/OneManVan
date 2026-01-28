@@ -59,6 +59,13 @@ public class DataSeederService
         var invoices = CreateSampleInvoices(customers, jobs);
         _context.Invoices.AddRange(invoices);
         await _context.SaveChangesAsync();
+
+        // Seed new fields from Product & Invoice Enhancements
+        await SeedProductEnhancements();
+        await SeedManufacturerBrands();
+        await SeedInvoiceLineItems(invoices);
+        await SeedAssetRegistrations(assets);
+        await SeedCompanies(customers);
     }
 
     private static List<Customer> CreateSampleCustomers()
@@ -562,6 +569,7 @@ public class DataSeederService
     public async Task ClearAllDataAsync()
     {
         _context.Payments.RemoveRange(_context.Payments);
+        _context.InvoiceLineItems.RemoveRange(_context.InvoiceLineItems);
         _context.Invoices.RemoveRange(_context.Invoices);
         _context.TimeEntries.RemoveRange(_context.TimeEntries);
         _context.Jobs.RemoveRange(_context.Jobs);
@@ -570,10 +578,189 @@ public class DataSeederService
         _context.InventoryLogs.RemoveRange(_context.InventoryLogs);
         _context.InventoryItems.RemoveRange(_context.InventoryItems);
         _context.CustomFields.RemoveRange(_context.CustomFields);
+        _context.AssetOwners.RemoveRange(_context.AssetOwners);
         _context.Assets.RemoveRange(_context.Assets);
         _context.Sites.RemoveRange(_context.Sites);
+        _context.CustomerCompanyRoles.RemoveRange(_context.CustomerCompanyRoles);
         _context.Customers.RemoveRange(_context.Customers);
+        _context.Companies.RemoveRange(_context.Companies);
+        _context.Products.RemoveRange(_context.Products);
         
         await _context.SaveChangesAsync();
     }
+
+    #region Product & Invoice Enhancement Seeding
+
+    private async Task SeedProductEnhancements()
+    {
+        var products = _context.Products.Take(10).ToList();
+        foreach (var product in products)
+        {
+            product.SerialNumber = $"{product.Manufacturer.Substring(0, Math.Min(2, product.Manufacturer.Length)).ToUpper()}-{DateTime.Now.Year}-{Random.Shared.Next(1000, 9999)}";
+            product.RegistrationRequired = true;
+        }
+        await _context.SaveChangesAsync();
+    }
+
+    private async Task SeedManufacturerBrands()
+    {
+        // ManufacturerRegistrations are seeded via migration, just verify
+        if (!_context.ManufacturerRegistrations.Any())
+        {
+            // Fallback: add a few key ones
+            var brands = new[]
+            {
+                new ManufacturerRegistration
+                {
+                    BrandName = "Trane",
+                    RegistrationUrl = "https://www.trane.com/residential/en/resources/warranty-and-registration",
+                    RegistrationNotes = "Register within 60 days for extended warranty",
+                    IsActive = true,
+                    DisplayOrder = 10
+                },
+                new ManufacturerRegistration
+                {
+                    BrandName = "Carrier",
+                    RegistrationUrl = "https://productregistration.carrier.com/Public/RegistrationForm?brand=carrier",
+                    RegistrationNotes = "Register for extended parts warranty",
+                    IsActive = true,
+                    DisplayOrder = 20
+                }
+            };
+            _context.ManufacturerRegistrations.AddRange(brands);
+            await _context.SaveChangesAsync();
+        }
+    }
+
+    private async Task SeedInvoiceLineItems(List<Invoice> invoices)
+    {
+        foreach (var invoice in invoices.Take(5))
+        {
+            var lineItems = new List<InvoiceLineItem>();
+            
+            if (invoice.LaborAmount > 0)
+            {
+                lineItems.Add(new InvoiceLineItem
+                {
+                    InvoiceId = invoice.Id,
+                    Source = "Labor",
+                    Description = "HVAC service labor",
+                    Quantity = 1,
+                    UnitPrice = invoice.LaborAmount,
+                    DisplayOrder = 1
+                });
+            }
+            
+            if (invoice.PartsAmount > 0)
+            {
+                lineItems.Add(new InvoiceLineItem
+                {
+                    InvoiceId = invoice.Id,
+                    Source = "Custom",
+                    Description = "Parts and materials",
+                    Quantity = 1,
+                    UnitPrice = invoice.PartsAmount,
+                    DisplayOrder = 2
+                });
+            }
+            
+            _context.InvoiceLineItems.AddRange(lineItems);
+        }
+        await _context.SaveChangesAsync();
+    }
+
+    private async Task SeedAssetRegistrations(List<Asset> assets)
+    {
+        var assetsWithSerials = assets.Where(a => !string.IsNullOrEmpty(a.Serial)).Take(6).ToList();
+        
+        // Mark 3 as registered
+        foreach (var asset in assetsWithSerials.Take(3))
+        {
+            asset.IsRegisteredOnline = true;
+            asset.RegistrationDate = DateTime.Now.AddDays(-Random.Shared.Next(5, 60));
+            asset.RegistrationConfirmation = $"REG-{Random.Shared.Next(100000, 999999)}";
+        }
+        
+        // Leave 3 unregistered for testing registration reminders
+        
+        await _context.SaveChangesAsync();
+    }
+
+    private async Task SeedCompanies(List<Customer> customers)
+    {
+        var companies = new[]
+        {
+            new Company
+            {
+                Name = "ABC Property Management",
+                CompanyType = CompanyType.PropertyManagement,
+                TaxId = "12-3456789",
+                Phone = "555-PM-0100",
+                Email = "info@abcproperty.com",
+                Website = "www.abcproperty.com",
+                IsActive = true,
+                Notes = "Manages 50+ residential properties",
+                CreatedAt = DateTime.UtcNow.AddMonths(-12)
+            },
+            new Company
+            {
+                Name = "XYZ Commercial HVAC",
+                CompanyType = CompanyType.Contractor,
+                TaxId = "98-7654321",
+                Phone = "555-HVAC-200",
+                Email = "contact@xyzhvac.com",
+                Website = "www.xyzhvac.com",
+                IsActive = true,
+                Notes = "Subcontractor for large commercial projects",
+                CreatedAt = DateTime.UtcNow.AddMonths(-8)
+            },
+            new Company
+            {
+                Name = "Green Building Corp",
+                CompanyType = CompanyType.PropertyManagement,
+                TaxId = "45-1122334",
+                Phone = "555-GRN-0300",
+                Email = "facilities@greenbuilding.com",
+                IsActive = true,
+                Notes = "LEED certified buildings",
+                CreatedAt = DateTime.UtcNow.AddMonths(-6)
+            }
+        };
+        
+        _context.Companies.AddRange(companies);
+        await _context.SaveChangesAsync();
+        
+        // Link some customers to companies
+        var firstCompany = companies[0];
+        var secondCompany = companies[1];
+        
+        _context.CustomerCompanyRoles.AddRange(
+            new CustomerCompanyRole
+            {
+                CustomerId = customers[1].Id,
+                CompanyId = firstCompany.Id,
+                Role = "Property Manager",
+                IsPrimaryContact = true
+            },
+            new CustomerCompanyRole
+            {
+                CustomerId = customers[2].Id,
+                CompanyId = firstCompany.Id,
+                Role = "Assistant Manager",
+                IsPrimaryContact = false
+            },
+            new CustomerCompanyRole
+            {
+                CustomerId = customers[3].Id,
+                CompanyId = secondCompany.Id,
+                Role = "Project Manager",
+                IsPrimaryContact = true
+            }
+        );
+        
+        await _context.SaveChangesAsync();
+    }
+
+    #endregion
 }
+

@@ -1,0 +1,373 @@
+@page "/invoices/{Id:int}"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@using OneManVan.Shared.Models.Enums
+@attribute [Authorize]
+@inject IDbContextFactory<OneManVanDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>@(invoice?.InvoiceNumber ?? "Invoice") - TradeFlow</PageTitle>
+
+<div class="container-fluid py-4">
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary"></div>
+        </div>
+    }
+    else if (invoice == null)
+    {
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>Invoice not found
+        </div>
+    }
+    else
+    {
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-start mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/invoices">Invoices</a></li>
+                        <li class="breadcrumb-item active">@invoice.InvoiceNumber</li>
+                    </ol>
+                </nav>
+                <div class="d-flex align-items-center">
+                    <div class="avatar-circle bg-success bg-opacity-10 text-success me-3" style="width: 60px; height: 60px; font-size: 24px;">
+                        <i class="bi bi-receipt"></i>
+                    </div>
+                    <div>
+                        <h1 class="h2 mb-1">Invoice @invoice.InvoiceNumber</h1>
+                        <div class="d-flex gap-2">
+                            <span class="badge @GetStatusBadgeClass(invoice.Status)">@invoice.Status</span>
+                            @if (invoice.DueDate.HasValue && invoice.DueDate < DateTime.Now && invoice.Status != InvoiceStatus.Paid)
+                            {
+                                <span class="badge bg-danger">Overdue</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary" @onclick="GoBack">
+                    <i class="bi bi-arrow-left me-2"></i>Back
+                </button>
+                @if (invoice.Status != InvoiceStatus.Paid)
+                {
+                    <button class="btn btn-success" @onclick="MarkAsPaid">
+                        <i class="bi bi-check-circle me-2"></i>Mark Paid
+                    </button>
+                }
+                <button class="btn btn-primary" @onclick="EditInvoice">
+                    <i class="bi bi-pencil me-2"></i>Edit
+                </button>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <!-- Invoice Details -->
+            <div class="col-md-8">
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0">Invoice Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Customer</label>
+                                @if (invoice.Customer != null)
+                                {
+                                    <a href="/customers/@invoice.CustomerId" class="text-decoration-none">
+                                        <i class="bi bi-person me-1"></i>@invoice.Customer.Name
+                                    </a>
+                                }
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Invoice Date</label>
+                                <span>@invoice.InvoiceDate.ToString("MMM dd, yyyy")</span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Due Date</label>
+                                @if (invoice.DueDate.HasValue)
+                                {
+                                    <span class="@(invoice.DueDate < DateTime.Now && invoice.Status != InvoiceStatus.Paid ? "text-danger fw-bold" : "")">
+                                        @invoice.DueDate.Value.ToString("MMM dd, yyyy")
+                                    </span>
+                                }
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Payment Terms</label>
+                                <span>@invoice.Terms</span>
+                            </div>
+                            @if (invoice.Job != null)
+                            {
+                                <div class="col-12">
+                                    <label class="text-muted small d-block mb-1">Related Job</label>
+                                    <a href="/jobs/@invoice.JobId" class="text-decoration-none">
+                                        <i class="bi bi-briefcase me-1"></i>@invoice.Job.JobNumber - @invoice.Job.Title
+                                    </a>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(invoice.Notes))
+                            {
+                                <div class="col-12">
+                                    <label class="text-muted small d-block mb-1">Notes</label>
+                                    <p class="mb-0">@invoice.Notes</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Line Items -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0">Line Items</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (invoice.LineItems?.Any() == true)
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Description</th>
+                                            <th class="text-center">Quantity</th>
+                                            <th class="text-end">Unit Price</th>
+                                            <th class="text-end">Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in invoice.LineItems)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <div>@item.Description</div>
+                                                    @if (!string.IsNullOrEmpty(item.Notes))
+                                                    {
+                                                        <small class="text-muted">@item.Notes</small>
+                                                    }
+                                                </td>
+                                                <td class="text-center">@item.Quantity</td>
+                                                <td class="text-end">@item.UnitPrice.ToString("C")</td>
+                                                <td class="text-end fw-semibold">@item.Total.ToString("C")</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                    <tfoot class="table-light">
+                                        <tr>
+                                            <td colspan="3" class="text-end fw-semibold">Subtotal:</td>
+                                            <td class="text-end fw-semibold">@invoice.SubTotal.ToString("C")</td>
+                                        </tr>
+                                        @if (invoice.TaxAmount > 0)
+                                        {
+                                            <tr>
+                                                <td colspan="3" class="text-end">Tax:</td>
+                                                <td class="text-end">@invoice.TaxAmount.ToString("C")</td>
+                                            </tr>
+                                        }
+                                        <tr class="fw-bold">
+                                            <td colspan="3" class="text-end">Total:</td>
+                                            <td class="text-end">@invoice.Total.ToString("C")</td>
+                                        </tr>
+                                        @if (invoice.BalanceDue > 0)
+                                        {
+                                            <tr class="text-danger fw-bold">
+                                                <td colspan="3" class="text-end">Balance Due:</td>
+                                                <td class="text-end">@invoice.BalanceDue.ToString("C")</td>
+                                            </tr>
+                                        }
+                                    </tfoot>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-4 text-muted">
+                                <i class="bi bi-inbox fs-3 mb-2 d-block"></i>
+                                <p class="mb-0">No line items</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-md-4">
+                <!-- Summary -->
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0">Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3 pb-3 border-bottom">
+                            <label class="text-muted small d-block mb-1">Total Amount</label>
+                            <span class="h3 mb-0">@invoice.Total.ToString("C")</span>
+                        </div>
+                        <div class="mb-3 pb-3 border-bottom">
+                            <label class="text-muted small d-block mb-1">Balance Due</label>
+                            <span class="h4 mb-0 @(invoice.BalanceDue > 0 ? "text-danger" : "text-success")">
+                                @invoice.BalanceDue.ToString("C")
+                            </span>
+                        </div>
+                        <div>
+                            <label class="text-muted small d-block mb-1">Status</label>
+                            <span class="badge @GetStatusBadgeClass(invoice.Status) fs-6">@invoice.Status</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            @if (invoice.Status != InvoiceStatus.Paid)
+                            {
+                                <button class="btn btn-success" @onclick="MarkAsPaid">
+                                    <i class="bi bi-check-circle me-2"></i>Mark as Paid
+                                </button>
+                            }
+                            @if (invoice.Status == InvoiceStatus.Draft)
+                            {
+                                <button class="btn btn-primary" @onclick="SendInvoice">
+                                    <i class="bi bi-send me-2"></i>Send Invoice
+                                </button>
+                            }
+                            <button class="btn btn-outline-secondary" @onclick="ViewCustomer">
+                                <i class="bi bi-person me-2"></i>View Customer
+                            </button>
+                            @if (invoice.Job != null)
+                            {
+                                <button class="btn btn-outline-secondary" @onclick="ViewJob">
+                                    <i class="bi bi-briefcase me-2"></i>View Job
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .avatar-circle {
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private bool isLoading = true;
+    private Invoice? invoice;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadInvoiceAsync();
+    }
+
+    private async Task LoadInvoiceAsync()
+    {
+        try
+        {
+            isLoading = true;
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+            
+            invoice = await db.Invoices
+                .Include(i => i.Customer)
+                .Include(i => i.Job)
+                .Include(i => i.LineItems)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(i => i.Id == Id);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/invoices");
+    }
+
+    private void EditInvoice()
+    {
+        Navigation.NavigateTo($"/invoices/{Id}/edit");
+    }
+
+    private void ViewCustomer()
+    {
+        if (invoice?.CustomerId != null)
+        {
+            Navigation.NavigateTo($"/customers/{invoice.CustomerId}");
+        }
+    }
+
+    private void ViewJob()
+    {
+        if (invoice?.JobId != null)
+        {
+            Navigation.NavigateTo($"/jobs/{invoice.JobId}");
+        }
+    }
+
+    private async Task MarkAsPaid()
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var invoiceToUpdate = await db.Invoices.FindAsync(Id);
+            if (invoiceToUpdate != null)
+            {
+                invoiceToUpdate.Status = InvoiceStatus.Paid;
+                invoiceToUpdate.Balance = 0;
+                await db.SaveChangesAsync();
+                await LoadInvoiceAsync();
+            }
+        }
+        catch (Exception)
+        {
+            // Handle error
+        }
+    }
+
+    private async Task SendInvoice()
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var invoiceToUpdate = await db.Invoices.FindAsync(Id);
+            if (invoiceToUpdate != null)
+            {
+                invoiceToUpdate.Status = InvoiceStatus.Sent;
+                await db.SaveChangesAsync();
+                await LoadInvoiceAsync();
+            }
+        }
+        catch (Exception)
+        {
+            // Handle error
+        }
+    }
+
+    private string GetStatusBadgeClass(InvoiceStatus status)
+    {
+        return status switch
+        {
+            InvoiceStatus.Draft => "bg-secondary",
+            InvoiceStatus.Sent => "bg-info",
+            InvoiceStatus.Paid => "bg-success",
+            InvoiceStatus.Overdue => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+}

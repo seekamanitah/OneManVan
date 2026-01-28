@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="OneManVan.Mobile.Controls.BusinessHealthChart">
+    
+    <Border BackgroundColor="{AppThemeBinding Light=White, Dark=#2D2D2D}"
+            StrokeShape="RoundRectangle 16"
+            Stroke="Transparent"
+            Padding="20,16">
+        
+        <Border.Shadow>
+            <Shadow Brush="Black" Offset="0,2" Radius="8" Opacity="0.12"/>
+        </Border.Shadow>
+
+        <Grid RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="16">
+            
+            <!-- Header -->
+            <Grid ColumnDefinitions="*,Auto">
+                <VerticalStackLayout>
+                    <Label Text="Business Health"
+                           FontSize="18"
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light=#333, Dark=#FFF}"/>
+                    <Label x:Name="SubtitleLabel"
+                           Text="Last 7 days performance"
+                           FontSize="12"
+                           TextColor="{AppThemeBinding Light=#757575, Dark=#B0B0B0}"/>
+                </VerticalStackLayout>
+                
+                <!-- Trend Badge -->
+                <Border Grid.Column="1"
+                        x:Name="TrendBadge"
+                        BackgroundColor="{AppThemeBinding Light=#E8F5E9, Dark=#1B3D1F}"
+                        StrokeShape="RoundRectangle 12"
+                        Stroke="Transparent"
+                        Padding="12,6"
+                        IsVisible="False">
+                    <Label x:Name="TrendLabel"
+                           FontSize="12"
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light=#388E3C, Dark=#81C784}"/>
+                </Border>
+            </Grid>
+
+            <!-- Revenue Chart Area -->
+            <Border Grid.Row="1"
+                    BackgroundColor="{AppThemeBinding Light=#FAFAFA, Dark=#1E1E1E}"
+                    StrokeShape="RoundRectangle 12"
+                    Stroke="Transparent"
+                    Padding="12"
+                    HeightRequest="120">
+                <Grid>
+                    <!-- Chart will be drawn here -->
+                    <GraphicsView x:Name="RevenueChartView"
+                                  HeightRequest="120"
+                                  WidthRequest="300"
+                                  HorizontalOptions="Fill"/>
+                    
+                    <!-- Loading/Empty State -->
+                    <Label x:Name="ChartPlaceholder"
+                           Text="Loading chart..."
+                           FontSize="12"
+                           TextColor="{AppThemeBinding Light=#757575, Dark=#B0B0B0}"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center"
+                           IsVisible="True"/>
+                </Grid>
+            </Border>
+
+            <!-- Metrics Row -->
+            <Grid Grid.Row="2" ColumnDefinitions="*,*" ColumnSpacing="12">
+                
+                <!-- Completion Rate -->
+                <Border BackgroundColor="{AppThemeBinding Light=#F5F5F5, Dark=#1E1E1E}"
+                        StrokeShape="RoundRectangle 12"
+                        Stroke="Transparent"
+                        Padding="16,12">
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Completion Rate"
+                               FontSize="11"
+                               TextColor="{AppThemeBinding Light=#757575, Dark=#B0B0B0}"/>
+                        <HorizontalStackLayout Spacing="8">
+                            <Label x:Name="CompletionRateLabel"
+                                   Text="0%"
+                                   FontSize="24"
+                                   FontAttributes="Bold"
+                                   TextColor="{AppThemeBinding Light=#4CAF50, Dark=#81C784}"/>
+                            <Label x:Name="CompletionRateChange"
+                                   FontSize="11"
+                                   TextColor="{AppThemeBinding Light=#4CAF50, Dark=#81C784}"
+                                   VerticalOptions="Center"
+                                   IsVisible="False"/>
+                        </HorizontalStackLayout>
+                        <!-- Progress Bar -->
+                        <ProgressBar x:Name="CompletionProgressBar"
+                                     Progress="0"
+                                     ProgressColor="#4CAF50"
+                                     HeightRequest="4"
+                                     Margin="0,4,0,0"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Average Revenue -->
+                <Border Grid.Column="1"
+                        BackgroundColor="{AppThemeBinding Light=#F5F5F5, Dark=#1E1E1E}"
+                        StrokeShape="RoundRectangle 12"
+                        Stroke="Transparent"
+                        Padding="16,12">
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Avg Daily Revenue"
+                               FontSize="11"
+                               TextColor="{AppThemeBinding Light=#757575, Dark=#B0B0B0}"/>
+                        <HorizontalStackLayout Spacing="8">
+                            <Label x:Name="AvgRevenueLabel"
+                                   Text="$0"
+                                   FontSize="24"
+                                   FontAttributes="Bold"
+                                   TextColor="{AppThemeBinding Light=#2196F3, Dark=#64B5F6}"/>
+                            <Label x:Name="AvgRevenueChange"
+                                   FontSize="11"
+                                   TextColor="{AppThemeBinding Light=#2196F3, Dark=#64B5F6}"
+                                   VerticalOptions="Center"
+                                   IsVisible="False"/>
+                        </HorizontalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+            </Grid>
+
+            <!-- Footer Info -->
+            <Label Grid.Row="3"
+                   x:Name="FooterLabel"
+                   Text="Data updated just now"
+                   FontSize="10"
+                   TextColor="{AppThemeBinding Light=#BDBDBD, Dark=#757575}"
+                   HorizontalOptions="Center"/>
+        </Grid>
+    </Border>
+</ContentView>

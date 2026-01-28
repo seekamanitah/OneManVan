@@ -31,6 +31,18 @@ public class Company
     [MaxLength(100)]
     public string? Email { get; set; }
 
+    /// <summary>
+    /// Primary contact name for this company.
+    /// </summary>
+    [MaxLength(200)]
+    public string? ContactName { get; set; }
+
+    /// <summary>
+    /// Optional link to an existing Customer who is the contact.
+    /// </summary>
+    [ForeignKey(nameof(ContactCustomer))]
+    public int? ContactCustomerId { get; set; }
+
     // Billing Address
     [MaxLength(200)]
     public string? BillingAddress { get; set; }
@@ -59,8 +71,10 @@ public class Company
     public DateTime? UpdatedAt { get; set; }
 
     // Navigation properties
+    public Customer? ContactCustomer { get; set; }
     public ICollection<Customer> Customers { get; set; } = [];
     public ICollection<Asset> Assets { get; set; } = [];
+    public ICollection<Site> Sites { get; set; } = [];
     public ICollection<CustomerCompanyRole> CustomerRoles { get; set; } = [];
     public ICollection<AssetOwner> OwnedAssets { get; set; } = [];
 }

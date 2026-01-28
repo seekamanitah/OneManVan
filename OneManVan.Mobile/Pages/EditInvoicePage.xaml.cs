@@ -49,6 +49,7 @@ public partial class EditInvoicePage : ContentPage
                 LaborAmountEntry.Text = _invoice.LaborAmount.ToString("N2");
                 PartsAmountEntry.Text = _invoice.PartsAmount.ToString("N2");
                 TaxRateEntry.Text = _invoice.TaxRate.ToString("N1");
+                TaxIncludedSwitch.IsToggled = _invoice.TaxIncluded;
                 NotesEditor.Text = _invoice.Notes;
                 StatusPicker.SelectedIndex = (int)_invoice.Status;
             }
@@ -80,6 +81,7 @@ public partial class EditInvoicePage : ContentPage
             _invoice.LaborAmount = decimal.Parse(LaborAmountEntry.Text ?? "0");
             _invoice.PartsAmount = decimal.Parse(PartsAmountEntry.Text ?? "0");
             _invoice.TaxRate = decimal.Parse(TaxRateEntry.Text ?? "7.0");
+            _invoice.TaxIncluded = TaxIncludedSwitch.IsToggled;
             _invoice.Notes = NotesEditor.Text?.Trim();
             _invoice.Status = (InvoiceStatus)StatusPicker.SelectedIndex;
 

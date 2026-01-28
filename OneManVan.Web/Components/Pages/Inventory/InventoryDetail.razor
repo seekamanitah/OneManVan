@@ -1,0 +1,251 @@
+@page "/inventory/{Id:int}"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@using OneManVan.Shared.Models.Enums
+@attribute [Authorize]
+@inject IDbContextFactory<OneManVanDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>@(item?.Name ?? "Inventory Item") - OneManVan</PageTitle>
+
+<div class="container-fluid py-4">
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary"></div>
+        </div>
+    }
+    else if (item == null)
+    {
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>Item not found
+        </div>
+    }
+    else
+    {
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-start mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/inventory">Inventory</a></li>
+                        <li class="breadcrumb-item active">@item.Name</li>
+                    </ol>
+                </nav>
+                <div class="d-flex align-items-center">
+                    <div class="avatar-circle bg-info bg-opacity-10 text-info me-3" style="width: 60px; height: 60px; font-size: 24px;">
+                        <i class="bi bi-box"></i>
+                    </div>
+                    <div>
+                        <h1 class="h2 mb-1">@item.Name</h1>
+                        <span class="badge @GetStatusBadgeClass()">@GetStatusText()</span>
+                        @if (!string.IsNullOrEmpty(item.Sku))
+                        {
+                            <span class="badge bg-secondary ms-1">@item.Sku</span>
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary" @onclick="GoBack">
+                    <i class="bi bi-arrow-left me-2"></i>Back
+                </button>
+                <button class="btn btn-primary" @onclick="EditItem">
+                    <i class="bi bi-pencil me-2"></i>Edit
+                </button>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <!-- Main Info -->
+            <div class="col-md-8">
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0">Item Details</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Category</label>
+                                <span>@item.Category</span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Part Number</label>
+                                <span>@(item.PartNumber ?? "-")</span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Location</label>
+                                <span>@(item.Location ?? "-")</span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Supplier</label>
+                                <span>@(item.Supplier ?? "-")</span>
+                            </div>
+                            @if (!string.IsNullOrEmpty(item.Description))
+                            {
+                                <div class="col-12">
+                                    <label class="text-muted small d-block mb-1">Description</label>
+                                    <p class="mb-0">@item.Description</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stock & Pricing -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0">Stock & Pricing</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="text-muted small d-block mb-1">Quantity on Hand</label>
+                                <span class="h4 @GetQuantityClass()">@item.QuantityOnHand @item.Unit</span>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="text-muted small d-block mb-1">Reorder Point</label>
+                                <span>@item.ReorderPoint @item.Unit</span>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="text-muted small d-block mb-1">Last Restocked</label>
+                                <span>@(item.LastRestockedAt?.ToString("MMM dd, yyyy") ?? "Never")</span>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="text-muted small d-block mb-1">Cost</label>
+                                <span>@item.Cost.ToString("C")</span>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="text-muted small d-block mb-1">Price</label>
+                                <span>@item.Price.ToString("C")</span>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="text-muted small d-block mb-1">Profit Margin</label>
+                                <span>@item.ProfitMargin.ToString("F1")%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-md-4">
+                <!-- Quick Stats -->
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0">Quick Stats</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3 pb-3 border-bottom">
+                            <label class="text-muted small d-block mb-1">Stock Value</label>
+                            <span class="h4">@((item.QuantityOnHand * item.Cost).ToString("C"))</span>
+                        </div>
+                        <div class="mb-3 pb-3 border-bottom">
+                            <label class="text-muted small d-block mb-1">Status</label>
+                            <span class="badge @GetStatusBadgeClass() fs-6">@GetStatusText()</span>
+                        </div>
+                        <div>
+                            <label class="text-muted small d-block mb-1">Created</label>
+                            <span>@item.CreatedAt.ToString("MMM dd, yyyy")</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-success" @onclick="AdjustStock">
+                                <i class="bi bi-plus-slash-minus me-2"></i>Adjust Stock
+                            </button>
+                            <button class="btn btn-outline-primary" @onclick="EditItem">
+                                <i class="bi bi-pencil me-2"></i>Edit Item
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .avatar-circle {
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private bool isLoading = true;
+    private InventoryItem? item;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadItemAsync();
+    }
+
+    private async Task LoadItemAsync()
+    {
+        try
+        {
+            isLoading = true;
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+            
+            item = await db.InventoryItems
+                .AsNoTracking()
+                .FirstOrDefaultAsync(i => i.Id == Id);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/inventory");
+    }
+
+    private void EditItem()
+    {
+        Navigation.NavigateTo($"/inventory/{Id}/edit");
+    }
+
+    private void AdjustStock()
+    {
+        Navigation.NavigateTo($"/inventory/{Id}/adjust");
+    }
+
+    private string GetQuantityClass()
+    {
+        if (item == null) return "";
+        if (item.IsOutOfStock) return "text-danger";
+        if (item.IsLowStock) return "text-warning";
+        return "text-success";
+    }
+
+    private string GetStatusBadgeClass()
+    {
+        if (item == null) return "bg-secondary";
+        if (item.IsOutOfStock) return "bg-danger";
+        if (item.IsLowStock) return "bg-warning";
+        return "bg-success";
+    }
+
+    private string GetStatusText()
+    {
+        if (item == null) return "Unknown";
+        if (item.IsOutOfStock) return "Out of Stock";
+        if (item.IsLowStock) return "Low Stock";
+        return "In Stock";
+    }
+}

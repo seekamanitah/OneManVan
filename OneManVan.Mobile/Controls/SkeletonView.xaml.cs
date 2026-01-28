@@ -33,8 +33,8 @@ public partial class SkeletonView : ContentView
         
         while (_isAnimating && Handler != null)
         {
-            await this.FadeTo(0.5, 800, Easing.CubicInOut);
-            await this.FadeTo(1.0, 800, Easing.CubicInOut);
+            await this.FadeToAsync(0.5, 800, Easing.CubicInOut);
+            await this.FadeToAsync(1.0, 800, Easing.CubicInOut);
         }
     }
 

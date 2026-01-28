@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="OneManVan.Mobile.Pages.SettingsPage"
@@ -121,6 +121,163 @@
                                 OnColor="#2196F3"
                                 Toggled="OnDarkModeToggled"/>
                     </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Database Configuration Section -->
+            <Border StrokeShape="RoundRectangle 12" 
+                   Padding="16"
+                   Stroke="Transparent">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Database Configuration" 
+                           FontSize="18" 
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light=#4CAF50, Dark=#81C784}"/>
+
+                    <Label Text="Choose between local standalone mode or remote sync mode."
+                           FontSize="13"
+                           TextColor="{AppThemeBinding Light=#757575, Dark=#B0B0B0}"/>
+
+                    <!-- Database Type Picker -->
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Connection Type" 
+                               FontSize="14" 
+                               FontAttributes="Bold"/>
+                        <Picker x:Name="DatabaseTypePicker" 
+                                BackgroundColor="{AppThemeBinding Light={StaticResource LightInputBackground}, Dark={StaticResource DarkInputBackground}}"
+                                SelectedIndexChanged="OnDatabaseTypeChanged">
+                            <Picker.ItemsSource>
+                                <x:Array Type="{x:Type x:String}">
+                                    <x:String>Local (SQLite)</x:String>
+                                    <x:String>Remote (SQL Server)</x:String>
+                                </x:Array>
+                            </Picker.ItemsSource>
+                        </Picker>
+                        <Label x:Name="LocalModeDescription"
+                               Text="Standalone mode - works offline without internet"
+                               FontSize="11"
+                               TextColor="{AppThemeBinding Light=#757575, Dark=#B0B0B0}"
+                               IsVisible="True"/>
+                        <Label x:Name="RemoteModeDescription"
+                               Text="Sync mode - enables multi-device synchronization"
+                               FontSize="11"
+                               TextColor="{AppThemeBinding Light=#757575, Dark=#B0B0B0}"
+                               IsVisible="False"/>
+                    </VerticalStackLayout>
+
+                    <!-- SQL Server Connection Details -->
+                    <VerticalStackLayout x:Name="SqlServerMobilePanel" 
+                                         Spacing="12" 
+                                         IsVisible="False">
+                        
+                        <Label Text="Connection Details" 
+                               FontSize="14" 
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light=#4CAF50, Dark=#81C784}"/>
+
+                        <!-- Server Address -->
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Server Address" FontSize="12"/>
+                            <Entry x:Name="ServerAddressMobileEntry" 
+                                   Placeholder="192.168.1.100 or localhost"
+                                   Keyboard="Url"
+                                   BackgroundColor="{AppThemeBinding Light={StaticResource LightInputBackground}, Dark={StaticResource DarkInputBackground}}"/>
+                        </VerticalStackLayout>
+
+                        <!-- Port -->
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Port" FontSize="12"/>
+                            <Entry x:Name="ServerPortMobileEntry" 
+                                   Text="1433"
+                                   Keyboard="Numeric"
+                                   BackgroundColor="{AppThemeBinding Light={StaticResource LightInputBackground}, Dark={StaticResource DarkInputBackground}}"/>
+                        </VerticalStackLayout>
+
+                        <!-- Database Name -->
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Database Name" FontSize="12"/>
+                            <Entry x:Name="DatabaseNameMobileEntry" 
+                                   Text="OneManVanFSM"
+                                   BackgroundColor="{AppThemeBinding Light={StaticResource LightInputBackground}, Dark={StaticResource DarkInputBackground}}"/>
+                        </VerticalStackLayout>
+
+                        <!-- Username -->
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Username" FontSize="12"/>
+                            <Entry x:Name="UsernameMobileEntry" 
+                                   Placeholder="e.g., OneManVan_sync"
+                                   BackgroundColor="{AppThemeBinding Light={StaticResource LightInputBackground}, Dark={StaticResource DarkInputBackground}}"/>
+                        </VerticalStackLayout>
+
+                        <!-- Password -->
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Password" FontSize="12"/>
+                            <Grid ColumnDefinitions="*,Auto">
+                                <Entry x:Name="PasswordMobileEntry" 
+                                       IsPassword="True"
+                                       Placeholder="Password"
+                                       BackgroundColor="{AppThemeBinding Light={StaticResource LightInputBackground}, Dark={StaticResource DarkInputBackground}}"/>
+                                <Button Grid.Column="1" 
+                                        x:Name="ShowPasswordMobileButton"
+                                        Text="Show"
+                                        Padding="8,0"
+                                        WidthRequest="70"
+                                        HeightRequest="40"
+                                        BackgroundColor="{AppThemeBinding Light=#E0E0E0, Dark=#404040}"
+                                        TextColor="{AppThemeBinding Light=#212121, Dark=#FFFFFF}"
+                                        CornerRadius="8"
+                                        Margin="8,0,0,0"
+                                        Clicked="OnShowPasswordMobileClicked"/>
+                            </Grid>
+                        </VerticalStackLayout>
+
+                        <!-- Trust Certificate Option -->
+                        <HorizontalStackLayout Spacing="12">
+                            <CheckBox x:Name="TrustCertificateMobileCheck" 
+                                      IsChecked="True"
+                                      Color="{AppThemeBinding Light=#4CAF50, Dark=#81C784}"/>
+                            <Label Text="Trust Server Certificate" 
+                                   VerticalOptions="Center"/>
+                        </HorizontalStackLayout>
+
+                        <!-- Test Connection Button -->
+                        <Button Text="Test Connection" 
+                                Clicked="OnTestConnectionMobileClicked"
+                                BackgroundColor="{AppThemeBinding Light=#4CAF50, Dark=#388E3C}"
+                                TextColor="White"
+                                CornerRadius="8"
+                                HeightRequest="44"/>
+                        
+                        <Label x:Name="ConnectionStatusMobileLabel" 
+                               IsVisible="False"
+                               FontSize="12"
+                               HorizontalOptions="Center"/>
+                    </VerticalStackLayout>
+
+                    <!-- Current Configuration Display -->
+                    <Border BackgroundColor="{AppThemeBinding Light=#F5F5F5, Dark=#2C2C2C}"
+                            StrokeShape="RoundRectangle 8"
+                            Padding="12"
+                            Stroke="Transparent">
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Current Configuration" 
+                                   FontAttributes="Bold" 
+                                   FontSize="13"/>
+                            <Label x:Name="CurrentConfigMobileLabel" 
+                                   FontSize="11"
+                                   TextColor="{AppThemeBinding Light=#757575, Dark=#B0B0B0}"
+                                   LineBreakMode="WordWrap"/>
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Save & Restart Button -->
+                    <Button Text="Save &amp; Restart App"
+                            Clicked="OnSaveDatabaseConfigMobileClicked"
+                            BackgroundColor="{AppThemeBinding Light=#4CAF50, Dark=#388E3C}"
+                            TextColor="White"
+                            CornerRadius="8"
+                            HeightRequest="48"
+                            FontAttributes="Bold"/>
                 </VerticalStackLayout>
             </Border>
 
@@ -278,6 +435,90 @@
                             CornerRadius="8"
                             HeightRequest="44"
                             Clicked="OnShareBackupClicked"/>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Database Management Section -->
+            <Border StrokeShape="RoundRectangle 12" 
+                   Padding="16"
+                   Stroke="Transparent">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Database Management" 
+                           FontSize="18" 
+                           FontAttributes="Bold"
+                           TextColor="{AppThemeBinding Light=#F44336, Dark=#EF5350}"/>
+
+                    <Label Text="Manage your database: view statistics, seed demo data, or reset completely."
+                           FontSize="13"
+                           TextColor="{AppThemeBinding Light=#757575, Dark=#B0B0B0}"/>
+
+                    <!-- Database Statistics -->
+                    <Border BackgroundColor="{AppThemeBinding Light=#F5F5F5, Dark=#2C2C2C}"
+                            StrokeShape="RoundRectangle 8"
+                            Padding="12"
+                            Stroke="Transparent">
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Database Statistics" 
+                                   FontAttributes="Bold" 
+                                   FontSize="13"/>
+                            <Label x:Name="DatabaseStatsMobileLabel" 
+                                   FontSize="11"
+                                   TextColor="{AppThemeBinding Light=#757575, Dark=#B0B0B0}"
+                                   LineBreakMode="WordWrap"
+                                   Text="Loading statistics..."/>
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Warning -->
+                    <Border BackgroundColor="{AppThemeBinding Light=#FFEBEE, Dark=#5C1A1A}"
+                            StrokeShape="RoundRectangle 8"
+                            Padding="12"
+                            Stroke="Transparent">
+                        <Label Text="Warning: These operations cannot be undone. Create a backup before proceeding."
+                               FontSize="11"
+                               TextColor="{AppThemeBinding Light=#D32F2F, Dark=#EF5350}"
+                               LineBreakMode="WordWrap"/>
+                    </Border>
+
+                    <!-- Action Buttons -->
+                    <Button Text="Refresh Stats"
+                            BackgroundColor="{AppThemeBinding Light=#E0E0E0, Dark=#404040}"
+                            TextColor="{AppThemeBinding Light=#333333, Dark=#FFFFFF}"
+                            CornerRadius="8"
+                            HeightRequest="44"
+                            Clicked="OnRefreshDatabaseStatsMobileClicked"/>
+
+                    <Button Text="Seed Demo Data"
+                            BackgroundColor="#4CAF50"
+                            TextColor="White"
+                            CornerRadius="8"
+                            HeightRequest="44"
+                            Clicked="OnSeedDemoDataMobileClicked"/>
+
+                    <Button Text="Clear All Data"
+                            BackgroundColor="#F44336"
+                            TextColor="White"
+                            CornerRadius="8"
+                            HeightRequest="44"
+                            Clicked="OnClearAllDataMobileClicked"/>
+
+                    <Button Text="Reset Database"
+                            BackgroundColor="#B71C1C"
+                            TextColor="White"
+                            CornerRadius="8"
+                            HeightRequest="44"
+                            Clicked="OnResetDatabaseMobileClicked"/>
+
+                    <!-- Info Labels -->
+                    <Label Text="� Seed Demo Data: Adds sample records for testing"
+                           FontSize="11"
+                           TextColor="{AppThemeBinding Light=#757575, Dark=#B0B0B0}"/>
+                    <Label Text="� Clear All Data: Removes all records but keeps structure"
+                           FontSize="11"
+                           TextColor="{AppThemeBinding Light=#757575, Dark=#B0B0B0}"/>
+                    <Label Text="� Reset Database: Completely erases and recreates database"
+                           FontSize="11"
+                           TextColor="{AppThemeBinding Light=#757575, Dark=#B0B0B0}"/>
                 </VerticalStackLayout>
             </Border>
 

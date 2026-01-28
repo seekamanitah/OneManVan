@@ -299,7 +299,7 @@ public partial class AssetListPage : ContentPage
 public class AssetGroup : ObservableCollection<Asset>
 {
     public string Name { get; }
-    public int Count => Items.Count;
+    public new int Count => Items.Count;
 
     public AssetGroup(string name, IEnumerable<Asset> assets) : base(assets)
     {

@@ -1,0 +1,337 @@
+@page "/assets/new"
+@page "/assets/{Id:int}/edit"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@using OneManVan.Shared.Models.Enums
+@attribute [Authorize]
+@inject IDbContextFactory<OneManVanDbContext> DbFactory
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<PageTitle>@(IsNew ? "New Asset" : $"Edit Asset") - OneManVan</PageTitle>
+
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Header -->
+            <div class="mb-4">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/assets">Assets</a></li>
+                        <li class="breadcrumb-item active">@(IsNew ? "New" : "Edit")</li>
+                    </ol>
+                </nav>
+                <h1 class="h2">@(IsNew ? "New Asset" : $"Edit: {model.AssetName ?? model.Serial}")</h1>
+            </div>
+
+            @if (isLoading)
+            {
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary"></div>
+                </div>
+            }
+            else
+            {
+                <EditForm Model="@model" OnValidSubmit="HandleSubmit">
+                    <DataAnnotationsValidator />
+
+                    <!-- Basic Info -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0">Equipment Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Customer</label>
+                                    <InputSelect class="form-select" @bind-Value="model.CustomerId">
+                                        <option value="">Select customer...</option>
+                                        @foreach (var customer in customers)
+                                        {
+                                            <option value="@customer.Id">@customer.Name</option>
+                                        }
+                                    </InputSelect>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Asset Name</label>
+                                    <InputText class="form-control" @bind-Value="model.AssetName" placeholder="Optional friendly name" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Serial Number *</label>
+                                    <InputText class="form-control" @bind-Value="model.Serial" />
+                                    <ValidationMessage For="@(() => model.Serial)" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Asset Tag</label>
+                                    <InputText class="form-control" @bind-Value="model.AssetTag" placeholder="Barcode/QR code" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Brand</label>
+                                    <InputText class="form-control" @bind-Value="model.Brand" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Model</label>
+                                    <InputText class="form-control" @bind-Value="model.Model" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Nickname</label>
+                                    <InputText class="form-control" @bind-Value="model.Nickname" placeholder="e.g., Upstairs Unit" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Location</label>
+                                    <InputText class="form-control" @bind-Value="model.Location" placeholder="Physical location" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Equipment Type -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0">Equipment Type</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Equipment Type</label>
+                                    <InputSelect class="form-select" @bind-Value="model.EquipmentType">
+                                        @foreach (var et in Enum.GetValues<EquipmentType>())
+                                        {
+                                            <option value="@et">@et</option>
+                                        }
+                                    </InputSelect>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Fuel Type</label>
+                                    <InputSelect class="form-select" @bind-Value="model.FuelType">
+                                        @foreach (var ft in Enum.GetValues<FuelType>())
+                                        {
+                                            <option value="@ft">@ft</option>
+                                        }
+                                    </InputSelect>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Status</label>
+                                    <InputSelect class="form-select" @bind-Value="model.Status">
+                                        @foreach (var s in Enum.GetValues<AssetStatus>())
+                                        {
+                                            <option value="@s">@s</option>
+                                        }
+                                    </InputSelect>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Warranty -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0">Installation & Warranty</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Install Date</label>
+                                    <InputDate class="form-control" @bind-Value="model.InstallDate" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Warranty Start</label>
+                                    <InputDate class="form-control" @bind-Value="model.WarrantyStartDate" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Warranty Expiration</label>
+                                    <InputDate class="form-control" @bind-Value="model.WarrantyExpiration" />
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check mt-4">
+                                        <InputCheckbox class="form-check-input" @bind-Value="model.IsRegisteredOnline" />
+                                        <label class="form-check-label">Registered Online</label>
+                                    </div>
+                                </div>
+                                @if (model.IsRegisteredOnline)
+                                {
+                                    <div class="col-md-4">
+                                        <label class="form-label">Registration Date</label>
+                                        <InputDate class="form-control" @bind-Value="model.RegistrationDate" />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Registration Confirmation</label>
+                                        <InputText class="form-control" @bind-Value="model.RegistrationConfirmation" />
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <button type="button" class="btn btn-outline-secondary" @onclick="Cancel" disabled="@isSaving">
+                                    Cancel
+                                </button>
+                                <div class="d-flex gap-2">
+                                    @if (!IsNew)
+                                    {
+                                        <button type="button" class="btn btn-outline-danger" @onclick="DeleteAsset" disabled="@isSaving">
+                                            <i class="bi bi-trash me-2"></i>Delete
+                                        </button>
+                                    }
+                                    <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                                        @if (isSaving)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-2"></span>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-check-circle me-2"></i>
+                                        }
+                                        @(IsNew ? "Create Asset" : "Save Changes")
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger mt-3">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>@errorMessage
+                        </div>
+                    }
+                </EditForm>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int? Id { get; set; }
+
+    private bool IsNew => !Id.HasValue;
+    private bool isLoading = true;
+    private bool isSaving = false;
+    private string errorMessage = "";
+    private Asset model = new();
+    private List<Customer> customers = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCustomersAsync();
+        
+        if (IsNew)
+        {
+            model = new Asset
+            {
+                EquipmentType = EquipmentType.Unknown,
+                FuelType = FuelType.Unknown,
+                Status = AssetStatus.Active
+            };
+            isLoading = false;
+        }
+        else
+        {
+            await LoadAssetAsync();
+        }
+    }
+
+    private async Task LoadCustomersAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        customers = await db.Customers
+            .Where(c => c.Status == CustomerStatus.Active)
+            .OrderBy(c => c.Name)
+            .AsNoTracking()
+            .ToListAsync();
+    }
+
+    private async Task LoadAssetAsync()
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            
+            var asset = await db.Assets.FirstOrDefaultAsync(a => a.Id == Id!.Value);
+
+            if (asset != null)
+            {
+                model = asset;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load asset: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            isSaving = true;
+            errorMessage = "";
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+
+            if (IsNew)
+            {
+                model.CreatedAt = DateTime.UtcNow;
+                db.Assets.Add(model);
+            }
+            else
+            {
+                db.Assets.Update(model);
+            }
+
+            await db.SaveChangesAsync();
+
+            Navigation.NavigateTo(IsNew ? "/assets" : $"/assets/{model.Id}");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to save: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task DeleteAsset()
+    {
+        if (!await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this asset?"))
+            return;
+
+        try
+        {
+            isSaving = true;
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+            model.Status = AssetStatus.Decommissioned;
+            model.DecommissionedDate = DateTime.UtcNow;
+            db.Assets.Update(model);
+            await db.SaveChangesAsync();
+
+            Navigation.NavigateTo("/assets");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to delete: {ex.Message}";
+            isSaving = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        if (IsNew)
+            Navigation.NavigateTo("/assets");
+        else
+            Navigation.NavigateTo($"/assets/{Id}");
+    }
+}

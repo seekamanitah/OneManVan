@@ -34,7 +34,9 @@ public static class DbContextExtensions
                 
                 await Task.Delay(delay, cancellationToken);
             }
+#pragma warning disable CS0168 // Variable ex declared but never used in catch block
             catch (DbUpdateConcurrencyException ex) when (attempt < maxRetries)
+#pragma warning restore CS0168
             {
                 // Handle concurrency conflicts
                 System.Diagnostics.Debug.WriteLine(

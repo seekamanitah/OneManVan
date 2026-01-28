@@ -1,0 +1,269 @@
+@page "/jobs"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@using OneManVan.Shared.Models.Enums
+@attribute [Authorize]
+@inject IDbContextFactory<OneManVanDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Jobs - OneManVan</PageTitle>
+
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-0">Jobs</h1>
+            <p class="text-muted mb-0">Scheduled work and service calls</p>
+        </div>
+        <div class="d-flex gap-2">
+            <ExportButton EntityType="jobs" />
+            <button class="btn btn-primary" @onclick="CreateJob">
+                <i class="bi bi-plus-circle me-2"></i>New Job
+            </button>
+        </div>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" class="form-control border-start-0" 
+                               placeholder="Search jobs..." 
+                               @bind="searchText" 
+                               @bind:event="oninput"
+                               @onkeyup="OnSearchChanged" />
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" @bind="filterStatus" @bind:after="ApplyFilters">
+                        <option value="">All Statuses</option>
+                        @foreach (var status in Enum.GetValues<JobStatus>())
+                        {
+                            <option value="@status">@status</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" @bind="filterType" @bind:after="ApplyFilters">
+                        <option value="">All Types</option>
+                        @foreach (var type in Enum.GetValues<JobType>())
+                        {
+                            <option value="@type">@type</option>
+                        }
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Job List -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            @if (isLoading)
+            {
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary"></div>
+                    <p class="mt-2 text-muted">Loading jobs...</p>
+                </div>
+            }
+            else if (filteredJobs.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Job</th>
+                                <th>Customer</th>
+                                <th>Scheduled</th>
+                                <th>Type</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var job in filteredJobs)
+                            {
+                                <tr style="cursor: pointer;" @onclick="@(() => ViewJob(job.Id))">
+                                    <td>
+                                        <div class="fw-semibold">@job.Title</div>
+                                        @if (!string.IsNullOrEmpty(job.JobNumber))
+                                        {
+                                            <small class="text-muted">@job.JobNumber</small>
+                                        }
+                                    </td>
+                                    <td>@(job.Customer?.Name ?? "-")</td>
+                                    <td>
+                                        @if (job.ScheduledDate.HasValue)
+                                        {
+                                            <span>@job.ScheduledDate.Value.ToString("MMM dd, yyyy")</span>
+                                            @if (job.ArrivalWindowStart.HasValue)
+                                            {
+                                                <br /><small class="text-muted">@job.ArrivalWindowStart.Value.ToString(@"hh\:mm")</small>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Unscheduled</span>
+                                        }
+                                    </td>
+                                    <td>@job.JobType</td>
+                                    <td>
+                                        <span class="badge @GetPriorityBadge(job.Priority)">@job.Priority</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge @GetStatusBadge(job.Status)">@job.Status</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="btn-group btn-group-sm" @onclick:stopPropagation="true">
+                                            <button class="btn btn-outline-primary" @onclick="@(() => ViewJob(job.Id))">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            <button class="btn btn-outline-secondary" @onclick="@(() => EditJob(job.Id))">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card-footer bg-white border-top">
+                    <small class="text-muted">
+                        Showing @filteredJobs.Count of @allJobs.Count jobs
+                    </small>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-briefcase fs-1 text-muted mb-3 d-block"></i>
+                    <h5>No jobs found</h5>
+                    <p class="text-muted mb-3">Create your first job</p>
+                    <button class="btn btn-primary" @onclick="CreateJob">
+                        <i class="bi bi-plus-circle me-2"></i>New Job
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool isLoading = true;
+    private List<Job> allJobs = new();
+    private List<Job> filteredJobs = new();
+    
+    private string searchText = "";
+    private string filterStatus = "";
+    private string filterType = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadJobsAsync();
+    }
+
+    private async Task LoadJobsAsync()
+    {
+        try
+        {
+            isLoading = true;
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+            
+            allJobs = await db.Jobs
+                .Include(j => j.Customer)
+                .OrderByDescending(j => j.ScheduledDate ?? DateTime.MaxValue)
+                .ThenByDescending(j => j.CreatedAt)
+                .AsNoTracking()
+                .ToListAsync();
+
+            ApplyFilters();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void ApplyFilters()
+    {
+        var query = allJobs.AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(searchText))
+        {
+            var search = searchText.ToLower();
+            query = query.Where(j =>
+                j.Title.ToLower().Contains(search) ||
+                (j.JobNumber?.ToLower().Contains(search) ?? false) ||
+                (j.Description?.ToLower().Contains(search) ?? false) ||
+                (j.Customer?.Name?.ToLower().Contains(search) ?? false));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filterStatus) && Enum.TryParse<JobStatus>(filterStatus, out var status))
+        {
+            query = query.Where(j => j.Status == status);
+        }
+
+        if (!string.IsNullOrWhiteSpace(filterType) && Enum.TryParse<JobType>(filterType, out var type))
+        {
+            query = query.Where(j => j.JobType == type);
+        }
+
+        filteredJobs = query.ToList();
+    }
+
+    private void OnSearchChanged(KeyboardEventArgs e)
+    {
+        ApplyFilters();
+    }
+
+    private void CreateJob()
+    {
+        Navigation.NavigateTo("/jobs/new");
+    }
+
+    private void ViewJob(int id)
+    {
+        Navigation.NavigateTo($"/jobs/{id}");
+    }
+
+    private void EditJob(int id)
+    {
+        Navigation.NavigateTo($"/jobs/{id}/edit");
+    }
+
+    private string GetStatusBadge(JobStatus status)
+    {
+        return status switch
+        {
+            JobStatus.Draft => "bg-secondary",
+            JobStatus.Scheduled => "bg-info",
+            JobStatus.InProgress => "bg-primary",
+            JobStatus.Completed => "bg-success",
+            JobStatus.Cancelled => "bg-danger",
+            JobStatus.OnHold => "bg-warning",
+            _ => "bg-secondary"
+        };
+    }
+
+    private string GetPriorityBadge(JobPriority priority)
+    {
+        return priority switch
+        {
+            JobPriority.Low => "bg-secondary",
+            JobPriority.Normal => "bg-info",
+            JobPriority.High => "bg-warning",
+            JobPriority.Urgent => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+}

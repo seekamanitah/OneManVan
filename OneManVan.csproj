@@ -10,23 +10,43 @@
     <AssemblyName>OneManVan</AssemblyName>
   </PropertyGroup>
 
-  <!-- Exclude Mobile, Shared, and Mobile.Tests from WPF compilation -->
+  <!-- Exclude other projects from WPF compilation -->
   <ItemGroup>
     <Compile Remove="OneManVan.Mobile\**" />
     <Compile Remove="OneManVan.Shared\**" />
     <Compile Remove="OneManVan.Mobile.Tests\**" />
+    <Compile Remove="OneManVan.Web\**" />
+    <Compile Remove="OneManVan.Web.DISABLED\**" />
+    <Compile Remove="OneManVan.Web.Tests\**" />
+    <Compile Remove="DbMigrator\**" />
     <Content Remove="OneManVan.Mobile\**" />
     <Content Remove="OneManVan.Shared\**" />
     <Content Remove="OneManVan.Mobile.Tests\**" />
+    <Content Remove="OneManVan.Web\**" />
+    <Content Remove="OneManVan.Web.DISABLED\**" />
+    <Content Remove="OneManVan.Web.Tests\**" />
+    <Content Remove="DbMigrator\**" />
     <EmbeddedResource Remove="OneManVan.Mobile\**" />
     <EmbeddedResource Remove="OneManVan.Shared\**" />
     <EmbeddedResource Remove="OneManVan.Mobile.Tests\**" />
+    <EmbeddedResource Remove="OneManVan.Web\**" />
+    <EmbeddedResource Remove="OneManVan.Web.DISABLED\**" />
+    <EmbeddedResource Remove="OneManVan.Web.Tests\**" />
+    <EmbeddedResource Remove="DbMigrator\**" />
     <None Remove="OneManVan.Mobile\**" />
     <None Remove="OneManVan.Shared\**" />
     <None Remove="OneManVan.Mobile.Tests\**" />
+    <None Remove="OneManVan.Web\**" />
+    <None Remove="OneManVan.Web.DISABLED\**" />
+    <None Remove="OneManVan.Web.Tests\**" />
+    <None Remove="DbMigrator\**" />
     <Page Remove="OneManVan.Mobile\**" />
     <Page Remove="OneManVan.Shared\**" />
     <Page Remove="OneManVan.Mobile.Tests\**" />
+    <Page Remove="OneManVan.Web\**" />
+    <Page Remove="OneManVan.Web.DISABLED\**" />
+    <Page Remove="OneManVan.Web.Tests\**" />
+    <Page Remove="DbMigrator\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -64,6 +84,8 @@
 
   <ItemGroup>
     <None Include=".github\copilot-instructions.md" />
+    <None Include="DbMigrator\DbMigrator.csproj" />
+    <None Include="OneManVan.Web.Tests\OneManVan.Web.Tests.csproj" />
   </ItemGroup>
 
 </Project>

@@ -29,6 +29,25 @@ public partial class AddSitePage : ContentPage
     {
         InitializeComponent();
         _db = db;
+        LoadCompaniesAsync();
+    }
+
+    private async void LoadCompaniesAsync()
+    {
+        try
+        {
+            var companies = await _db.Companies
+                .Where(c => c.IsActive)
+                .OrderBy(c => c.Name)
+                .ToListAsync();
+
+            CompanyPicker.ItemsSource = companies;
+            CompanyPicker.ItemDisplayBinding = new Binding("Name");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Failed to load companies: {ex.Message}");
+        }
     }
 
     private async void LoadCustomerAsync()
@@ -66,6 +85,9 @@ public partial class AddSitePage : ContentPage
             {
                 CustomerId = _customerId,
                 SiteNumber = siteNumber,
+                SiteName = string.IsNullOrWhiteSpace(SiteNameEntry.Text) ? null : SiteNameEntry.Text.Trim(),
+                LocationDescription = string.IsNullOrWhiteSpace(LocationDescriptionEditor.Text) ? null : LocationDescriptionEditor.Text.Trim(),
+                CompanyId = (CompanyPicker.SelectedItem as Company)?.Id,
                 Address = AddressEntry.Text.Trim(),
                 Address2 = Address2Entry.Text?.Trim(),
                 City = CityEntry.Text?.Trim(),

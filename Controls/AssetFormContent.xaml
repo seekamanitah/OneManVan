@@ -4,6 +4,99 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     
     <StackPanel>
+        <!-- Basic Information Section -->
+        <TextBlock Text="Basic Information" FontSize="14" FontWeight="Bold"
+                   Foreground="{DynamicResource PrimaryBrush}" Margin="0,0,0,10"/>
+        
+        <!-- Asset Name (Friendly Name) -->
+        <TextBlock Text="Asset Name" FontSize="12" FontWeight="SemiBold"
+                   Foreground="{DynamicResource TextBrush}" Margin="0,0,0,4"/>
+        <TextBox x:Name="AssetNameTextBox"
+                 Background="{DynamicResource SurfaceBrush}"
+                 Foreground="{DynamicResource TextBrush}"
+                 BorderBrush="{DynamicResource Surface2Brush}"
+                 BorderThickness="1"
+                 Padding="10,8"
+                 FontSize="13"
+                 Margin="0,0,0,15"/>
+        
+        <!-- Description -->
+        <TextBlock Text="Description" FontSize="12" FontWeight="SemiBold"
+                   Foreground="{DynamicResource TextBrush}" Margin="0,0,0,4"/>
+        <TextBox x:Name="DescriptionTextBox"
+                 Background="{DynamicResource SurfaceBrush}"
+                 Foreground="{DynamicResource TextBrush}"
+                 BorderBrush="{DynamicResource Surface2Brush}"
+                 BorderThickness="1"
+                 Padding="10,8"
+                 FontSize="13"
+                 Height="60"
+                 TextWrapping="Wrap"
+                 AcceptsReturn="True"
+                 VerticalScrollBarVisibility="Auto"
+                 Margin="0,0,0,15"/>
+        
+        <!-- Customer Assignment -->
+        <TextBlock Text="Assign to Customer (Optional)" FontSize="12" FontWeight="SemiBold"
+                   Foreground="{DynamicResource TextBrush}" Margin="0,0,0,4"/>
+        <Grid Margin="0,0,0,15">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <ComboBox x:Name="CustomerComboBox"
+                      Grid.Column="0"
+                      Background="{DynamicResource SurfaceBrush}"
+                      Foreground="{DynamicResource TextBrush}"
+                      BorderBrush="{DynamicResource Surface2Brush}"
+                      BorderThickness="1"
+                      Padding="10,8"
+                      FontSize="13"
+                      DisplayMemberPath="Name"
+                      SelectedValuePath="Id">
+                <ComboBox.ItemContainerStyle>
+                    <Style TargetType="ComboBoxItem">
+                        <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+                        <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                        <Setter Property="Padding" Value="10,8"/>
+                    </Style>
+                </ComboBox.ItemContainerStyle>
+            </ComboBox>
+            <Button Grid.Column="1"
+                    Content="Clear"
+                    Background="{DynamicResource Surface2Brush}"
+                    Foreground="{DynamicResource TextBrush}"
+                    Padding="12,8"
+                    FontSize="12"
+                    BorderThickness="0"
+                    Cursor="Hand"
+                    Margin="8,0,0,0"
+                    Click="OnClearCustomerClick">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                CornerRadius="6" 
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Button.Template>
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+        </Grid>
+        
+        <!-- Equipment Info Section -->
+        <TextBlock Text="Equipment Information" FontSize="14" FontWeight="Bold"
+                   Foreground="{DynamicResource PrimaryBrush}" Margin="0,5,0,10"/>
+        
         <!-- Serial Number -->
         <TextBlock Text="Serial Number *" FontSize="12" FontWeight="SemiBold"
                    Foreground="{DynamicResource TextBrush}" Margin="0,0,0,4"/>
@@ -16,45 +109,42 @@
                  FontSize="13"
                  Margin="0,0,0,15"/>
         
-        <!-- Brand -->
-        <TextBlock Text="Brand" FontSize="12" FontWeight="SemiBold"
-                   Foreground="{DynamicResource TextBrush}" Margin="0,0,0,4"/>
-        <TextBox x:Name="BrandTextBox"
-                 Background="{DynamicResource SurfaceBrush}"
-                 Foreground="{DynamicResource TextBrush}"
-                 BorderBrush="{DynamicResource Surface2Brush}"
-                 BorderThickness="1"
-                 Padding="10,8"
-                 FontSize="13"
-                 Margin="0,0,0,15"/>
-        
-        <!-- Model -->
-        <TextBlock Text="Model" FontSize="12" FontWeight="SemiBold"
-                   Foreground="{DynamicResource TextBrush}" Margin="0,0,0,4"/>
-        <TextBox x:Name="ModelTextBox"
-                 Background="{DynamicResource SurfaceBrush}"
-                 Foreground="{DynamicResource TextBrush}"
-                 BorderBrush="{DynamicResource Surface2Brush}"
-                 BorderThickness="1"
-                 Padding="10,8"
-                 FontSize="13"
-                 Margin="0,0,0,15"/>
-        
-        <!-- Nickname -->
-        <TextBlock Text="Nickname (Location)" FontSize="12" FontWeight="SemiBold"
-                   Foreground="{DynamicResource TextBrush}" Margin="0,0,0,4"/>
-        <TextBox x:Name="NicknameTextBox"
-                 Background="{DynamicResource SurfaceBrush}"
-                 Foreground="{DynamicResource TextBrush}"
-                 BorderBrush="{DynamicResource Surface2Brush}"
-                 BorderThickness="1"
-                 Padding="10,8"
-                 FontSize="13"
-                 Margin="0,0,0,15"/>
+        <!-- Brand and Model -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="Brand" FontSize="12" FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextBrush}" Margin="0,0,0,4"/>
+                <TextBox x:Name="BrandTextBox"
+                         Background="{DynamicResource SurfaceBrush}"
+                         Foreground="{DynamicResource TextBrush}"
+                         BorderBrush="{DynamicResource Surface2Brush}"
+                         BorderThickness="1"
+                         Padding="10,8"
+                         FontSize="13"/>
+            </StackPanel>
+            
+            <StackPanel Grid.Column="2">
+                <TextBlock Text="Model" FontSize="12" FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextBrush}" Margin="0,0,0,4"/>
+                <TextBox x:Name="ModelTextBox"
+                         Background="{DynamicResource SurfaceBrush}"
+                         Foreground="{DynamicResource TextBrush}"
+                         BorderBrush="{DynamicResource Surface2Brush}"
+                         BorderThickness="1"
+                         Padding="10,8"
+                         FontSize="13"/>
+            </StackPanel>
+        </Grid>
         
         <!-- Equipment Type -->
         <TextBlock Text="Equipment Type" FontSize="12" FontWeight="SemiBold"
-                   Foreground="{DynamicResource TextBrush}" Margin="0,0,0,4"/>
+                   Foreground="{DynamicResource TextBrush}" Margin="0,15,0,4"/>
         <ComboBox x:Name="EquipmentTypeCombo"
                   Background="{DynamicResource SurfaceBrush}"
                   Foreground="{DynamicResource TextBrush}"
@@ -64,9 +154,190 @@
                   FontSize="13"
                   Margin="0,0,0,15"/>
         
+        <!-- Location Section -->
+        <TextBlock Text="Location of Installation" FontSize="14" FontWeight="Bold"
+                   Foreground="{DynamicResource PrimaryBrush}" Margin="0,5,0,10"/>
+        
+        <!-- Location and Nickname -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="Location" FontSize="12" FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextBrush}" Margin="0,0,0,4"/>
+                <TextBox x:Name="LocationTextBox"
+                         Background="{DynamicResource SurfaceBrush}"
+                         Foreground="{DynamicResource TextBrush}"
+                         BorderBrush="{DynamicResource Surface2Brush}"
+                         BorderThickness="1"
+                         Padding="10,8"
+                         FontSize="13"/>
+            </StackPanel>
+            
+            <StackPanel Grid.Column="2">
+                <TextBlock Text="Nickname" FontSize="12" FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextBrush}" Margin="0,0,0,4"/>
+                <TextBox x:Name="NicknameTextBox"
+                         Background="{DynamicResource SurfaceBrush}"
+                         Foreground="{DynamicResource TextBrush}"
+                         BorderBrush="{DynamicResource Surface2Brush}"
+                         BorderThickness="1"
+                         Padding="10,8"
+                         FontSize="13"/>
+            </StackPanel>
+        </Grid>
+        
+        <!-- Warranty Section -->
+        <TextBlock Text="Warranty Information" FontSize="14" FontWeight="Bold"
+                   Foreground="{DynamicResource PrimaryBrush}" Margin="0,20,0,10"/>
+        
+        <!-- Warrantied by SEHVAC Checkbox -->
+        <CheckBox x:Name="IsWarrantiedBySEHVACCheckBox"
+                  Content="Warrantied by SEHVAC"
+                  Foreground="{DynamicResource TextBrush}"
+                  FontSize="13"
+                  Margin="0,0,0,10"/>
+        
+        <!-- Warranty Quick Presets -->
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,10" Height="32">
+            <TextBlock Text="Quick Warranty:" 
+                       VerticalAlignment="Center"
+                       FontSize="12"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource SubtextBrush}"
+                       Margin="0,0,8,0"/>
+            <Button Content="1 Year"
+                    Background="{DynamicResource Surface2Brush}"
+                    Foreground="{DynamicResource TextBrush}"
+                    Padding="12,6"
+                    FontSize="12"
+                    BorderThickness="0"
+                    Cursor="Hand"
+                    Margin="0,0,6,0"
+                    Click="OnWarranty1YearClick">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                CornerRadius="6" 
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Button.Template>
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+            <Button Content="5 Years"
+                    Background="{DynamicResource Surface2Brush}"
+                    Foreground="{DynamicResource TextBrush}"
+                    Padding="12,6"
+                    FontSize="12"
+                    BorderThickness="0"
+                    Cursor="Hand"
+                    Margin="0,0,6,0"
+                    Click="OnWarranty5YearsClick">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                CornerRadius="6" 
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Button.Template>
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+            <Button Content="10 Years"
+                    Background="{DynamicResource Surface2Brush}"
+                    Foreground="{DynamicResource TextBrush}"
+                    Padding="12,6"
+                    FontSize="12"
+                    BorderThickness="0"
+                    Cursor="Hand"
+                    Margin="0,0,6,0"
+                    Click="OnWarranty10YearsClick">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                CornerRadius="6" 
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Button.Template>
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+            <Button Content="12 Years"
+                    Background="{DynamicResource Surface2Brush}"
+                    Foreground="{DynamicResource TextBrush}"
+                    Padding="12,6"
+                    FontSize="12"
+                    BorderThickness="0"
+                    Cursor="Hand"
+                    Click="OnWarranty12YearsClick">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                CornerRadius="6" 
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Button.Template>
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+        </StackPanel>
+        
+        <!-- Warranty Expiration -->
+        <TextBlock Text="Warranty Expiration" FontSize="12" FontWeight="SemiBold"
+                   Foreground="{DynamicResource TextBrush}" Margin="0,0,0,4"/>
+        <DatePicker x:Name="WarrantyExpirationDatePicker"
+                    Background="{DynamicResource SurfaceBrush}"
+                    Foreground="{DynamicResource TextBrush}"
+                    BorderBrush="{DynamicResource Surface2Brush}"
+                    BorderThickness="1"
+                    Padding="10,8"
+                    FontSize="13"
+                    Margin="0,0,0,15"/>
+        
         <!-- Notes -->
         <TextBlock Text="Notes" FontSize="12" FontWeight="SemiBold"
-                   Foreground="{DynamicResource TextBrush}" Margin="0,0,0,4"/>
+                   Foreground="{DynamicResource TextBrush}" Margin="0,5,0,4"/>
         <TextBox x:Name="NotesTextBox"
                  Background="{DynamicResource SurfaceBrush}"
                  Foreground="{DynamicResource TextBrush}"

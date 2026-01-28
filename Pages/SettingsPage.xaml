@@ -132,7 +132,7 @@
                                Foreground="{DynamicResource TextBrush}" Margin="0,0,0,15"/>
 
                     <!-- Theme Toggle -->
-                    <Grid Margin="0,0,0,20">
+                    <Grid Margin="0,0,0,15">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
@@ -174,55 +174,21 @@
                         </StackPanel>
                     </Grid>
 
-                    <!-- UI Scale Slider -->
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-
+                    <!-- UI Scale Info (read-only, controlled from sidebar) -->
+                    <Border Background="{DynamicResource Surface2Brush}" 
+                            CornerRadius="6" 
+                            Padding="12,10">
                         <StackPanel>
-                            <TextBlock Text="UI Scale" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource TextBrush}"/>
-                            <TextBlock Text="Adjust interface size for better readability"
-                                       Foreground="{DynamicResource SubtextBrush}" FontSize="12"/>
-                            
-                            <Grid Margin="0,12,0,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-
-                                <TextBlock Text="A" FontSize="11" Foreground="{DynamicResource SubtextBrush}" 
-                                           VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                
-                                <Slider x:Name="UiScaleSlider" 
-                                        Grid.Column="1"
-                                        Minimum="0.8" Maximum="1.5" 
-                                        TickFrequency="0.05"
-                                        IsSnapToTickEnabled="True"
-                                        Width="200"
-                                        ValueChanged="UiScaleSlider_ValueChanged"/>
-                                
-                                <TextBlock Text="A" FontSize="18" FontWeight="Bold" 
-                                           Foreground="{DynamicResource SubtextBrush}" 
-                                           VerticalAlignment="Center" Margin="10,0,0,0" Grid.Column="2"/>
-                            </Grid>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                                <TextBlock Text="UI Scale" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextBrush}"/>
+                            </StackPanel>
+                            <TextBlock Text="Use the UI Scale slider in the left sidebar to adjust the interface size for all pages"
+                                       Foreground="{DynamicResource SubtextBrush}" 
+                                       FontSize="12" 
+                                       TextWrapping="Wrap"/>
                         </StackPanel>
-
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
-                            <TextBlock x:Name="UiScalePercentText" Text="100%" 
-                                       FontSize="14" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource PrimaryBrush}"
-                                       VerticalAlignment="Center" Margin="0,0,10,0"
-                                       MinWidth="50" TextAlignment="Right"/>
-                            <Button Content="Reset" 
-                                    Style="{StaticResource SecondaryButton}"
-                                    Padding="10,5"
-                                    Click="ResetUiScale_Click"/>
-                        </StackPanel>
-                    </Grid>
+                    </Border>
                 </StackPanel>
             </Border>
 
@@ -779,6 +745,202 @@
                 </Grid>
             </Border>
 
+            <!-- Database Configuration -->
+            <Border Style="{StaticResource SettingCard}">
+                <StackPanel>
+                    <TextBlock Text="Database Configuration" FontSize="16" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextBrush}" Margin="0,0,0,15"/>
+                    
+                    <!-- Database Type Selection -->
+                    <TextBlock Text="Connection Type:" 
+                               Foreground="{DynamicResource SubtextBrush}" Margin="0,0,0,8"/>
+                    
+                    <StackPanel Margin="0,0,0,15">
+                        <RadioButton x:Name="SqliteRadio"
+                                     Content="Local Database (SQLite)" 
+                                     IsChecked="True"
+                                     GroupName="DatabaseType"
+                                     Foreground="{DynamicResource TextBrush}"
+                                     Margin="0,0,0,8"
+                                     Checked="OnDatabaseTypeChanged"/>
+                        <TextBlock Text="Standalone mode - works offline without internet"
+                                   Foreground="{DynamicResource SubtextBrush}"
+                                   FontSize="11"
+                                   Margin="25,0,0,12"/>
+                        
+                        <RadioButton x:Name="SqlServerRadio"
+                                     Content="Remote Database (SQL Server)"
+                                     GroupName="DatabaseType"
+                                     Foreground="{DynamicResource TextBrush}"
+                                     Margin="0,0,0,8"
+                                     Checked="OnDatabaseTypeChanged"/>
+                        <TextBlock Text="Sync mode - enables multi-device sync via shared database"
+                                   Foreground="{DynamicResource SubtextBrush}"
+                                   FontSize="11"
+                                   Margin="25,0,0,0"/>
+                    </StackPanel>
+
+                    <!-- SQL Server Connection Details -->
+                    <Border x:Name="SqlServerPanel"
+                            Background="{DynamicResource Surface2Brush}"
+                            CornerRadius="6"
+                            Padding="15"
+                            Margin="0,0,0,15"
+                            Visibility="Collapsed">
+                        
+                        <StackPanel>
+                            <TextBlock Text="Connection Details" 
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextBrush}"
+                                       Margin="0,0,0,12"/>
+                            
+                            <!-- Server Address & Port -->
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="80"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <StackPanel>
+                                    <TextBlock Text="Server Address" 
+                                               FontSize="12" 
+                                               Foreground="{DynamicResource SubtextBrush}"
+                                               Margin="0,0,0,4"/>
+                                    <TextBox x:Name="ServerAddressBox" 
+                                             Text="localhost"
+                                             Background="{DynamicResource BackgroundBrush}"
+                                             Foreground="{DynamicResource TextBrush}"
+                                             BorderBrush="{DynamicResource BorderBrush}"/>
+                                </StackPanel>
+                                
+                                <TextBlock Grid.Column="1" 
+                                           Text=":" 
+                                           VerticalAlignment="Center"
+                                           Foreground="{DynamicResource TextBrush}"
+                                           Margin="8,20,8,0"/>
+                                
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Port" 
+                                               FontSize="12" 
+                                               Foreground="{DynamicResource SubtextBrush}"
+                                               Margin="0,0,0,4"/>
+                                    <TextBox x:Name="ServerPortBox" 
+                                             Text="1433"
+                                             Background="{DynamicResource BackgroundBrush}"
+                                             Foreground="{DynamicResource TextBrush}"
+                                             BorderBrush="{DynamicResource BorderBrush}"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Database Name -->
+                            <StackPanel Margin="0,0,0,10">
+                                <TextBlock Text="Database Name" 
+                                           FontSize="12" 
+                                           Foreground="{DynamicResource SubtextBrush}"
+                                           Margin="0,0,0,4"/>
+                                <TextBox x:Name="DatabaseNameBox" 
+                                         Text="OneManVanFSM"
+                                         Background="{DynamicResource BackgroundBrush}"
+                                         Foreground="{DynamicResource TextBrush}"
+                                         BorderBrush="{DynamicResource BorderBrush}"/>
+                            </StackPanel>
+
+                            <!-- Username -->
+                            <StackPanel Margin="0,0,0,10">
+                                <TextBlock Text="Username" 
+                                           FontSize="12" 
+                                           Foreground="{DynamicResource SubtextBrush}"
+                                           Margin="0,0,0,4"/>
+                                <TextBox x:Name="UsernameBox" 
+                                         Text="sa"
+                                         Background="{DynamicResource BackgroundBrush}"
+                                         Foreground="{DynamicResource TextBrush}"
+                                         BorderBrush="{DynamicResource BorderBrush}"/>
+                            </StackPanel>
+
+                            <!-- Password -->
+                            <StackPanel Margin="0,0,0,10">
+                                <TextBlock Text="Password" 
+                                           FontSize="12" 
+                                           Foreground="{DynamicResource SubtextBrush}"
+                                           Margin="0,0,0,4"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <PasswordBox x:Name="PasswordBox"
+                                                 Background="{DynamicResource BackgroundBrush}"
+                                                 Foreground="{DynamicResource TextBrush}"
+                                                 BorderBrush="{DynamicResource BorderBrush}"/>
+                                    <Button Grid.Column="1" 
+                                            x:Name="ShowPasswordButton"
+                                            Content="Show" 
+                                            Width="70"
+                                            Style="{StaticResource SecondaryButton}"
+                                            Margin="8,0,0,0"
+                                            Click="OnShowPasswordClicked"/>
+                                </Grid>
+                            </StackPanel>
+
+                            <!-- Options -->
+                            <CheckBox x:Name="TrustCertificateCheck"
+                                      Content="Trust Server Certificate"
+                                      IsChecked="True"
+                                      Foreground="{DynamicResource TextBrush}"
+                                      Margin="0,0,0,8"/>
+                            
+                            <CheckBox x:Name="EncryptCheck"
+                                      Content="Use Encryption (TLS/SSL)"
+                                      IsChecked="False"
+                                      Foreground="{DynamicResource TextBrush}"
+                                      Margin="0,0,0,12"/>
+
+                            <!-- Test Connection -->
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="Test Connection"
+                                        Style="{StaticResource SecondaryButton}"
+                                        Click="OnTestConnectionClicked"
+                                        Margin="0,0,10,0"/>
+                                <TextBlock x:Name="ConnectionStatusText"
+                                           VerticalAlignment="Center"
+                                           Visibility="Collapsed"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Current Configuration Display -->
+                    <Border Background="{DynamicResource Surface2Brush}"
+                            CornerRadius="6"
+                            Padding="12"
+                            Margin="0,0,0,15">
+                        <StackPanel>
+                            <TextBlock Text="Current Configuration" 
+                                       FontWeight="SemiBold" 
+                                       FontSize="13"
+                                       Foreground="{DynamicResource TextBrush}"
+                                       Margin="0,0,0,8"/>
+                            <TextBlock x:Name="CurrentConfigText" 
+                                       TextWrapping="Wrap"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource SubtextBrush}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Action Buttons -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Content="Reset to Default"
+                                Style="{StaticResource SecondaryButton}"
+                                Click="OnResetDatabaseConfigClicked"
+                                Margin="0,0,10,0"/>
+                        <Button Content="Save &amp; Restart"
+                                Style="{StaticResource ActionButton}"
+                                Click="OnSaveDatabaseConfigClicked"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
             <!-- Data Management -->
             <Border Style="{StaticResource SettingCard}">
                 <StackPanel>
@@ -799,6 +961,76 @@
                         <Button Content="Open Data Folder" Style="{StaticResource SecondaryButton}"
                                 Click="OpenDataFolder_Click"/>
                     </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Database Management -->
+            <Border Style="{StaticResource SettingCard}">
+                <StackPanel>
+                    <TextBlock Text="Database Management" FontSize="16" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextBrush}" Margin="0,0,0,15"/>
+
+                    <!-- Database Statistics -->
+                    <Border Background="{DynamicResource Surface2Brush}"
+                            CornerRadius="6"
+                            Padding="12"
+                            Margin="0,0,0,15">
+                        <StackPanel>
+                            <TextBlock Text="Database Statistics" 
+                                       FontWeight="SemiBold" 
+                                       FontSize="13"
+                                       Foreground="{DynamicResource TextBrush}"
+                                       Margin="0,0,0,8"/>
+                            <TextBlock x:Name="DatabaseStatsText" 
+                                       TextWrapping="Wrap"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource SubtextBrush}"
+                                       Text="Loading statistics..."/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Warning Message -->
+                    <Border Background="{DynamicResource ErrorBrush}"
+                            CornerRadius="6"
+                            Padding="12"
+                            Margin="0,0,0,15"
+                            Opacity="0.1">
+                        <TextBlock Text="?? Warning: These operations cannot be undone. Create a backup before proceeding."
+                                   FontSize="12"
+                                   Foreground="{DynamicResource TextBrush}"
+                                   TextWrapping="Wrap"/>
+                    </Border>
+
+                    <!-- Database Actions -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,0,0,10">
+                        <Button Content="Refresh Stats"
+                                Style="{StaticResource SecondaryButton}"
+                                Click="OnRefreshDatabaseStatsClicked"
+                                Margin="0,0,10,0"/>
+                        <Button Content="Seed Demo Data"
+                                Style="{StaticResource ActionButton}"
+                                Click="OnSeedDemoDataClicked"
+                                Margin="0,0,10,0"/>
+                        <Button Content="Clear All Data"
+                                Style="{StaticResource DangerButton}"
+                                Click="OnClearAllDataClicked"
+                                Margin="0,0,10,0"/>
+                        <Button Content="Reset Database"
+                                Style="{StaticResource DangerButton}"
+                                Click="OnResetDatabaseClicked"/>
+                    </StackPanel>
+
+                    <TextBlock Text="&#8226; Seed Demo Data: Adds sample customers, companies, assets, jobs, and invoices"
+                               FontSize="11"
+                               Foreground="{DynamicResource SubtextBrush}"
+                               Margin="0,0,0,4"/>
+                    <TextBlock Text="&#8226; Clear All Data: Removes all data but keeps the database structure"
+                               FontSize="11"
+                               Foreground="{DynamicResource SubtextBrush}"
+                               Margin="0,0,0,4"/>
+                    <TextBlock Text="&#8226; Reset Database: Completely erases and recreates the database"
+                               FontSize="11"
+                               Foreground="{DynamicResource SubtextBrush}"/>
                 </StackPanel>
             </Border>
 

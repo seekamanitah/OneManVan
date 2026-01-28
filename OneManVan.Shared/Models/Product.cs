@@ -29,6 +29,13 @@ public class Product
     [MaxLength(100)]
     public string ModelNumber { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Serial number for individually tracked products (optional).
+    /// Useful for high-value equipment or demo units.
+    /// </summary>
+    [MaxLength(100)]
+    public string? SerialNumber { get; set; }
+
     [MaxLength(200)]
     public string? ProductName { get; set; }
 

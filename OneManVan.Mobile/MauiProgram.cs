@@ -5,6 +5,7 @@ using OneManVan.Mobile.Pages;
 using OneManVan.Mobile.Services;
 using OneManVan.Shared.Data;
 using OneManVan.Shared.Services;
+using OneManVan.Shared.Models;
 using ZXing.Net.Maui.Controls;
 
 namespace OneManVan.Mobile;
@@ -23,19 +24,28 @@ public static class MauiProgram
                 fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
             });
 
-        // Configure SQLite database with DbContextFactory for proper disposal
-        var dbPath = Path.Combine(FileSystem.AppDataDirectory, "onemanvan.db");
+        // Load database configuration
+        var configDir = FileSystem.AppDataDirectory;
+        var dbConfigService = new DatabaseConfigService(configDir);
+        var dbConfig = dbConfigService.LoadConfiguration();
+
+        // Configure database based on configuration
+        // Note: Mobile currently supports SQLite only. SQL Server support requires additional packages.
+        var dbPath = Path.Combine(FileSystem.AppDataDirectory, 
+            dbConfig.Type == DatabaseType.SQLite ? dbConfig.SqliteFilePath : "onemanvan.db");
+        
         builder.Services.AddDbContextFactory<OneManVanDbContext>(options =>
             options.UseSqlite($"Data Source={dbPath}"));
         
-        // Also register DbContext for backward compatibility with existing code
+        // Also register DbContext for backward compatibility
         builder.Services.AddDbContext<OneManVanDbContext>(options =>
             options.UseSqlite($"Data Source={dbPath}"));
 
         // Register core services (Singleton - stateless or app-wide state)
+        builder.Services.AddSingleton<ISettingsStorage, MobileSettingsStorage>();
         builder.Services.AddSingleton<IBackupService, MobileBackupService>();
         builder.Services.AddSingleton<MobileBackupService>();
-        builder.Services.AddSingleton<TradeConfigurationService>();
+        builder.Services.AddSingleton<OneManVan.Shared.Services.TradeConfigurationService>();
         builder.Services.AddSingleton<OfflineSyncService>();
         builder.Services.AddSingleton<AdvancedSyncService>();
         builder.Services.AddSingleton<SyncConflictResolver>();
@@ -46,10 +56,11 @@ public static class MauiProgram
         // Register services that need DbContext (Scoped - tied to request/page lifetime)
         builder.Services.AddScoped<PhotoCaptureService>();
         builder.Services.AddScoped<InventoryLookupService>();
-        builder.Services.AddScoped<CsvExportImportService>();
+        builder.Services.AddScoped<Shared.Services.CsvExportImportService>(); // Using shared service
         builder.Services.AddScoped<QuickAddCustomerService>();
         builder.Services.AddScoped<CustomerPickerService>();
         builder.Services.AddScoped<LineItemDialogService>();
+        builder.Services.AddScoped<DashboardDataService>(); // Dashboard metrics
 
         // Register main pages (Transient - new instance each time)
         builder.Services.AddTransient<MainPage>();
@@ -85,6 +96,10 @@ public static class MauiProgram
         builder.Services.AddTransient<ProductDetailPage>();
         builder.Services.AddTransient<AddProductPage>();
         builder.Services.AddTransient<EditProductPage>();
+        builder.Services.AddTransient<CompanyListPage>();
+        builder.Services.AddTransient<CompanyDetailPage>();
+        builder.Services.AddTransient<AddCompanyPage>();
+        builder.Services.AddTransient<EditCompanyPage>();
         builder.Services.AddTransient<SettingsPage>();
         builder.Services.AddTransient<SetupWizardPage>();
         builder.Services.AddTransient<SchemaEditorPage>();

@@ -114,7 +114,7 @@ public partial class AddAssetPage : ContentPage
     private async Task SelectSiteForCustomerAsync(Customer customer)
     {
         var siteOptions = customer.Sites.Select(s => s.Address).ToArray();
-        var selected = await DisplayActionSheet("Select Site", "Cancel", null, siteOptions);
+        var selected = await DisplayActionSheetAsync("Select Site", "Cancel", null, siteOptions);
         
         if (selected != "Cancel" && !string.IsNullOrEmpty(selected))
         {
@@ -147,7 +147,7 @@ public partial class AddAssetPage : ContentPage
 
     private async void OnSelectLocationTapped(object sender, TappedEventArgs e)
     {
-        var choice = await DisplayActionSheet("Link Asset To", "Cancel", null, "Site/Property", "Customer", "No Location (Add Later)");
+        var choice = await DisplayActionSheetAsync("Link Asset To", "Cancel", null, "Site/Property", "Customer", "No Location (Add Later)");
         
         if (choice == "Site/Property")
         {
@@ -178,7 +178,7 @@ public partial class AddAssetPage : ContentPage
         }
         
         var siteOptions = sites.Select(s => $"{s.Address} ({s.Customer?.Name ?? "Unknown"})").ToArray();
-        var selected = await DisplayActionSheet("Select Site", "Cancel", null, siteOptions);
+        var selected = await DisplayActionSheetAsync("Select Site", "Cancel", null, siteOptions);
         
         if (selected != "Cancel" && !string.IsNullOrEmpty(selected))
         {

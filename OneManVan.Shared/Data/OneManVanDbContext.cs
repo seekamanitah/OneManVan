@@ -4,7 +4,7 @@ using OneManVan.Shared.Models;
 namespace OneManVan.Shared.Data;
 
 /// <summary>
-/// Entity Framework Core database context for TradeFlow FSM.
+/// Entity Framework Core database context for OneManVan FSM.
 /// Supports SQLite (local) and SQL Server (remote Docker) modes.
 /// </summary>
 public class OneManVanDbContext : DbContext
@@ -44,11 +44,18 @@ public class OneManVanDbContext : DbContext
     
     // Invoicing
     public DbSet<Invoice> Invoices => Set<Invoice>();
+    public DbSet<InvoiceLineItem> InvoiceLineItems => Set<InvoiceLineItem>();
     public DbSet<Payment> Payments => Set<Payment>();
     
     // Products
     public DbSet<Product> Products => Set<Product>();
     public DbSet<ProductDocument> ProductDocuments => Set<ProductDocument>();
+    
+    // Manufacturer Registration URLs (configurable)
+    public DbSet<ManufacturerRegistration> ManufacturerRegistrations => Set<ManufacturerRegistration>();
+    
+    // Warranty Claims
+    public DbSet<WarrantyClaim> WarrantyClaims => Set<WarrantyClaim>();
     
     // Service History & Photos
     public DbSet<ServiceHistory> ServiceHistory => Set<ServiceHistory>();
@@ -730,6 +737,29 @@ public class OneManVanDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => new { e.FieldDefinitionId, e.DisplayOrder });
             entity.HasIndex(e => e.IsActive);
+        });
+
+        // =====================
+        // WarrantyClaim configuration
+        // =====================
+        modelBuilder.Entity<WarrantyClaim>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.AssetId);
+            entity.HasIndex(e => e.ClaimNumber);
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.ClaimDate);
+            entity.HasIndex(e => e.IsCoveredByWarranty);
+
+            entity.HasOne(e => e.Asset)
+                .WithMany()
+                .HasForeignKey(e => e.AssetId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Job)
+                .WithMany()
+                .HasForeignKey(e => e.JobId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
     }
 }

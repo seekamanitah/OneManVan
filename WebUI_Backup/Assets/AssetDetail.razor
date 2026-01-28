@@ -1,0 +1,390 @@
+@page "/assets/{Id:int}"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@using OneManVan.Shared.Utilities
+@attribute [Authorize]
+@inject IDbContextFactory<OneManVanDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>@(asset?.Product?.Name ?? "Asset") - TradeFlow</PageTitle>
+
+<div class="container-fluid py-4">
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary"></div>
+        </div>
+    }
+    else if (asset == null)
+    {
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>Asset not found
+        </div>
+    }
+    else
+    {
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-start mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/assets">Assets</a></li>
+                        <li class="breadcrumb-item active">@asset.Brand + " " + asset.Model?.Name</li>
+                    </ol>
+                </nav>
+                <div class="d-flex align-items-center">
+                    <div class="avatar-circle bg-success bg-opacity-10 text-success me-3" style="width: 60px; height: 60px; font-size: 24px;">
+                        <i class="bi bi-tools"></i>
+                    </div>
+                    <div>
+                        <h1 class="h2 mb-1">@asset.Brand + " " + asset.Model?.Name</h1>
+                        <div class="d-flex gap-2">
+                            @if (!string.IsNullOrEmpty(asset.Serial))
+                            {
+                                <span class="badge bg-dark">@asset.Serial</span>
+                            }
+                            @if (asset.IsRegisteredOnline)
+                            {
+                                <span class="badge bg-success">Registered</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning">Unregistered</span>
+                            }
+                            @if (asset.WarrantyExpiration.HasValue && asset.WarrantyExpiration > DateTime.Now)
+                            {
+                                <span class="badge bg-info">Under Warranty</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary" @onclick="GoBack">
+                    <i class="bi bi-arrow-left me-2"></i>Back
+                </button>
+                <button class="btn btn-primary" @onclick="EditAsset">
+                    <i class="bi bi-pencil me-2"></i>Edit
+                </button>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <!-- Asset Information -->
+            <div class="col-md-8">
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0">Asset Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Product</label>
+                                <div>
+                                    <div class="fw-semibold">@asset.Brand + " " + asset.Model?.Name</div>
+                                    @if (!string.IsNullOrEmpty(asset.Brand + " " + asset.Model?))
+                                    {
+                                        <small class="text-muted">@asset.Brand + " " + asset.Model @asset.Brand + " " + asset.Model.Model</small>
+                                    }
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Serial Number</label>
+                                <span class="badge bg-dark">@(asset.Serial ?? "—")</span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Customer</label>
+                                @if (asset.Customer != null)
+                                {
+                                    <a href="/customers/@asset.CustomerId" class="text-decoration-none">
+                                        <i class="bi bi-person me-1"></i>@asset.Customer.Name
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Location</label>
+                                <span>@(asset.Location ?? "—")</span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Install Date</label>
+                                <span>@(asset.InstallDate?.ToString("MMM dd, yyyy") ?? "—")</span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Service Date</label>
+                                <span>@(asset.LastServiceDate?.ToString("MMM dd, yyyy") ?? "—")</span>
+                            </div>
+                            @if (!string.IsNullOrEmpty(asset.Notes))
+                            {
+                                <div class="col-12">
+                                    <label class="text-muted small d-block mb-1">Notes</label>
+                                    <p class="mb-0">@asset.Notes</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Warranty Information -->
+                @if (asset.WarrantyExpiration.HasValue || !string.IsNullOrEmpty(asset.RegistrationConfirmation))
+                {
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0">Warranty Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                @if (asset.WarrantyExpiration.HasValue)
+                                {
+                                    <div class="col-md-6">
+                                        <label class="text-muted small d-block mb-1">Warranty Expires</label>
+                                        <span>@asset.WarrantyExpiration.Value.ToString("MMM dd, yyyy")</span>
+                                        @if (asset.WarrantyExpiration > DateTime.Now)
+                                        {
+                                            <span class="badge bg-success ms-2">Active</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary ms-2">Expired</span>
+                                        }
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(asset.RegistrationConfirmation))
+                                {
+                                    <div class="col-md-6">
+                                        <label class="text-muted small d-block mb-1">Registration Number</label>
+                                        <span>@asset.RegistrationConfirmation</span>
+                                    </div>
+                                }
+                                @if (asset.RegistrationDate.HasValue)
+                                {
+                                    <div class="col-md-6">
+                                        <label class="text-muted small d-block mb-1">Registration Date</label>
+                                        <span>@asset.RegistrationDate.Value.ToString("MMM dd, yyyy")</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Service History -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0">Service History</h5>
+                    </div>
+                    <div class="card-body">
+                        @if (asset.Jobs?.Any() == true)
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Job</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var job in asset.Jobs.OrderByDescending(j => j.ScheduledDate).Take(10))
+                                        {
+                                            <tr>
+                                                <td>@job.ScheduledDate?.ToString("MMM dd, yyyy")</td>
+                                                <td>@job.Title</td>
+                                                <td><span class="badge @GetJobStatusBadge(job.Status)">@job.Status</span></td>
+                                                <td>
+                                                    <a href="/jobs/@job.Id" class="btn btn-sm btn-outline-primary">View</a>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-4 text-muted">
+                                <i class="bi bi-clipboard-check fs-3 mb-2 d-block"></i>
+                                <p class="mb-0">No service history</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-md-4">
+                <!-- Quick Stats -->
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0">Quick Stats</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                            <span class="text-muted">Service Jobs</span>
+                            <span class="h4 mb-0">@(asset.Jobs?.Count ?? 0)</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                            <span class="text-muted">Registration Status</span>
+                            <span class="badge @(asset.IsRegisteredOnline ? "bg-success" : "bg-warning")">
+                                @(asset.IsRegisteredOnline ? "Registered" : "Unregistered")
+                            </span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted">Age</span>
+                            <span>@GetAssetAge()</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Registration Info -->
+                @if (asset.IsRegisteredOnline)
+                {
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0">Registration</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="text-muted small d-block mb-1">Confirmation</label>
+                                <span>@(asset.RegistrationConfirmation ?? "—")</span>
+                            </div>
+                            @if (asset.RegistrationDate.HasValue)
+                            {
+                                <div>
+                                    <label class="text-muted small d-block mb-1">Date Registered</label>
+                                    <span>@asset.RegistrationDate.Value.ToString("MMM dd, yyyy")</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- Actions -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-primary" @onclick="ScheduleService">
+                                <i class="bi bi-calendar-plus me-2"></i>Schedule Service
+                            </button>
+                            <button class="btn btn-outline-secondary" @onclick="ViewProduct">
+                                <i class="bi bi-box me-2"></i>View Product
+                            </button>
+                            <button class="btn btn-outline-secondary" @onclick="ViewCustomer">
+                                <i class="bi bi-person me-2"></i>View Customer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .avatar-circle {
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private bool isLoading = true;
+    private Asset? asset;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAssetAsync();
+    }
+
+    private async Task LoadAssetAsync()
+    {
+        try
+        {
+            isLoading = true;
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+            
+            asset = await db.Assets
+                
+                .Include(a => a.Customer)
+                .Include(a => a.Jobs)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(a => a.Id == Id);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private string GetAssetAge()
+    {
+        if (!asset?.InstallDate.HasValue ?? true)
+            return "Unknown";
+
+        var age = DateTime.Now - asset.InstallDate.Value;
+        var years = age.Days / 365;
+        var months = (age.Days % 365) / 30;
+
+        if (years > 0)
+            return $"{years}y {months}m";
+        if (months > 0)
+            return $"{months} months";
+        return $"{age.Days} days";
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/assets");
+    }
+
+    private void EditAsset()
+    {
+        Navigation.NavigateTo($"/assets/{Id}/edit");
+    }
+
+    private void ScheduleService()
+    {
+        Navigation.NavigateTo($"/jobs/new?assetId={Id}");
+    }
+
+    private void ViewProduct()
+    {
+        if (asset?.ProductId != null)
+        {
+            Navigation.NavigateTo($"/products/{asset.Brand + " " + 0}");
+        }
+    }
+
+    private void ViewCustomer()
+    {
+        if (asset?.CustomerId != null)
+        {
+            Navigation.NavigateTo($"/customers/{asset.CustomerId}");
+        }
+    }
+
+    private string GetJobStatusBadge(JobStatus status)
+    {
+        return status switch
+        {
+            JobStatus.Scheduled => "bg-info",
+            JobStatus.InProgress => "bg-warning",
+            JobStatus.Completed => "bg-success",
+            JobStatus.Cancelled => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+}

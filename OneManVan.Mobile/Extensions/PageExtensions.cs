@@ -33,7 +33,7 @@ public static class PageExtensions
                 // Haptic may not be supported on all platforms
             }
             
-            await page.DisplayAlert("Success", successMessage, "OK");
+            await page.DisplayAlertAsync("Success", successMessage, "OK");
             
             if (navigateBack)
             {
@@ -45,7 +45,7 @@ public static class PageExtensions
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Save error: {ex}");
-            await page.DisplayAlert(
+            await page.DisplayAlertAsync(
                 "Save Failed", 
                 "Unable to save. Please try again.", 
                 "OK");
@@ -75,7 +75,7 @@ public static class PageExtensions
                 try { HapticFeedback.Default.Perform(HapticFeedbackType.Click); } catch { }
             }
             
-            await page.DisplayAlert(successTitle, successMessage, "OK");
+            await page.DisplayAlertAsync(successTitle, successMessage, "OK");
             
             if (navigateBack)
             {
@@ -87,7 +87,7 @@ public static class PageExtensions
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Operation error: {ex}");
-            await page.DisplayAlert(errorTitle, errorMessage, "OK");
+            await page.DisplayAlertAsync(errorTitle, errorMessage, "OK");
             return false;
         }
     }

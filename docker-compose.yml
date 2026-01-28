@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: tradeflow-db
+    hostname: tradeflow-sql
+    ports:
+      - "1433:1433"
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=TradeFlow2025!
+      - MSSQL_PID=Express
+      - MSSQL_TCP_PORT=1433
+    volumes:
+      - tradeflow-data:/var/opt/mssql/data
+      - tradeflow-log:/var/opt/mssql/log
+      - tradeflow-backup:/var/opt/mssql/backup
+      - ./docker/init:/docker-entrypoint-initdb.d
+    networks:
+      - tradeflow-network
+    restart: unless-stopped
+    healthcheck:
+      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "TradeFlow2025!" -Q "SELECT 1" || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  tradeflow-data:
+    name: tradeflow-sqldata
+  tradeflow-log:
+    name: tradeflow-sqllogs
+  tradeflow-backup:
+    name: tradeflow-backups
+
+networks:
+  tradeflow-network:
+    name: tradeflow-net
+    driver: bridge

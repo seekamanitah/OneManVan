@@ -13,6 +13,7 @@ public partial class CustomerDetailPage : ContentPage
     private int _customerId;
     private bool _isNewCustomer;
     private CancellationTokenSource? _cts;
+    private CustomerCompanyRole? _companyRole;
 
     public Customer Customer { get; set; } = new();
     public bool IsExisting => _customerId > 0;
@@ -48,6 +49,7 @@ public partial class CustomerDetailPage : ContentPage
             await LoadCustomerAsync(_cts.Token);
             InitializePickers();
             LoadPrimaryAddress();
+            await LoadCompanyRelationshipAsync();
         }
         catch (OperationCanceledException)
         {
@@ -152,6 +154,16 @@ public partial class CustomerDetailPage : ContentPage
             if (customer != null)
             {
                 Customer = customer;
+                
+                // Auto-split Name into FirstName/LastName if they're not already set
+                if (string.IsNullOrWhiteSpace(Customer.FirstName) && !string.IsNullOrWhiteSpace(Customer.Name))
+                {
+                    var nameParts = Customer.Name.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
+                    if (nameParts.Length >= 1)
+                        Customer.FirstName = nameParts[0];
+                    if (nameParts.Length >= 2)
+                        Customer.LastName = nameParts[1];
+                }
             }
         }
         else
@@ -228,12 +240,16 @@ public partial class CustomerDetailPage : ContentPage
 
     private async void OnSaveClicked(object sender, EventArgs e)
     {
-        if (string.IsNullOrWhiteSpace(Customer.Name))
+        // Validate FirstName or LastName is provided
+        if (string.IsNullOrWhiteSpace(Customer.FirstName) && string.IsNullOrWhiteSpace(Customer.LastName))
         {
-            await DisplayAlertAsync("Validation Error", "Customer name is required.", "OK");
-            NameEntry.Focus();
+            await DisplayAlertAsync("Validation Error", "Please enter at least a first name or last name.", "OK");
+            FirstNameEntry.Focus();
             return;
         }
+
+        // Construct full name from FirstName and LastName for backward compatibility
+        Customer.Name = $"{Customer.FirstName?.Trim()} {Customer.LastName?.Trim()}".Trim();
 
         try
         {
@@ -483,6 +499,70 @@ public partial class CustomerDetailPage : ContentPage
         catch (Exception ex)
         {
             await DisplayAlertAsync("Error", $"Could not open maps: {ex.Message}", "OK");
+        }
+    }
+
+    private async Task LoadCompanyRelationshipAsync()
+    {
+        if (_customerId <= 0) return;
+
+        try
+        {
+            await using var db = await _dbFactory.CreateDbContextAsync();
+            
+            _companyRole = await db.CustomerCompanyRoles
+                .Include(r => r.Company)
+                .FirstOrDefaultAsync(r => r.CustomerId == _customerId && r.EndDate == null);
+
+            if (_companyRole != null)
+            {
+                // Show company relationship card
+                CompanyRelationshipCard.IsVisible = true;
+                
+                // Populate fields
+                LinkedCompanyNameLabel.Text = _companyRole.Company.Name;
+                RoleLabel.Text = _companyRole.Role;
+                
+                // Show/hide optional fields
+                if (!string.IsNullOrWhiteSpace(_companyRole.Title))
+                {
+                    CompanyTitleLabel.Text = _companyRole.Title;
+                    TitleGrid.IsVisible = true;
+                }
+                else
+                {
+                    TitleGrid.IsVisible = false;
+                }
+                
+                if (!string.IsNullOrWhiteSpace(_companyRole.Department))
+                {
+                    DepartmentLabel.Text = _companyRole.Department;
+                    DepartmentGrid.IsVisible = true;
+                }
+                else
+                {
+                    DepartmentGrid.IsVisible = false;
+                }
+                
+                // Show primary contact badge
+                PrimaryContactBadge.IsVisible = _companyRole.IsPrimaryContact;
+            }
+            else
+            {
+                CompanyRelationshipCard.IsVisible = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Load company relationship error: {ex}");
+        }
+    }
+
+    private async void OnLinkedCompanyTapped(object sender, EventArgs e)
+    {
+        if (_companyRole != null)
+        {
+            await Shell.Current.GoToAsync($"CompanyDetail?companyId={_companyRole.CompanyId}");
         }
     }
 }

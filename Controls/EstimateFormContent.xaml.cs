@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using OneManVan.Shared.Data;
 using OneManVan.Shared.Models;
 using OneManVan.Shared.Models.Enums;
+using OneManVan.Dialogs;
 
 namespace OneManVan.Controls;
 
@@ -94,6 +95,29 @@ public partial class EstimateFormContent : UserControl
         StatusCombo.SelectedIndex = 0; // Draft
     }
     
+    private void OnQuickAddCustomerClick(object sender, RoutedEventArgs e)
+    {
+        var dialog = new QuickAddCustomerDialog
+        {
+            Owner = Window.GetWindow(this)
+        };
+        
+        if (dialog.ShowDialog() == true && dialog.CreatedCustomer != null)
+        {
+            // Reload customers to include the new one
+            LoadCustomers();
+            
+            // Select the newly created customer
+            System.Threading.Tasks.Task.Delay(100).ContinueWith(_ =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    CustomerCombo.SelectedValue = dialog.CreatedCustomer.Id;
+                });
+            });
+        }
+    }
+    
     public Estimate GetEstimate()
     {
         var selectedStatus = (StatusCombo.SelectedItem as ComboBoxItem)?.Tag as EstimateStatus? ?? EstimateStatus.Draft;
@@ -105,6 +129,7 @@ public partial class EstimateFormContent : UserControl
             SiteId = SiteCombo.SelectedValue as int?,
             Status = selectedStatus,
             TaxRate = decimal.TryParse(TaxRateTextBox.Text, out var taxRate) ? taxRate : 0,
+            TaxIncluded = TaxIncludedCheckBox.IsChecked == true,
             Description = DescriptionTextBox.Text,
             Notes = NotesTextBox.Text
         };
@@ -116,6 +141,7 @@ public partial class EstimateFormContent : UserControl
         DescriptionTextBox.Text = estimate.Description;
         NotesTextBox.Text = estimate.Notes;
         TaxRateTextBox.Text = estimate.TaxRate.ToString("F2");
+        TaxIncludedCheckBox.IsChecked = estimate.TaxIncluded;
         
         // Select customer
         CustomerCombo.SelectedValue = estimate.CustomerId;

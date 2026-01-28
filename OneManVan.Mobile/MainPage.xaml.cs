@@ -5,6 +5,7 @@ using OneManVan.Mobile.Theme;
 using OneManVan.Shared.Data;
 using OneManVan.Shared.Models;
 using OneManVan.Shared.Models.Enums;
+using OneManVan.Shared.Services;
 
 namespace OneManVan.Mobile;
 
@@ -12,6 +13,7 @@ public partial class MainPage : ContentPage
 {
     private readonly IDbContextFactory<OneManVanDbContext> _dbFactory;
     private readonly TradeConfigurationService _tradeService;
+    private readonly DashboardDataService _dashboardService;
     private CancellationTokenSource? _cts;
     private int _currentDashboard = 1; // 1 = Today, 2 = Week, 3 = Month
     private DateTime _weekStartDate;
@@ -21,11 +23,15 @@ public partial class MainPage : ContentPage
     private List<Job> _selectedDayJobs = [];
     private Dictionary<DateTime, int> _monthJobCounts = [];
 
-    public MainPage(IDbContextFactory<OneManVanDbContext> dbFactory, TradeConfigurationService tradeService)
+    public MainPage(
+        IDbContextFactory<OneManVanDbContext> dbFactory, 
+        TradeConfigurationService tradeService,
+        DashboardDataService dashboardService)
     {
         InitializeComponent();
         _dbFactory = dbFactory;
         _tradeService = tradeService;
+        _dashboardService = dashboardService;
         
         // Initialize to current week (starting Monday)
         var today = DateTime.Today;
@@ -45,6 +51,12 @@ public partial class MainPage : ContentPage
         {
             UpdateTradeLabels();
             UpdateDateTimeHeader();
+            
+            // Load hero metrics first (fast)
+            await LoadHeroMetricsAsync(_cts.Token);
+            
+            // Load alerts
+            await LoadAlertsAsync(_cts.Token);
             
             await LoadScheduleFirstDashboardAsync(_cts.Token);
             
@@ -1138,6 +1150,150 @@ public partial class MainPage : ContentPage
     private async void OnSearchAssetsClicked(object sender, EventArgs e)
     {
         await Shell.Current.GoToAsync("//Assets");
+    }
+
+    private async void OnCreateInvoiceClicked(object sender, EventArgs e)
+    {
+        await Shell.Current.GoToAsync("AddInvoice");
+    }
+
+    private async void OnViewCalendarClicked(object sender, EventArgs e)
+    {
+        // Toggle to Dashboard 3 (Month Calendar)
+        _currentDashboard = 3;
+        Dashboard1.IsVisible = false;
+        Dashboard2.IsVisible = false;
+        Dashboard3.IsVisible = true;
+        DashboardToggle.Text = "Today";
+        await LoadMonthDashboardAsync(_cts?.Token ?? CancellationToken.None);
+    }
+
+    private async void OnScanBarcodeClicked(object sender, EventArgs e)
+    {
+        await Shell.Current.GoToAsync("BarcodeScanner");
+    }
+
+    #endregion
+
+    #region Hero Metrics
+
+    /// <summary>
+    /// Load hero metrics for dashboard cards.
+    /// </summary>
+    private async Task LoadHeroMetricsAsync(CancellationToken ct)
+    {
+        try
+        {
+            var metrics = await _dashboardService.GetMetricsAsync();
+
+            if (ct.IsCancellationRequested) return;
+
+            // Update hero metric cards
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                // Today's Revenue
+                TodayRevenueCard.Value = metrics.TodayRevenue.ToString("C0");
+                TodayRevenueCard.Label = "Today's Revenue";
+                
+                // Active Jobs
+                ActiveJobsCard.Value = metrics.ActiveJobs.ToString();
+                ActiveJobsCard.Label = "Active Jobs";
+                
+                // Week Revenue
+                WeekRevenueCard.Value = metrics.WeekRevenue.ToString("C0");
+                WeekRevenueCard.Label = "This Week";
+                if (metrics.RevenueChangePercent != 0)
+                {
+                    WeekRevenueCard.Trend = metrics.RevenueTrendText;
+                    WeekRevenueCard.TrendColor = metrics.IsRevenueTrendingUp ? Colors.Green : Colors.Red;
+                }
+                
+                // New Customers
+                NewCustomersCard.Value = metrics.NewCustomersWeek.ToString();
+                NewCustomersCard.Label = "New Customers";
+                
+                // Update Business Health Chart
+                BusinessHealthChart.UpdateMetrics(metrics);
+                
+                // Update Today's Focus Summary
+                var todayJobsText = metrics.TodayJobCount == 1 ? "1 job" : $"{metrics.TodayJobCount} jobs";
+                TodayFocusSummary.Text = $"{todayJobsText} scheduled today";
+                
+                // Show overdue alert if needed
+                if (metrics.OverdueJobs > 0)
+                {
+                    OverdueAlertBadge.IsVisible = true;
+                    var overdueText = metrics.OverdueJobs == 1 ? "1 overdue" : $"{metrics.OverdueJobs} overdue";
+                    OverdueAlertText.Text = overdueText;
+                }
+                else
+                {
+                    OverdueAlertBadge.IsVisible = false;
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            // Log error but don't crash
+            System.Diagnostics.Debug.WriteLine($"Error loading hero metrics: {ex.Message}");
+        }
+    }
+
+    #endregion
+
+    #region Alerts & Notifications
+
+    /// <summary>
+    /// Load alerts and notifications.
+    /// </summary>
+    private async Task LoadAlertsAsync(CancellationToken ct)
+    {
+        try
+        {
+            var alerts = await _dashboardService.GetAlertsAsync();
+
+            if (ct.IsCancellationRequested) return;
+
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                // Clear existing alerts
+                AlertsContainer.Children.Clear();
+
+                if (alerts.Any())
+                {
+                    NoAlertsCard.IsVisible = false;
+                    
+                    // Add alert cards (max 5)
+                    foreach (var alert in alerts.Take(5))
+                    {
+                        var alertCard = new Controls.AlertCard();
+                        alertCard.SetAlert(alert);
+                        
+                        // Add tap gesture to navigate
+                        var tapGesture = new TapGestureRecognizer();
+                        tapGesture.Tapped += async (s, e) =>
+                        {
+                            // Navigate to the appropriate page
+                            if (!string.IsNullOrEmpty(alert.ActionUrl))
+                            {
+                                await Shell.Current.GoToAsync(alert.ActionUrl);
+                            }
+                        };
+                        alertCard.GestureRecognizers.Add(tapGesture);
+                        
+                        AlertsContainer.Children.Add(alertCard);
+                    }
+                }
+                else
+                {
+                    NoAlertsCard.IsVisible = true;
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error loading alerts: {ex.Message}");
+        }
     }
 
     #endregion

@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="OneManVan.Mobile.Pages.EnhancedSchemaEditorPage"
+             Title="Schema Editor"
+             BackgroundColor="{AppThemeBinding Light={StaticResource LightBackground}, Dark={StaticResource DarkBackground}}">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+        
+        <!-- Header -->
+        <Border Grid.Row="0" 
+                BackgroundColor="{StaticResource Primary}" 
+                Padding="16">
+            <Grid ColumnDefinitions="*,Auto,Auto">
+                <VerticalStackLayout>
+                    <Label Text="Schema Editor" 
+                           FontSize="20" 
+                           FontAttributes="Bold"
+                           TextColor="White"/>
+                    <Label Text="Manage custom fields"
+                           FontSize="14" 
+                           TextColor="White"
+                           Opacity="0.8"/>
+                </VerticalStackLayout>
+                
+                <Button Grid.Column="1"
+                        Text="+ Add"
+                        Clicked="OnAddFieldClick"
+                        BackgroundColor="White"
+                        TextColor="{StaticResource Primary}"
+                        CornerRadius="20"
+                        Padding="16,8"
+                        FontSize="14"
+                        FontAttributes="Bold"
+                        VerticalOptions="Center"/>
+                
+                <Button Grid.Column="2"
+                        Text="?"
+                        Clicked="OnMenuClick"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="20"
+                        WidthRequest="40"
+                        VerticalOptions="Center"
+                        Margin="8,0,0,0"/>
+            </Grid>
+        </Border>
+
+        <!-- Content -->
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="16" Spacing="12">
+                
+                <!-- Entity Type Filter -->
+                <Frame BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}"
+                       CornerRadius="12" Padding="12" HasShadow="False"
+                       BorderColor="{AppThemeBinding Light={StaticResource LightBorder}, Dark={StaticResource DarkBorder}}">
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                        <Label Text="Entity:" 
+                               FontSize="14"
+                               FontAttributes="Bold"
+                               VerticalOptions="Center"/>
+                        <Picker Grid.Column="1" 
+                                x:Name="EntityTypePicker"
+                                SelectedIndexChanged="OnEntityTypeChanged"
+                                BackgroundColor="{AppThemeBinding Light={StaticResource LightInputBackground}, Dark={StaticResource DarkInputBackground}}">
+                            <Picker.ItemsSource>
+                                <x:Array Type="{x:Type x:String}">
+                                    <x:String>Customer</x:String>
+                                    <x:String>Asset</x:String>
+                                    <x:String>Job</x:String>
+                                    <x:String>Invoice</x:String>
+                                    <x:String>Estimate</x:String>
+                                    <x:String>Product</x:String>
+                                    <x:String>InventoryItem</x:String>
+                                    <x:String>ServiceAgreement</x:String>
+                                </x:Array>
+                            </Picker.ItemsSource>
+                        </Picker>
+                    </Grid>
+                </Frame>
+
+                <!-- Fields List -->
+                <Label Text="Fields" 
+                       FontSize="16" 
+                       FontAttributes="Bold"
+                       Margin="0,8,0,0"/>
+                
+                <CollectionView x:Name="FieldsCollection"
+                                SelectionMode="None">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <SwipeView>
+                                <SwipeView.RightItems>
+                                    <SwipeItems>
+                                        <SwipeItem Text="Edit"
+                                                   BackgroundColor="{StaticResource Primary}"
+                                                   Command="{Binding Source={x:Reference FieldsCollection}, Path=BindingContext.EditFieldCommand}"
+                                                   CommandParameter="{Binding}"/>
+                                        <SwipeItem Text="Delete"
+                                                   BackgroundColor="{StaticResource Danger}"
+                                                   Command="{Binding Source={x:Reference FieldsCollection}, Path=BindingContext.DeleteFieldCommand}"
+                                                   CommandParameter="{Binding}"/>
+                                    </SwipeItems>
+                                </SwipeView.RightItems>
+                                
+                                <Frame BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}"
+                                       CornerRadius="12" Padding="12" Margin="0,4"
+                                       HasShadow="False"
+                                       BorderColor="{AppThemeBinding Light={StaticResource LightBorder}, Dark={StaticResource DarkBorder}}">
+                                    <Frame.GestureRecognizers>
+                                        <TapGestureRecognizer Tapped="OnFieldTapped"/>
+                                    </Frame.GestureRecognizers>
+                                    
+                                    <Grid ColumnDefinitions="*,Auto,Auto" RowDefinitions="Auto,Auto" RowSpacing="4">
+                                        <VerticalStackLayout>
+                                            <HorizontalStackLayout Spacing="6">
+                                                <Label Text="{Binding DisplayName}" 
+                                                       FontSize="16"
+                                                       FontAttributes="Bold"
+                                                       VerticalOptions="Center"/>
+                                                <Frame BackgroundColor="{StaticResource Danger}"
+                                                       Padding="4,2"
+                                                       CornerRadius="4"
+                                                       HasShadow="False"
+                                                       IsVisible="{Binding IsRequired}">
+                                                    <Label Text="Required" 
+                                                           FontSize="10"
+                                                           TextColor="White"/>
+                                                </Frame>
+                                                <Frame BackgroundColor="{AppThemeBinding Light=#E0E0E0, Dark=#424242}"
+                                                       Padding="4,2"
+                                                       CornerRadius="4"
+                                                       HasShadow="False"
+                                                       IsVisible="{Binding IsSystemField}">
+                                                    <Label Text="System" 
+                                                           FontSize="10"
+                                                           TextColor="{AppThemeBinding Light=#757575, Dark=#BDBDBD}"/>
+                                                </Frame>
+                                            </HorizontalStackLayout>
+                                            <Label Text="{Binding FieldType}" 
+                                                   FontSize="12"
+                                                   TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                                        </VerticalStackLayout>
+                                        
+                                        <Frame Grid.Column="1"
+                                               BackgroundColor="{StaticResource Primary}"
+                                               Padding="6,3"
+                                               CornerRadius="10"
+                                               HasShadow="False"
+                                               IsVisible="{Binding HasChoices}"
+                                               VerticalOptions="Center">
+                                            <Label Text="{Binding ChoiceCount, StringFormat='{0} choices'}" 
+                                                   FontSize="11"
+                                                   TextColor="White"/>
+                                        </Frame>
+                                        
+                                        <Label Grid.Column="2"
+                                               Text=">"
+                                               FontSize="18"
+                                               TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"
+                                               VerticalOptions="Center"
+                                               Margin="8,0,0,0"/>
+                                    </Grid>
+                                </Frame>
+                            </SwipeView>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+                
+                <!-- Empty State -->
+                <VerticalStackLayout x:Name="EmptyState"
+                                     VerticalOptions="Center"
+                                     HorizontalOptions="Center"
+                                     Padding="32"
+                                     IsVisible="False">
+                    <Label Text="No custom fields yet" 
+                           FontSize="18"
+                           FontAttributes="Bold"
+                           HorizontalOptions="Center"
+                           TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                    <Label Text="Tap + Add to create your first field"
+                           FontSize="14"
+                           HorizontalOptions="Center"
+                           Margin="0,8,0,0"
+                           TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                </VerticalStackLayout>
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage>

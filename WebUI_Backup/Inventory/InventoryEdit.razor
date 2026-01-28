@@ -1,0 +1,418 @@
+@page "/inventory/new"
+@page "/inventory/{Id:int}/edit"
+@page "/inventory/{Id:int}/adjust"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@attribute [Authorize]
+@inject IDbContextFactory<OneManVanDbContext> DbFactory
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<PageTitle>@GetPageTitle() - TradeFlow</PageTitle>
+
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="mb-4">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/inventory">Inventory</a></li>
+                        <li class="breadcrumb-item active">@GetPageTitle()</li>
+                    </ol>
+                </nav>
+                <h1 class="h2">@GetPageTitle()</h1>
+            </div>
+
+            @if (isLoading)
+            {
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary"></div>
+                </div>
+            }
+            else
+            {
+                <EditForm Model="@model" OnValidSubmit="HandleSubmit">
+                    <DataAnnotationsValidator />
+
+                    @if (IsAdjust)
+                    {
+                        <!-- Stock Adjustment Mode -->
+                        <div class="card border-0 shadow-sm mb-3">
+                            <div class="card-header bg-white border-0 py-3">
+                                <h5 class="mb-0">Adjust Stock Level</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-info mb-3">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    Current stock: <strong>@model.Quantity</strong> units
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label class="form-label">Adjustment Type *</label>
+                                        <div class="btn-group w-100" role="group">
+                                            <input type="radio" class="btn-check" name="adjustmentType" id="adjustIn" 
+                                                   @onchange="@(() => adjustmentType = "In")" checked="@(adjustmentType == "In")" />
+                                            <label class="btn btn-outline-success" for="adjustIn">
+                                                <i class="bi bi-plus-circle me-2"></i>Add Stock
+                                            </label>
+
+                                            <input type="radio" class="btn-check" name="adjustmentType" id="adjustOut"
+                                                   @onchange="@(() => adjustmentType = "Out")" checked="@(adjustmentType == "Out")" />
+                                            <label class="btn btn-outline-danger" for="adjustOut">
+                                                <i class="bi bi-dash-circle me-2"></i>Remove Stock
+                                            </label>
+
+                                            <input type="radio" class="btn-check" name="adjustmentType" id="adjustSet"
+                                                   @onchange="@(() => adjustmentType = "Set")" checked="@(adjustmentType == "Set")" />
+                                            <label class="btn btn-outline-primary" for="adjustSet">
+                                                <i class="bi bi-arrow-repeat me-2"></i>Set Exact Amount
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label">
+                                            @(adjustmentType == "Set" ? "New Stock Level" : "Quantity") *
+                                        </label>
+                                        <InputNumber class="form-control form-control-lg" @bind-Value="adjustmentQuantity" />
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label">Reason *</label>
+                                        <InputText class="form-control" @bind-Value="adjustmentReason" 
+                                                   placeholder="e.g., Received shipment, Used in job, Physical count" />
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="alert @GetNewBalanceAlertClass()">
+                                            <strong>New Balance:</strong> @CalculateNewBalance() units
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- Regular Edit/Create Mode -->
+                        <!-- Product Selection -->
+                        <div class="card border-0 shadow-sm mb-3">
+                            <div class="card-header bg-white border-0 py-3">
+                                <h5 class="mb-0">Product & Location</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label class="form-label">Product *</label>
+                                        <select class="form-select" @bind="model.ProductId" disabled="@(!IsNew)">
+                                            <option value="0">Select product...</option>
+                                            @foreach (var product in products)
+                                            {
+                                                <option value="@product.Id">@product.Name (@product.SKU)</option>
+                                            }
+                                        </select>
+                                        @if (!IsNew)
+                                        {
+                                            <small class="text-muted">Product cannot be changed after creation</small>
+                                        }
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label">Location</label>
+                                        <InputText class="form-control" @bind-Value="model.Location" 
+                                                   placeholder="e.g., Warehouse A, Shelf 3, Truck" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Stock Levels -->
+                        <div class="card border-0 shadow-sm mb-3">
+                            <div class="card-header bg-white border-0 py-3">
+                                <h5 class="mb-0">Stock Levels</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label">Current Quantity *</label>
+                                        <InputNumber class="form-control" @bind-Value="model.Quantity" />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Reorder Point *</label>
+                                        <InputNumber class="form-control" @bind-Value="model.ReorderPoint" />
+                                        <small class="text-muted">Alert when stock reaches this level</small>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Reorder Quantity *</label>
+                                        <InputNumber class="form-control" @bind-Value="model.ReorderQuantity" />
+                                        <small class="text-muted">Amount to reorder</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Notes -->
+                        <div class="card border-0 shadow-sm mb-3">
+                            <div class="card-header bg-white border-0 py-3">
+                                <h5 class="mb-0">Notes</h5>
+                            </div>
+                            <div class="card-body">
+                                <InputTextArea class="form-control" rows="4" @bind-Value="model.Notes" 
+                                               placeholder="Add any additional notes about this inventory item..." />
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Form Actions -->
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <button type="button" class="btn btn-outline-secondary" @onclick="Cancel" disabled="@isSaving">
+                                    Cancel
+                                </button>
+                                <div class="d-flex gap-2">
+                                    @if (!IsNew && !IsAdjust)
+                                    {
+                                        <button type="button" class="btn btn-outline-danger" @onclick="DeleteInventory" disabled="@isSaving">
+                                            <i class="bi bi-trash me-2"></i>Delete
+                                        </button>
+                                    }
+                                    <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                                        @if (isSaving)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-2"></span>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-check-circle me-2"></i>
+                                        }
+                                        @(IsAdjust ? "Apply Adjustment" : IsNew ? "Create Inventory" : "Save Changes")
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger mt-3">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>@errorMessage
+                        </div>
+                    }
+                </EditForm>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+[Parameter]
+public int? Id { get; set; }
+
+private bool IsNew => !Id.HasValue;
+private bool IsAdjust => Navigation.Uri.Contains("/adjust");
+private bool isLoading = true;
+private bool isSaving = false;
+private string errorMessage = "";
+private InventoryItem model = new();
+private List<Product> products = new();
+
+    // Adjustment mode fields
+    private string adjustmentType = "In";
+    private int adjustmentQuantity = 0;
+    private string adjustmentReason = "";
+    private int originalQuantity = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProductsAsync();
+
+        if (IsNew)
+        {
+            // Check for productId query parameter
+            var uri = new Uri(Navigation.Uri);
+            var queryParams = System.Web.HttpUtility.ParseQueryString(uri.Query);
+            if (int.TryParse(queryParams["productId"], out int productId))
+            {
+                model.ProductId = productId;
+            }
+
+            model = new InventoryItem
+            {
+                Quantity = 0,
+                ReorderPoint = 10,
+                ReorderQuantity = 50
+            };
+            isLoading = false;
+        }
+        else
+        {
+            await LoadInventoryAsync();
+        }
+    }
+
+    private async Task LoadProductsAsync()
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            
+            products = await db.Products
+                .OrderBy(p => p.Name)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load products: {ex.Message}";
+        }
+    }
+
+    private async Task LoadInventoryAsync()
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            
+            var inventory = await db.Inventory.FindAsync(Id!.Value);
+            if (inventory != null)
+            {
+                model = inventory;
+                originalQuantity = inventory.Quantity;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load inventory: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            isSaving = true;
+            errorMessage = "";
+
+            // Validate
+            if (model.ProductId == 0)
+            {
+                errorMessage = "Please select a product";
+                return;
+            }
+
+            if (IsAdjust)
+            {
+                if (adjustmentQuantity <= 0)
+                {
+                    errorMessage = "Please enter a valid quantity";
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(adjustmentReason))
+                {
+                    errorMessage = "Please provide a reason for the adjustment";
+                    return;
+                }
+
+                // Apply adjustment
+                model.Quantity = CalculateNewBalance();
+                model.LastUpdatedBy = adjustmentReason;
+            }
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+
+            if (IsNew)
+            {
+                model.CreatedAt = DateTime.UtcNow;
+                model.LastStockUpdate = DateTime.UtcNow;
+                db.Inventory.Add(model);
+            }
+            else
+            {
+                model.ModifiedAt = DateTime.UtcNow;
+                model.LastStockUpdate = DateTime.UtcNow;
+                db.Inventory.Update(model);
+            }
+
+            await db.SaveChangesAsync();
+
+            // Navigate back
+            Navigation.NavigateTo(IsNew || IsAdjust ? "/inventory" : $"/inventory/{model.Id}");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to save inventory: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task DeleteInventory()
+    {
+        if (!await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this inventory item?"))
+            return;
+
+        try
+        {
+            isSaving = true;
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+            db.Inventory.Remove(model);
+            await db.SaveChangesAsync();
+
+            Navigation.NavigateTo("/inventory");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to delete inventory: {ex.Message}";
+            isSaving = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        if (IsNew || IsAdjust)
+        {
+            Navigation.NavigateTo("/inventory");
+        }
+        else
+        {
+            Navigation.NavigateTo($"/inventory/{Id}");
+        }
+    }
+
+    private string GetPageTitle()
+    {
+        if (IsAdjust)
+            return "Adjust Stock";
+        if (IsNew)
+            return "Add Inventory";
+        return "Edit Inventory";
+    }
+
+    private int CalculateNewBalance()
+    {
+        return adjustmentType switch
+        {
+            "In" => originalQuantity + adjustmentQuantity,
+            "Out" => Math.Max(0, originalQuantity - adjustmentQuantity),
+            "Set" => adjustmentQuantity,
+            _ => originalQuantity
+        };
+    }
+
+    private string GetNewBalanceAlertClass()
+    {
+        var newBalance = CalculateNewBalance();
+        if (newBalance == 0)
+            return "alert-danger";
+        if (newBalance <= model.ReorderPoint)
+            return "alert-warning";
+        return "alert-success";
+    }
+}

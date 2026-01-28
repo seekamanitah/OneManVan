@@ -1,0 +1,160 @@
+@page "/sites"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@attribute [Authorize]
+@inject IDbContextFactory<OneManVanDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Sites - OneManVan</PageTitle>
+
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-0">Sites</h1>
+            <p class="text-muted mb-0">Service locations for customers</p>
+        </div>
+        <div class="d-flex gap-2">
+            <ExportButton EntityType="sites" />
+            <button class="btn btn-primary" @onclick="CreateSite">
+                <i class="bi bi-plus-circle me-2"></i>New Site
+            </button>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control border-start-0" 
+                               placeholder="Search sites..." 
+                               @bind="searchText" @bind:event="oninput" @onkeyup="OnSearchChanged" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Site List -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            @if (isLoading)
+            {
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary"></div>
+                </div>
+            }
+            else if (filteredSites.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Site #</th>
+                                <th>Address</th>
+                                <th>City</th>
+                                <th>Customer</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var site in filteredSites)
+                            {
+                                <tr style="cursor: pointer;" @onclick="@(() => ViewSite(site.Id))">
+                                    <td>
+                                        <span class="fw-semibold">@(site.SiteNumber ?? $"S-{site.Id:D4}")</span>
+                                    </td>
+                                    <td>@site.Address</td>
+                                    <td>@(site.City ?? "-")</td>
+                                    <td>@(site.Customer?.Name ?? "-")</td>
+                                    <td class="text-end">
+                                        <div class="btn-group btn-group-sm" @onclick:stopPropagation="true">
+                                            <button class="btn btn-outline-primary" @onclick="@(() => ViewSite(site.Id))">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            <button class="btn btn-outline-secondary" @onclick="@(() => EditSite(site.Id))">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-geo-alt fs-1 text-muted mb-3 d-block"></i>
+                    <h5>No sites found</h5>
+                    <button class="btn btn-primary" @onclick="CreateSite">
+                        <i class="bi bi-plus-circle me-2"></i>Add Site
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool isLoading = true;
+    private List<Site> allSites = new();
+    private List<Site> filteredSites = new();
+    
+    private string searchText = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSitesAsync();
+    }
+
+    private async Task LoadSitesAsync()
+    {
+        try
+        {
+            isLoading = true;
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+            
+            allSites = await db.Sites
+                .Include(s => s.Customer)
+                .OrderBy(s => s.Address)
+                .AsNoTracking()
+                .ToListAsync();
+
+            ApplyFilters();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void ApplyFilters()
+    {
+        var query = allSites.AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(searchText))
+        {
+            var search = searchText.ToLower();
+            query = query.Where(s =>
+                (s.Address?.ToLower().Contains(search) ?? false) ||
+                (s.City?.ToLower().Contains(search) ?? false) ||
+                (s.Customer?.Name?.ToLower().Contains(search) ?? false) ||
+                (s.SiteNumber?.ToLower().Contains(search) ?? false));
+        }
+
+        filteredSites = query.ToList();
+    }
+
+    private void OnSearchChanged(KeyboardEventArgs e) => ApplyFilters();
+
+    private void CreateSite() => Navigation.NavigateTo("/sites/new");
+    private void ViewSite(int id) => Navigation.NavigateTo($"/sites/{id}");
+    private void EditSite(int id) => Navigation.NavigateTo($"/sites/{id}/edit");
+}

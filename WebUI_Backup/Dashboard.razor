@@ -1,0 +1,299 @@
+@page "/dashboard"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@using OneManVan.Shared.Models.Enums
+@attribute [Authorize]
+@inject IDbContextFactory<OneManVanDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Dashboard - TradeFlow</PageTitle>
+
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2 mb-0">Dashboard</h1>
+        <small class="text-muted">Last updated: @DateTime.Now.ToString("MMM dd, yyyy h:mm tt")</small>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2 text-muted">Loading dashboard data...</p>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <strong>Error:</strong> @errorMessage
+        </div>
+    }
+    else
+    {
+        <!-- Metric Cards -->
+        <div class="row g-3 mb-4">
+            <!-- Active Jobs Card -->
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h6 class="text-muted mb-1">Active Jobs</h6>
+                                <h2 class="mb-0">@metrics.ActiveJobs</h2>
+                            </div>
+                            <div class="bg-primary bg-opacity-10 p-3 rounded">
+                                <i class="bi bi-briefcase text-primary fs-4"></i>
+                            </div>
+                        </div>
+                        <small class="text-muted">
+                            <i class="bi bi-arrow-up text-success"></i>
+                            @metrics.JobsThisWeek this week
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pending Invoices Card -->
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h6 class="text-muted mb-1">Pending Invoices</h6>
+                                <h2 class="mb-0">@metrics.PendingInvoices</h2>
+                            </div>
+                            <div class="bg-warning bg-opacity-10 p-3 rounded">
+                                <i class="bi bi-receipt text-warning fs-4"></i>
+                            </div>
+                        </div>
+                        <small class="text-muted">
+                            @metrics.TotalInvoiceAmount.ToString("C") outstanding
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Customers Card -->
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h6 class="text-muted mb-1">Total Customers</h6>
+                                <h2 class="mb-0">@metrics.TotalCustomers</h2>
+                            </div>
+                            <div class="bg-success bg-opacity-10 p-3 rounded">
+                                <i class="bi bi-people text-success fs-4"></i>
+                            </div>
+                        </div>
+                        <small class="text-muted">
+                            @metrics.ActiveCustomers active
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Revenue Card -->
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h6 class="text-muted mb-1">This Month</h6>
+                                <h2 class="mb-0">@metrics.RevenueThisMonth.ToString("C0")</h2>
+                            </div>
+                            <div class="bg-info bg-opacity-10 p-3 rounded">
+                                <i class="bi bi-currency-dollar text-info fs-4"></i>
+                            </div>
+                        </div>
+                        <small class="text-muted">
+                            Revenue from invoices
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <!-- Recent Jobs -->
+            <div class="col-md-8">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-0 py-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Recent Jobs</h5>
+                            <a href="/jobs" class="btn btn-sm btn-outline-primary">View All</a>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (recentJobs.Any())
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Job #</th>
+                                            <th>Customer</th>
+                                            <th>Scheduled</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var job in recentJobs)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <span class="badge bg-secondary">@job.JobNumber</span>
+                                                </td>
+                                                <td>@job.Customer?.Name</td>
+                                                <td>@job.ScheduledDate?.ToString("MMM dd")</td>
+                                                <td>
+                                                    <span class="badge @GetStatusBadgeClass(job.Status)">
+                                                        @job.Status
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <a href="/jobs/@job.Id" class="btn btn-sm btn-outline-primary">View</a>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-5 text-muted">
+                                <i class="bi bi-briefcase fs-1 mb-2 d-block"></i>
+                                <p>No recent jobs</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0">Quick Actions</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary" @onclick="@(() => Navigation.NavigateTo("/jobs/new"))">
+                                <i class="bi bi-plus-circle me-2"></i>New Job
+                            </button>
+                            <button class="btn btn-outline-primary" @onclick="@(() => Navigation.NavigateTo("/customers/new"))">
+                                <i class="bi bi-person-plus me-2"></i>Add Customer
+                            </button>
+                            <button class="btn btn-outline-primary" @onclick="@(() => Navigation.NavigateTo("/invoices/new"))">
+                                <i class="bi bi-receipt me-2"></i>Create Invoice
+                            </button>
+                            <button class="btn btn-outline-primary" @onclick="@(() => Navigation.NavigateTo("/estimates/new"))">
+                                <i class="bi bi-file-earmark-text me-2"></i>New Estimate
+                            </button>
+                        </div>
+
+                        <hr class="my-3" />
+
+                        <h6 class="text-muted mb-3">System Status</h6>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <small>Database</small>
+                            <span class="badge bg-success">Connected</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <small>Total Records</small>
+                            <span class="badge bg-info">@(metrics.TotalCustomers + metrics.ActiveJobs)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private bool isLoading = true;
+    private string errorMessage = "";
+    private DashboardMetrics metrics = new();
+    private List<Job> recentJobs = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            isLoading = true;
+            await LoadDashboardDataAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load dashboard: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadDashboardDataAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+
+        // Load metrics
+        var startOfMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+        var startOfWeek = DateTime.Now.AddDays(-(int)DateTime.Now.DayOfWeek);
+
+        metrics.TotalCustomers = await db.Customers.CountAsync();
+        metrics.ActiveCustomers = await db.Customers.CountAsync(c => c.Status == CustomerStatus.Active);
+        
+        metrics.ActiveJobs = await db.Jobs.CountAsync(j => 
+            j.Status == JobStatus.Scheduled || j.Status == JobStatus.InProgress);
+        metrics.JobsThisWeek = await db.Jobs.CountAsync(j => 
+            j.CreatedAt >= startOfWeek);
+        
+        metrics.PendingInvoices = await db.Invoices.CountAsync(i => 
+            i.Status == InvoiceStatus.Draft || i.Status == InvoiceStatus.Sent);
+        metrics.TotalInvoiceAmount = await db.Invoices
+            .Where(i => i.Status == InvoiceStatus.Draft || i.Status == InvoiceStatus.Sent)
+            .SumAsync(i => i.Total);
+        
+        metrics.RevenueThisMonth = await db.Invoices
+            .Where(i => i.InvoiceDate >= startOfMonth && i.Status == InvoiceStatus.Paid)
+            .SumAsync(i => i.Total);
+
+        // Load recent jobs
+        recentJobs = await db.Jobs
+            .Include(j => j.Customer)
+            .OrderByDescending(j => j.CreatedAt)
+            .Take(5)
+            .AsNoTracking()
+            .ToListAsync();
+    }
+
+    private string GetStatusBadgeClass(JobStatus status)
+    {
+        return status switch
+        {
+            JobStatus.Scheduled => "bg-info",
+            JobStatus.InProgress => "bg-warning",
+            JobStatus.Completed => "bg-success",
+            JobStatus.Cancelled => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+
+    private class DashboardMetrics
+    {
+        public int TotalCustomers { get; set; }
+        public int ActiveCustomers { get; set; }
+        public int ActiveJobs { get; set; }
+        public int JobsThisWeek { get; set; }
+        public int PendingInvoices { get; set; }
+        public decimal TotalInvoiceAmount { get; set; }
+        public decimal RevenueThisMonth { get; set; }
+    }
+}

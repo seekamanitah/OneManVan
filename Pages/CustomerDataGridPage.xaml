@@ -160,16 +160,15 @@
 
             <StackPanel Grid.Column="0">
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="" FontSize="24" VerticalAlignment="Center" Margin="0,0,10,0"/>
                     <TextBlock Text="Customer Management" FontSize="24" FontWeight="Bold" 
                                Foreground="{DynamicResource TextBrush}"/>
                 </StackPanel>
                 <TextBlock x:Name="CustomerCountText" Text="Loading customers..." 
-                           FontSize="13" Foreground="{DynamicResource SubtextBrush}" Margin="34,5,0,0"/>
+                           FontSize="13" Foreground="{DynamicResource SubtextBrush}" Margin="0,5,0,0"/>
             </StackPanel>
 
             <StackPanel Grid.Column="1" Orientation="Horizontal">
-                <Button Content="?? Export" Click="OnExportClick"
+                <Button Content="Export" Click="OnExportClick"
                         Style="{StaticResource SecondaryButton}" Margin="0,0,10,0"/>
                 <Button Content="+ Add Customer" Click="OnAddCustomerClick"
                         Style="{StaticResource ActionButton}"/>
@@ -194,7 +193,7 @@
                              Padding="12,10"
                              FontSize="13"
                              TextChanged="OnSearchTextChanged"/>
-                    <TextBlock Text="?? Search customers..." 
+                    <TextBlock Text="Search customers..." 
                                IsHitTestVisible="False"
                                Foreground="{DynamicResource SubtextBrush}"
                                FontSize="13"
@@ -210,16 +209,16 @@
                 <ToggleButton x:Name="FilterAll" Content="All" IsChecked="True"
                               Style="{StaticResource FilterChip}" Margin="0,0,5,0"
                               Click="OnStatusFilterClick"/>
-                <ToggleButton x:Name="FilterActive" Content="? Active"
+                <ToggleButton x:Name="FilterActive" Content="Active"
                               Style="{StaticResource FilterChip}" Margin="0,0,5,0"
                               Click="OnStatusFilterClick"/>
-                <ToggleButton x:Name="FilterVIP" Content="?? VIP"
+                <ToggleButton x:Name="FilterVIP" Content="VIP"
                               Style="{StaticResource FilterChip}" Margin="0,0,5,0"
                               Click="OnStatusFilterClick"/>
-                <ToggleButton x:Name="FilterLead" Content="? Lead"
+                <ToggleButton x:Name="FilterLead" Content="Lead"
                               Style="{StaticResource FilterChip}" Margin="0,0,5,0"
                               Click="OnStatusFilterClick"/>
-                <ToggleButton x:Name="FilterDelinquent" Content="?? Delinquent"
+                <ToggleButton x:Name="FilterDelinquent" Content="Delinquent"
                               Style="{StaticResource FilterChip}" Margin="0,0,15,0"
                               Click="OnStatusFilterClick"/>
                 
@@ -227,10 +226,10 @@
                            VerticalAlignment="Center" Margin="0,0,10,0"/>
                 <ComboBox x:Name="TypeFilter" Width="150" SelectionChanged="OnTypeFilterChanged">
                     <ComboBoxItem Content="All Types" IsSelected="True"/>
-                    <ComboBoxItem Content="?? Residential"/>
-                    <ComboBoxItem Content="?? Commercial"/>
-                    <ComboBoxItem Content="??? Property Manager"/>
-                    <ComboBoxItem Content="??? Government"/>
+                    <ComboBoxItem Content="Residential"/>
+                    <ComboBoxItem Content="Commercial"/>
+                    <ComboBoxItem Content="Property Manager"/>
+                    <ComboBoxItem Content="Government"/>
                 </ComboBox>
             </StackPanel>
         </Grid>
@@ -416,26 +415,26 @@
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
-                                    <Button Content="" ToolTip="Call Customer"
+                                    <Button Content="Call" ToolTip="Call Customer"
                                             Click="OnCallClick" Tag="{Binding}"
                                             Background="Transparent" BorderThickness="0"
                                             Foreground="{DynamicResource TextBrush}"
-                                            FontSize="14" Padding="6,4" Cursor="Hand"/>
-                                    <Button Content="?" ToolTip="Email Customer"
+                                            FontSize="12" Padding="6,4" Cursor="Hand"/>
+                                    <Button Content="Email" ToolTip="Email Customer"
                                             Click="OnEmailClick" Tag="{Binding}"
                                             Background="Transparent" BorderThickness="0"
                                             Foreground="{DynamicResource TextBrush}"
-                                            FontSize="14" Padding="6,4" Cursor="Hand"/>
-                                    <Button Content="?" ToolTip="Edit Customer"
+                                            FontSize="12" Padding="6,4" Cursor="Hand"/>
+                                    <Button Content="Edit" ToolTip="Edit Customer"
                                             Click="OnEditClick" Tag="{Binding}"
                                             Background="Transparent" BorderThickness="0"
                                             Foreground="{DynamicResource PrimaryBrush}"
-                                            FontSize="14" Padding="6,4" Cursor="Hand"/>
-                                    <Button Content="" ToolTip="Delete Customer"
+                                            FontSize="12" Padding="6,4" Cursor="Hand"/>
+                                    <Button Content="Delete" ToolTip="Delete Customer"
                                             Click="OnDeleteClick" Tag="{Binding}"
                                             Background="Transparent" BorderThickness="0"
                                             Foreground="{DynamicResource ErrorBrush}"
-                                            FontSize="14" Padding="6,4" Cursor="Hand"/>
+                                            FontSize="12" Padding="6,4" Cursor="Hand"/>
                                 </StackPanel>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
@@ -475,16 +474,16 @@
 
                 <!-- Page navigation -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal">
-                    <Button x:Name="FirstPageBtn" Content="?" Click="OnFirstPageClick"
+                    <Button x:Name="FirstPageBtn" Content="|&lt;" Click="OnFirstPageClick"
                             Style="{StaticResource SecondaryButton}" Padding="8,4" Margin="0,0,5,0"/>
-                    <Button x:Name="PrevPageBtn" Content="?" Click="OnPrevPageClick"
+                    <Button x:Name="PrevPageBtn" Content="&lt;" Click="OnPrevPageClick"
                             Style="{StaticResource SecondaryButton}" Padding="8,4" Margin="0,0,5,0"/>
                     <TextBlock x:Name="CurrentPageText" Text="Page 1" FontSize="12" 
                                Foreground="{DynamicResource TextBrush}"
                                VerticalAlignment="Center" Margin="10,0"/>
-                    <Button x:Name="NextPageBtn" Content="?" Click="OnNextPageClick"
+                    <Button x:Name="NextPageBtn" Content="&gt;" Click="OnNextPageClick"
                             Style="{StaticResource SecondaryButton}" Padding="8,4" Margin="0,0,5,0"/>
-                    <Button x:Name="LastPageBtn" Content="?" Click="OnLastPageClick"
+                    <Button x:Name="LastPageBtn" Content="&gt;|" Click="OnLastPageClick"
                             Style="{StaticResource SecondaryButton}" Padding="8,4"/>
                 </StackPanel>
             </Grid>
@@ -494,7 +493,6 @@
         <Border Grid.RowSpan="5" Background="#80000000" CornerRadius="8"
                 x:Name="LoadingOverlay" Visibility="Collapsed">
             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                <TextBlock Text="?" FontSize="32" HorizontalAlignment="Center"/>
                 <TextBlock Text="Loading customers..." FontSize="14" Foreground="White"
                            HorizontalAlignment="Center" Margin="0,10,0,0"/>
             </StackPanel>

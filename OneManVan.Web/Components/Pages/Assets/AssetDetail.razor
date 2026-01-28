@@ -1,0 +1,422 @@
+@page "/assets/{Id:int}"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@using OneManVan.Shared.Models.Enums
+@attribute [Authorize]
+@inject IDbContextFactory<OneManVanDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>@(asset?.AssetName ?? asset?.Nickname ?? "Asset") - OneManVan</PageTitle>
+
+<div class="container-fluid py-4">
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary"></div>
+        </div>
+    }
+    else if (asset == null)
+    {
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>Asset not found
+        </div>
+    }
+    else
+    {
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-start mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/assets">Assets</a></li>
+                        <li class="breadcrumb-item active">@asset.Serial</li>
+                    </ol>
+                </nav>
+                <div class="d-flex align-items-center">
+                    <div class="avatar-circle bg-warning bg-opacity-10 text-warning me-3" style="width: 60px; height: 60px; font-size: 24px;">
+                        <i class="bi bi-tools"></i>
+                    </div>
+                    <div>
+                        <h1 class="h2 mb-1">@(asset.AssetName ?? asset.Nickname ?? $"{asset.Brand} {asset.Model}")</h1>
+                        <p class="text-muted mb-0">@asset.Brand @asset.Model</p>
+                        <span class="badge @GetStatusBadge()">@asset.Status</span>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary" @onclick="GoBack">
+                    <i class="bi bi-arrow-left me-2"></i>Back
+                </button>
+                <button class="btn btn-primary" @onclick="EditAsset">
+                    <i class="bi bi-pencil me-2"></i>Edit
+                </button>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <!-- Main Info -->
+            <div class="col-md-8">
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0">Equipment Details</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Brand</label>
+                                <span class="fw-semibold">@(asset.Brand ?? "-")</span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Model</label>
+                                <span>@(asset.Model ?? "-")</span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Serial Number</label>
+                                <code>@asset.Serial</code>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Asset Tag</label>
+                                <span>@(asset.AssetTag ?? "-")</span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Equipment Type</label>
+                                <span>@asset.EquipmentType</span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Fuel Type</label>
+                                <span>@asset.FuelType</span>
+                            </div>
+                            @if (!string.IsNullOrEmpty(asset.Location))
+                            {
+                                <div class="col-12">
+                                    <label class="text-muted small d-block mb-1">Location</label>
+                                    <span>@asset.Location</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Warranty Info -->
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0">Warranty Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Install Date</label>
+                                <span>@(asset.InstallDate?.ToString("MMM dd, yyyy") ?? "-")</span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Warranty Start</label>
+                                <span>@(asset.WarrantyStartDate?.ToString("MMM dd, yyyy") ?? "-")</span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Warranty Expiration</label>
+                                <span class="@(asset.IsWarrantyExpired ? "text-danger" : asset.IsWarrantyExpiringSoon ? "text-warning" : "")">
+                                    @(asset.WarrantyExpiration?.ToString("MMM dd, yyyy") ?? "-")
+                                </span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Warranty Status</label>
+                                @if (asset.IsWarrantyExpired)
+                                {
+                                    <span class="badge bg-danger">Expired</span>
+                                }
+                                else if (asset.IsWarrantyExpiringSoon)
+                                {
+                                    <span class="badge bg-warning">Expiring Soon</span>
+                                }
+                                else if (asset.WarrantyExpiration.HasValue)
+                                {
+                                    <span class="badge bg-success">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Unknown</span>
+                                }
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Registered Online</label>
+                                @if (asset.IsRegisteredOnline)
+                                {
+                                    <span class="text-success"><i class="bi bi-check-circle-fill me-1"></i>Yes</span>
+                                }
+                                else
+                                {
+                                    <span class="text-warning"><i class="bi bi-exclamation-triangle-fill me-1"></i>Not Registered</span>
+                                }
+                            </div>
+                            @if (asset.IsRegisteredOnline && !string.IsNullOrEmpty(asset.RegistrationConfirmation))
+                            {
+                                <div class="col-md-6">
+                                    <label class="text-muted small d-block mb-1">Registration Confirmation</label>
+                                    <span>@asset.RegistrationConfirmation</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Warranty Claims -->
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-white border-0 py-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Warranty Claims</h5>
+                            <button class="btn btn-sm btn-primary" @onclick="FileNewClaim">
+                                <i class="bi bi-plus-circle me-2"></i>File Claim
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        @if (isLoadingClaims)
+                        {
+                            <div class="text-center py-3">
+                                <div class="spinner-border spinner-border-sm text-primary"></div>
+                            </div>
+                        }
+                        else if (warrantyClaims.Any())
+                        {
+                            <!-- Claims Stats -->
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <div class="p-2 bg-light rounded text-center">
+                                        <div class="small text-muted">Total Claims</div>
+                                        <div class="h5 mb-0">@warrantyClaims.Count</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="p-2 bg-success bg-opacity-10 rounded text-center">
+                                        <div class="small text-muted">Approved</div>
+                                        <div class="h5 mb-0 text-success">@warrantyClaims.Count(c => c.Status == ClaimStatus.Approved || c.Status == ClaimStatus.Completed)</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Claims List -->
+                            <div class="list-group list-group-flush">
+                                @foreach (var claim in warrantyClaims.Take(5))
+                                {
+                                    <div class="list-group-item px-0" style="cursor: pointer;" @onclick="@(() => ViewClaim(claim.Id))">
+                                        <div class="d-flex justify-content-between align-items-start mb-1">
+                                            <strong>@(claim.ClaimNumber ?? $"CLM-{claim.Id:D4}")</strong>
+                                            <span class="badge @GetClaimStatusBadge(claim.Status)">@claim.Status</span>
+                                        </div>
+                                        <div class="small text-muted text-truncate">
+                                            @claim.IssueDescription
+                                        </div>
+                                        <div class="small text-muted mt-1">
+                                            <i class="bi bi-calendar me-1"></i>@claim.ClaimDate.ToString("MMM dd, yyyy")
+                                            @if (claim.IsCoveredByWarranty)
+                                            {
+                                                <span class="ms-2 text-success"><i class="bi bi-check-circle"></i> Covered</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="ms-2 text-danger"><i class="bi bi-x-circle"></i> Not Covered</span>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+
+                            @if (warrantyClaims.Count > 5)
+                            {
+                                <div class="text-center mt-3">
+                                    <a href="/warranties/claims?assetId=@Id" class="btn btn-sm btn-outline-primary">
+                                        View All @warrantyClaims.Count Claims
+                                    </a>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-center py-4 text-muted">
+                                <i class="bi bi-shield-check fs-3 mb-2 d-block"></i>
+                                <p class="mb-2">No warranty claims filed</p>
+                                <button class="btn btn-sm btn-primary" @onclick="FileNewClaim">
+                                    <i class="bi bi-plus-circle me-2"></i>File First Claim
+                                </button>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-md-4">
+                <!-- Customer Info -->
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0">Customer</h5>
+                    </div>
+                    <div class="card-body">
+                        @if (asset.Customer != null)
+                        {
+                            <a href="/customers/@asset.CustomerId" class="text-decoration-none">
+                                <div class="fw-semibold">@asset.Customer.Name</div>
+                            </a>
+                            @if (!string.IsNullOrEmpty(asset.Customer.Phone))
+                            {
+                                <div class="text-muted small mt-1">@asset.Customer.Phone</div>
+                            }
+                        }
+                        else
+                        {
+                            <span class="text-muted">No customer assigned</span>
+                        }
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0">Quick Info</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="text-muted small d-block mb-1">Created</label>
+                            <span>@asset.CreatedAt.ToString("MMM dd, yyyy")</span>
+                        </div>
+                        <div class="mb-3">
+                            <label class="text-muted small d-block mb-1">Last Service</label>
+                            <span>@(asset.LastServiceDate?.ToString("MMM dd, yyyy") ?? "Never")</span>
+                        </div>
+                        <div>
+                            <label class="text-muted small d-block mb-1">Next Service Due</label>
+                            <span>@(asset.NextServiceDue?.ToString("MMM dd, yyyy") ?? "-")</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-primary" @onclick="EditAsset">
+                                <i class="bi bi-pencil me-2"></i>Edit Asset
+                            </button>
+                            <button class="btn btn-outline-success" @onclick="CreateJob">
+                                <i class="bi bi-plus-circle me-2"></i>Create Job
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .avatar-circle {
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private bool isLoading = true;
+    private bool isLoadingClaims = true;
+    private Asset? asset;
+    private List<WarrantyClaim> warrantyClaims = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAssetAsync();
+        await LoadWarrantyClaimsAsync();
+    }
+
+    private async Task LoadAssetAsync()
+    {
+        try
+        {
+            isLoading = true;
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+            
+            asset = await db.Assets
+                .Include(a => a.Customer)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(a => a.Id == Id);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadWarrantyClaimsAsync()
+    {
+        try
+        {
+            isLoadingClaims = true;
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+            
+            warrantyClaims = await db.WarrantyClaims
+                .Where(c => c.AssetId == Id)
+                .OrderByDescending(c => c.ClaimDate)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+        finally
+        {
+            isLoadingClaims = false;
+        }
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/assets");
+    }
+
+    private void EditAsset()
+    {
+        Navigation.NavigateTo($"/assets/{Id}/edit");
+    }
+
+    private void CreateJob()
+    {
+        Navigation.NavigateTo($"/jobs/new?assetId={Id}");
+    }
+
+    private void FileNewClaim()
+    {
+        Navigation.NavigateTo($"/warranties/claims/add?assetId={Id}");
+    }
+
+    private void ViewClaim(int claimId)
+    {
+        Navigation.NavigateTo($"/warranties/claims/{claimId}");
+    }
+
+    private string GetStatusBadge()
+    {
+        return asset?.Status switch
+        {
+            AssetStatus.Active => "bg-success",
+            AssetStatus.Inactive => "bg-secondary",
+            AssetStatus.Decommissioned => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+
+    private string GetClaimStatusBadge(ClaimStatus status) => status switch
+    {
+        ClaimStatus.Pending => "bg-secondary",
+        ClaimStatus.UnderReview => "bg-info",
+        ClaimStatus.Approved => "bg-success",
+        ClaimStatus.Denied => "bg-danger",
+        ClaimStatus.Completed => "bg-primary",
+        ClaimStatus.Cancelled => "bg-dark",
+        _ => "bg-secondary"
+    };
+}

@@ -210,6 +210,23 @@ public class Asset
     public int LaborWarrantyYears { get; set; } = 1;
 
     /// <summary>
+    /// Has equipment been registered online for warranty?
+    /// Critical for ensuring full warranty coverage.
+    /// </summary>
+    public bool IsRegisteredOnline { get; set; } = false;
+
+    /// <summary>
+    /// Date when equipment was registered online with manufacturer.
+    /// </summary>
+    public DateTime? RegistrationDate { get; set; }
+
+    /// <summary>
+    /// Registration confirmation number or URL from manufacturer.
+    /// </summary>
+    [MaxLength(200)]
+    public string? RegistrationConfirmation { get; set; }
+
+    /// <summary>
     /// Compressor warranty in years (often 10).
     /// </summary>
     public int CompressorWarrantyYears { get; set; } = 10;

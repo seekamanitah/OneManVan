@@ -1,0 +1,222 @@
+@page "/settings"
+@using OneManVan.Shared.Services
+@attribute [Authorize]
+@inject TradeConfigurationService TradeService
+@inject ISettingsStorage SettingsStorage
+@inject NavigationManager Navigation
+
+<PageTitle>Settings - OneManVan</PageTitle>
+
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Page Header -->
+            <div class="mb-4">
+                <h1 class="h2 mb-0">Settings</h1>
+                <p class="text-muted">Application configuration and preferences</p>
+            </div>
+
+            <!-- Trade Configuration -->
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-gear me-2"></i>Trade Configuration</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="text-muted small d-block mb-1">Current Trade</label>
+                            <span class="badge bg-primary fs-6">@TradeService.CurrentTrade</span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small d-block mb-1">Setup Complete</label>
+                            <span class="badge @(TradeService.IsSetupComplete ? "bg-success" : "bg-warning")">
+                                @(TradeService.IsSetupComplete ? "Yes" : "No")
+                            </span>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Change Trade</label>
+                            <select class="form-select" @bind="selectedTrade" style="max-width: 300px;">
+                                @foreach (var trade in TradeService.GetAvailableTrades())
+                                {
+                                    <option value="@trade.Type">@trade.Name - @trade.Description</option>
+                                }
+                            </select>
+                            <button class="btn btn-primary mt-2" @onclick="ChangeTrade">
+                                <i class="bi bi-arrow-right-circle me-2"></i>Apply Trade Change
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trade Preset Details -->
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0"><i class="bi bi-sliders me-2"></i>Current Trade Preset</h5>
+                </div>
+                <div class="card-body">
+                    @{
+                        var preset = TradeService.CurrentPreset;
+                    }
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="text-muted small d-block mb-1">Preset Name</label>
+                            <span>@preset.Name</span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small d-block mb-1">Primary Color</label>
+                            <span class="d-flex align-items-center">
+                                <span class="rounded me-2" style="width: 20px; height: 20px; background: @preset.PrimaryColor;"></span>
+                                @preset.PrimaryColor
+                            </span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small d-block mb-1">Asset Label</label>
+                            <span>@preset.AssetLabel / @preset.AssetPluralLabel</span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small d-block mb-1">Custom Fields</label>
+                            <span>@preset.CustomFields.Count defined</span>
+                        </div>
+                    </div>
+
+                    @if (preset.CustomFields.Any())
+                    {
+                        <hr />
+                        <h6>Custom Fields</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Entity</th>
+                                        <th>Field Name</th>
+                                        <th>Display Name</th>
+                                        <th>Type</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var field in preset.CustomFields)
+                                    {
+                                        <tr>
+                                            <td>@field.EntityType</td>
+                                            <td>@field.FieldName</td>
+                                            <td>@field.DisplayName</td>
+                                            <td>@field.FieldType</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Application Settings -->
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0"><i class="bi bi-display me-2"></i>Application Settings</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Default Tax Rate (%)</label>
+                            <input type="number" class="form-control" @bind="taxRate" step="0.01" style="max-width: 150px;" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Default Payment Terms (days)</label>
+                            <input type="number" class="form-control" @bind="paymentTermsDays" style="max-width: 150px;" />
+                        </div>
+                        <div class="col-12">
+                            <button class="btn btn-primary" @onclick="SaveAppSettings">
+                                <i class="bi bi-check-circle me-2"></i>Save Settings
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- About -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>About OneManVan</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="text-muted small d-block mb-1">Version</label>
+                            <span>1.0.0</span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small d-block mb-1">Platform</label>
+                            <span>Blazor Server (.NET 10)</span>
+                        </div>
+                        <div class="col-12">
+                            <label class="text-muted small d-block mb-1">Description</label>
+                            <p class="mb-0">
+                                OneManVan is a comprehensive field service management solution for trade professionals.
+                                Manage customers, assets, jobs, invoices, and more from any device.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (showToast)
+{
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div class="toast show" role="alert">
+            <div class="toast-header bg-success text-white">
+                <strong class="me-auto">Success</strong>
+                <button type="button" class="btn-close btn-close-white" @onclick="@(() => showToast = false)"></button>
+            </div>
+            <div class="toast-body">
+                @toastMessage
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private TradeType selectedTrade;
+    private decimal taxRate = 7.0m;
+    private int paymentTermsDays = 30;
+    private bool showToast = false;
+    private string toastMessage = "";
+
+    protected override void OnInitialized()
+    {
+        selectedTrade = TradeService.CurrentTrade;
+        taxRate = SettingsStorage.GetDecimal("DefaultTaxRate", 7.0m);
+        paymentTermsDays = SettingsStorage.GetInt("DefaultPaymentTermsDays", 30);
+    }
+
+    private async Task ChangeTrade()
+    {
+        await TradeService.SetTradeAsync(selectedTrade);
+        ShowToast($"Trade changed to {selectedTrade}");
+        StateHasChanged();
+    }
+
+    private void SaveAppSettings()
+    {
+        SettingsStorage.SetDecimal("DefaultTaxRate", taxRate);
+        SettingsStorage.SetInt("DefaultPaymentTermsDays", paymentTermsDays);
+        ShowToast("Settings saved successfully");
+    }
+
+    private void ShowToast(string message)
+    {
+        toastMessage = message;
+        showToast = true;
+        
+        // Auto-hide after 3 seconds
+        Task.Delay(3000).ContinueWith(_ => 
+        {
+            showToast = false;
+            InvokeAsync(StateHasChanged);
+        });
+    }
+}

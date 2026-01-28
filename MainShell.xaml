@@ -63,93 +63,216 @@ Background="{DynamicResource BackgroundBrush}">
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <!-- Logo/Brand -->
-                <StackPanel Grid.Row="0" Margin="20,25,20,30">
-                    <TextBlock Text="OneManVan" FontSize="22" FontWeight="Bold" 
-                               Foreground="{DynamicResource PrimaryBrush}"/>
-                    <TextBlock Text="by MtnManApps" FontSize="12" 
-                               Foreground="{DynamicResource SubtextBrush}"
-                               Margin="0,2,0,0"/>
-                </StackPanel>
+                <!-- Scalable Navigation Content (Logo + Navigation Items) -->
+                <Grid Grid.Row="0" Grid.RowSpan="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    
+                    <Grid.LayoutTransform>
+                        <ScaleTransform x:Name="SidebarScaleTransform" ScaleX="1" ScaleY="1"/>
+                    </Grid.LayoutTransform>
 
-                <!-- Navigation Items -->
-                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                    <StackPanel Margin="10,0">
-                        <Button x:Name="NavHome" Content="Home" 
-                                Style="{StaticResource NavButton}" 
-                                Click="NavHome_Click" Tag="Active"/>
-                        
-                        <TextBlock Text="MANAGEMENT" FontSize="10" FontWeight="SemiBold"
+                    <!-- Logo/Brand -->
+                    <StackPanel Grid.Row="0" Margin="20,25,20,30">
+                        <TextBlock Text="OneManVan" FontSize="22" FontWeight="Bold" 
+                                   Foreground="{DynamicResource PrimaryBrush}"/>
+                        <TextBlock Text="by MtnManApps" FontSize="12" 
                                    Foreground="{DynamicResource SubtextBrush}"
-                                   Margin="20,20,0,10"/>
-                        
-                        <Button x:Name="NavCustomers" Content="Customers" 
-                                Style="{StaticResource NavButton}" 
-                                Click="NavCustomers_Click"/>
-                        
-                        <Button x:Name="NavAssets" Content="Assets" 
-                                Style="{StaticResource NavButton}" 
-                                Click="NavAssets_Click"/>
-                        
-                        <Button x:Name="NavProducts" Content="Products" 
-                                Style="{StaticResource NavButton}" 
-                                Click="NavProducts_Click"/>
-                        
-                        <Button x:Name="NavEstimates" Content="Estimates" 
-                                Style="{StaticResource NavButton}" 
-                                Click="NavEstimates_Click"/>
-                        
-                        <Button x:Name="NavInventory" Content="Inventory" 
-                                Style="{StaticResource NavButton}" 
-                                Click="NavInventory_Click"/>
-
-                        <TextBlock Text="OPERATIONS" FontSize="10" FontWeight="SemiBold"
-                                   Foreground="{DynamicResource SubtextBrush}"
-                                   Margin="20,20,0,10"/>
-                        
-                        <Button x:Name="NavSchedule" Content="Jobs" 
-                                Style="{StaticResource NavButton}" 
-                                Click="NavSchedule_Click"/>
-                        
-                        <Button x:Name="NavKanban" Content="Kanban Board" 
-                                Style="{StaticResource NavButton}" 
-                                Click="NavKanban_Click"/>
-                        
-                        <Button x:Name="NavCalendar" Content="Calendar" 
-                                Style="{StaticResource NavButton}" 
-                                Click="NavCalendar_Click"/>
-                        
-                        <Button x:Name="NavServiceAgreements" Content="Agreements" 
-                                Style="{StaticResource NavButton}" 
-                                Click="NavServiceAgreements_Click"/>
-                        
-                        <Button x:Name="NavInvoices" Content="Invoices" 
-                                Style="{StaticResource NavButton}" 
-                                Click="NavInvoices_Click"/>
-                        
-                        <Button x:Name="NavReports" Content="Reports" 
-                                Style="{StaticResource NavButton}" 
-                                Click="NavReports_Click"/>
+                                   Margin="0,2,0,0"/>
                     </StackPanel>
-                </ScrollViewer>
 
-                <!-- Footer -->
+                    <!-- Navigation Items -->
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Margin="10,0">
+                            <Button x:Name="NavHome" Content="Home" 
+                                    Style="{StaticResource NavButton}" 
+                                    Click="NavHome_Click" Tag="Active"/>
+                            
+                            <TextBlock Text="MANAGEMENT" FontSize="13" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource SubtextBrush}"
+                                       Margin="20,20,0,10"/>
+                            
+                            <Button x:Name="NavCustomers" Content="Customers" 
+                                    Style="{StaticResource NavButton}" 
+                                    Click="NavCustomers_Click"/>
+                            
+                            <Button x:Name="NavAssets" Content="Assets" 
+                                    Style="{StaticResource NavButton}" 
+                                    Click="NavAssets_Click"/>
+                            
+                            <Button x:Name="NavProducts" Content="Products" 
+                                    Style="{StaticResource NavButton}" 
+                                    Click="NavProducts_Click"/>
+                            
+                            <Button x:Name="NavEstimates" Content="Estimates" 
+                                    Style="{StaticResource NavButton}" 
+                                    Click="NavEstimates_Click"/>
+                            
+                            <Button x:Name="NavInventory" Content="Inventory" 
+                                    Style="{StaticResource NavButton}" 
+                                    Click="NavInventory_Click"/>
+
+                            <TextBlock Text="OPERATIONS" FontSize="13" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource SubtextBrush}"
+                                       Margin="20,20,0,10"/>
+                            
+                            <Button x:Name="NavSchedule" Content="Jobs" 
+                                    Style="{StaticResource NavButton}" 
+                                    Click="NavSchedule_Click"/>
+                            
+                            <Button x:Name="NavKanban" Content="Kanban Board" 
+                                    Style="{StaticResource NavButton}" 
+                                    Click="NavKanban_Click"/>
+                            
+                            <Button x:Name="NavCalendar" Content="Calendar" 
+                                    Style="{StaticResource NavButton}" 
+                                    Click="NavCalendar_Click"/>
+                            
+                            <Button x:Name="NavServiceAgreements" Content="Agreements" 
+                                    Style="{StaticResource NavButton}" 
+                                    Click="NavServiceAgreements_Click"/>
+                            
+                            <Button x:Name="NavInvoices" Content="Invoices" 
+                                    Style="{StaticResource NavButton}" 
+                                    Click="NavInvoices_Click"/>
+                            
+                            <Button x:Name="NavReports" Content="Reports" 
+                                    Style="{StaticResource NavButton}" 
+                                    Click="NavReports_Click"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+
+                <!-- Quick Settings Footer (NOT scaled - stays at 100%) -->
                 <StackPanel Grid.Row="2" Margin="15,0,15,20">
                     <Border Height="1" Background="{DynamicResource Surface2Brush}" Margin="0,0,0,15"/>
                     
+                    <!-- Theme Toggle -->
+                    <Grid Margin="5,0,5,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <TextBlock Grid.Column="0" 
+                                   Text="Theme" 
+                                   FontSize="12" 
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextBrush}"
+                                   VerticalAlignment="Center"/>
+                        
+                        <StackPanel Grid.Column="2" Orientation="Horizontal">
+                            <Button x:Name="ThemeLightButton"
+                                    Content="Light"
+                                    Background="{DynamicResource Surface2Brush}"
+                                    Foreground="{DynamicResource TextBrush}"
+                                    Padding="10,4"
+                                    FontSize="11"
+                                    BorderThickness="0"
+                                    Cursor="Hand"
+                                    Margin="0,0,4,0"
+                                    Click="OnThemeLightClick">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                <Border x:Name="border"
+                                                Background="{TemplateBinding Background}" 
+                                                CornerRadius="4,0,0,4" 
+                                                Padding="{TemplateBinding Padding}"
+                                                BorderBrush="{DynamicResource Surface2Brush}"
+                                                BorderThickness="1">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="Tag" Value="Active">
+                                                <Setter TargetName="border" Property="Background" Value="{DynamicResource PrimaryBrush}"/>
+                                                <Setter Property="Foreground" Value="White"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                            
+                            <Button x:Name="ThemeDarkButton"
+                                    Content="Dark"
+                                    Background="{DynamicResource Surface2Brush}"
+                                    Foreground="{DynamicResource TextBrush}"
+                                    Padding="10,4"
+                                    FontSize="11"
+                                    BorderThickness="0"
+                                    Cursor="Hand"
+                                    Click="OnThemeDarkClick"
+                                    Tag="Active">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                <Border x:Name="border"
+                                                Background="{TemplateBinding Background}" 
+                                                CornerRadius="0,4,4,0" 
+                                                Padding="{TemplateBinding Padding}"
+                                                BorderBrush="{DynamicResource Surface2Brush}"
+                                                BorderThickness="1,1,1,1">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="Tag" Value="Active">
+                                                <Setter TargetName="border" Property="Background" Value="{DynamicResource PrimaryBrush}"/>
+                                                <Setter Property="Foreground" Value="White"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                    
+                    <!-- UI Scale Slider -->
+                    <Grid Margin="5,0,5,15">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        
+                        <Grid Grid.Row="0" Margin="0,0,0,4">
+                            <TextBlock Text="UI Scale" 
+                                       FontSize="12" 
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextBrush}"
+                                       HorizontalAlignment="Left"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock x:Name="UiScaleValueText"
+                                       Text="100%"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource SubtextBrush}"
+                                       HorizontalAlignment="Right"
+                                       VerticalAlignment="Center"/>
+                        </Grid>
+                        
+                        <Slider x:Name="UiScaleSliderQuick"
+                                Grid.Row="1"
+                                Minimum="0.8"
+                                Maximum="1.5"
+                                Value="1.0"
+                                TickFrequency="0.05"
+                                IsSnapToTickEnabled="True"
+                                VerticalAlignment="Center"
+                                ValueChanged="OnQuickUiScaleChanged"/>
+                    </Grid>
+                    
+                    <Border Height="1" Background="{DynamicResource Surface2Brush}" Margin="0,0,0,10"/>
+                    
+                    <!-- Navigation Buttons -->
                     <Button x:Name="NavSchema" Content="Schema Editor" Style="{StaticResource NavButton}"
                             Click="NavSchema_Click"/>
                     
-                    <Button x:Name="NavSettings" Content="Settings" Style="{StaticResource NavButton}"
+                    <Button x:Name="NavSettings" Content="Full Settings" Style="{StaticResource NavButton}"
                             Click="NavSettings_Click"/>
                     
                     <Button Content="Backup" Style="{StaticResource NavButton}"
                             Click="NavBackup_Click"/>
                     
-                    <Button x:Name="NavTestRunner" Content="Test Runner" Style="{StaticResource NavButton}"
-                            Click="NavTestRunner_Click"/>
-                    
-                    <TextBlock Text="v1.0.0 - HVAC Preset" FontSize="10"
+                    <TextBlock Text="v1.0.0" FontSize="10"
                                Foreground="{DynamicResource SubtextBrush}"
                                Margin="20,15,0,0"/>
                 </StackPanel>

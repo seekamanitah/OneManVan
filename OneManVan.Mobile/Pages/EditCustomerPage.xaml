@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:behaviors="clr-namespace:OneManVan.Mobile.Behaviors"
              x:Class="OneManVan.Mobile.Pages.EditCustomerPage"
              Title="Edit Customer"
              BackgroundColor="{AppThemeBinding Light={StaticResource LightBackground}, Dark={StaticResource DarkBackground}}">
@@ -20,9 +21,32 @@
             
             <Label Text="Contact" FontSize="18" FontAttributes="Bold" Margin="0,8,0,4" TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"/>
             <Entry x:Name="EmailEntry" Placeholder="Email" Keyboard="Email"/>
-            <Entry x:Name="PhoneEntry" Placeholder="Phone" Keyboard="Telephone"/>
-            <Entry x:Name="SecondaryPhoneEntry" Placeholder="Secondary Phone (optional)" Keyboard="Telephone"/>
+            <Entry x:Name="PhoneEntry" Placeholder="Phone" Keyboard="Telephone">
+                <Entry.Behaviors>
+                    <behaviors:PhoneNumberFormattingBehavior/>
+                </Entry.Behaviors>
+            </Entry>
+            <Entry x:Name="SecondaryPhoneEntry" Placeholder="Secondary Phone (optional)" Keyboard="Telephone">
+                <Entry.Behaviors>
+                    <behaviors:PhoneNumberFormattingBehavior/>
+                </Entry.Behaviors>
+            </Entry>
             <Entry x:Name="SecondaryEmailEntry" Placeholder="Secondary Email (optional)" Keyboard="Email"/>
+
+            <Label Text="Home Address" FontSize="18" FontAttributes="Bold" Margin="0,8,0,4" TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"/>
+            <Editor x:Name="HomeAddressEditor" 
+                    Placeholder="123 Main St, City, State ZIP" 
+                    HeightRequest="80"
+                    TextChanged="OnHomeAddressChanged"/>
+            
+            <!-- Navigate Button (shown when address entered) -->
+            <Button x:Name="NavigateButton"
+                    Text="Open in Maps"
+                    Clicked="OnNavigateClicked"
+                    IsVisible="False"
+                    BackgroundColor="{DynamicResource Secondary}"
+                    Margin="0,0,0,12"/>
+
 
             <Label Text="Classification" FontSize="18" FontAttributes="Bold" Margin="0,8,0,4" TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"/>
             <Picker x:Name="CustomerTypePicker" Title="Customer Type">
@@ -53,6 +77,55 @@
                     <x:String>Net 60</x:String>
                 </Picker.Items>
             </Picker>
+
+            <!-- Company Relationship Section -->
+            <Label Text="Company Relationship" FontSize="18" FontAttributes="Bold" Margin="0,8,0,4" TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"/>
+            
+            <Grid ColumnDefinitions="*, Auto" ColumnSpacing="8">
+                <Border Grid.Column="0" 
+                        BackgroundColor="{AppThemeBinding Light={StaticResource LightSurface}, Dark={StaticResource DarkSurface}}"
+                        StrokeShape="RoundRectangle 8"
+                        Padding="12"
+                        HeightRequest="48">
+                    <Label x:Name="LinkedCompanyLabel" 
+                           Text="No company linked" 
+                           TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"
+                           VerticalOptions="Center"/>
+                </Border>
+                <Button Grid.Column="1" 
+                        Text="Select" 
+                        Clicked="OnSelectCompanyClicked"
+                        BackgroundColor="{DynamicResource Primary}"
+                        WidthRequest="80"
+                        HeightRequest="48"/>
+            </Grid>
+
+            <!-- Role and Title (shown when company is linked) -->
+            <VerticalStackLayout x:Name="RoleSection" IsVisible="False" Spacing="8">
+                <Picker x:Name="RolePicker" Title="Role in Company">
+                    <Picker.Items>
+                        <x:String>Contact</x:String>
+                        <x:String>Owner</x:String>
+                        <x:String>Manager</x:String>
+                        <x:String>Employee</x:String>
+                        <x:String>Technician</x:String>
+                        <x:String>Contractor</x:String>
+                    </Picker.Items>
+                </Picker>
+                
+                <Entry x:Name="TitleEntry" Placeholder="Job Title (optional)"/>
+                <Entry x:Name="DepartmentEntry" Placeholder="Department (optional)"/>
+                
+                <HorizontalStackLayout Spacing="12">
+                    <CheckBox x:Name="IsPrimaryContactCheckBox"/>
+                    <Label Text="Primary Contact" VerticalOptions="Center"/>
+                </HorizontalStackLayout>
+
+                <Button Text="Remove Company Link" 
+                        Clicked="OnRemoveCompanyLinkClicked"
+                        BackgroundColor="{AppThemeBinding Light={StaticResource ErrorBrush}, Dark=#DC2626}"
+                        TextColor="White"/>
+            </VerticalStackLayout>
 
             <Label Text="Additional Information" FontSize="18" FontAttributes="Bold" Margin="0,8,0,4" TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"/>
             <Entry x:Name="TagsEntry" Placeholder="Tags (comma-separated)"/>

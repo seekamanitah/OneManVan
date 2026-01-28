@@ -65,6 +65,10 @@
         <ShellContent ContentTemplate="{DataTemplate pages:ProductListPage}" Route="Products"/>
     </FlyoutItem>
 
+    <FlyoutItem Title="Companies" Icon="{OnPlatform Default=dotnet_bot.png}">
+        <ShellContent ContentTemplate="{DataTemplate pages:CompanyListPage}" Route="Companies"/>
+    </FlyoutItem>
+
     <FlyoutItem Title="Service Agreements" Icon="{OnPlatform Default=dotnet_bot.png}">
         <ShellContent ContentTemplate="{DataTemplate pages:ServiceAgreementListPage}" Route="Agreements"/>
     </FlyoutItem>

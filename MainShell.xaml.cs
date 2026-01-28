@@ -58,12 +58,39 @@ public partial class MainShell : Window
         // Subscribe to UI scale changes
         App.UiScaleService.ScaleChanged += OnUiScaleChanged;
         ApplyCurrentScale();
+        
+        // Initialize quick settings
+        InitializeQuickSettings();
 
         // Start on home page
         NavigateTo("Home", NavHome);
         
         // Setup keyboard shortcuts
         KeyDown += MainShell_KeyDown;
+    }
+
+    private void InitializeQuickSettings()
+    {
+        // Set initial UI scale value
+        UiScaleSliderQuick.Value = App.UiScaleService.CurrentScale;
+        UiScaleValueText.Text = App.UiScaleService.GetScalePercentage();
+        
+        // Set initial theme button states
+        UpdateThemeButtonStates();
+    }
+
+    private void UpdateThemeButtonStates()
+    {
+        if (App.ThemeService.IsDarkMode)
+        {
+            ThemeDarkButton.Tag = "Active";
+            ThemeLightButton.Tag = null;
+        }
+        else
+        {
+            ThemeLightButton.Tag = "Active";
+            ThemeDarkButton.Tag = null;
+        }
     }
 
     private void OnUiScaleChanged(object? sender, double scale)
@@ -74,8 +101,17 @@ public partial class MainShell : Window
     private void ApplyCurrentScale()
     {
         var scale = App.UiScaleService.CurrentScale;
+        
+        // Scale main content area
         ContentScaleTransform.ScaleX = scale;
         ContentScaleTransform.ScaleY = scale;
+        
+        // Scale only the navigation items (not the footer with quick settings)
+        if (SidebarScaleTransform != null)
+        {
+            SidebarScaleTransform.ScaleX = scale;
+            SidebarScaleTransform.ScaleY = scale;
+        }
     }
 
     private void OnNavigationRequested(object? sender, NavigationRequestArgs e)
@@ -288,10 +324,12 @@ public partial class MainShell : Window
         NavigateTo("Schema", NavSchema);
     }
 
-    private void NavTestRunner_Click(object sender, RoutedEventArgs e)
-    {
-        NavigateTo("TestRunner", NavTestRunner);
-    }
+    // Test Runner button removed from quick nav - still accessible via full settings
+    // private void NavTestRunner_Click(object sender, RoutedEventArgs e)
+    // {
+    //     NavigateTo("TestRunner", NavTestRunner);
+    // }
+
 
     private async void NavBackup_Click(object sender, RoutedEventArgs e)
     {
@@ -458,6 +496,34 @@ public partial class MainShell : Window
                 SetStatus($"Navigated to inventory: {result.Title}");
                 break;
         }
+    }
+
+    #endregion
+
+    #region Quick Settings Handlers
+
+    private void OnQuickUiScaleChanged(object sender, System.Windows.RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (App.UiScaleService == null || UiScaleValueText == null)
+            return;
+        
+        var scale = e.NewValue;
+        App.UiScaleService.SetScale(scale);
+        UiScaleValueText.Text = App.UiScaleService.GetScalePercentage();
+    }
+
+    private void OnThemeLightClick(object sender, System.Windows.RoutedEventArgs e)
+    {
+        App.ThemeService.SetTheme(Services.ThemeService.AppTheme.Light);
+        UpdateThemeButtonStates();
+        ToastService.Success("Switched to Light Theme");
+    }
+
+    private void OnThemeDarkClick(object sender, System.Windows.RoutedEventArgs e)
+    {
+        App.ThemeService.SetTheme(Services.ThemeService.AppTheme.Dark);
+        UpdateThemeButtonStates();
+        ToastService.Success("Switched to Dark Theme");
     }
 
     #endregion

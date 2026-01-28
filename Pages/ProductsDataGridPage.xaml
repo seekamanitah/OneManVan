@@ -171,7 +171,6 @@
 
                 <StackPanel Grid.Column="0">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="" FontSize="24" VerticalAlignment="Center" Margin="0,0,10,0"/>
                         <TextBlock Text="Products Catalog" FontSize="24" FontWeight="Bold" 
                                    Foreground="{DynamicResource TextBrush}"/>
                     </StackPanel>
@@ -180,9 +179,9 @@
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <Button Content="?? Import" Click="OnImportClick"
+                    <Button Content="Import" Click="OnImportClick"
                             Style="{StaticResource SecondaryButton}" Margin="0,0,10,0"/>
-                    <Button Content="?? Export" Click="OnExportClick"
+                    <Button Content="Export" Click="OnExportClick"
                             Style="{StaticResource SecondaryButton}" Margin="0,0,10,0"/>
                     <Button Content="+ Add Product" Click="OnAddProductClick"
                             Style="{StaticResource ActionButton}"/>
@@ -207,7 +206,7 @@
                                  Padding="12,10"
                                  FontSize="13"
                                  TextChanged="OnSearchTextChanged"/>
-                        <TextBlock Text="?? Search products..." 
+                        <TextBlock Text="Search products..." 
                                    IsHitTestVisible="False"
                                    Foreground="{DynamicResource SubtextBrush}"
                                    FontSize="13"
@@ -223,16 +222,16 @@
                     <ToggleButton x:Name="FilterAll" Content="All" IsChecked="True"
                                   Style="{StaticResource FilterChip}" Margin="0,0,5,0"
                                   Click="OnCategoryFilterClick"/>
-                    <ToggleButton x:Name="FilterAC" Content="?? AC"
+                    <ToggleButton x:Name="FilterAC" Content="AC"
                                   Style="{StaticResource FilterChip}" Margin="0,0,5,0"
                                   Click="OnCategoryFilterClick"/>
-                    <ToggleButton x:Name="FilterHeatPump" Content="?? Heat Pump"
+                    <ToggleButton x:Name="FilterHeatPump" Content="Heat Pump"
                                   Style="{StaticResource FilterChip}" Margin="0,0,5,0"
                                   Click="OnCategoryFilterClick"/>
-                    <ToggleButton x:Name="FilterFurnace" Content="?? Furnace"
+                    <ToggleButton x:Name="FilterFurnace" Content="Furnace"
                                   Style="{StaticResource FilterChip}" Margin="0,0,5,0"
                                   Click="OnCategoryFilterClick"/>
-                    <ToggleButton x:Name="FilterMiniSplit" Content="?? Mini Split"
+                    <ToggleButton x:Name="FilterMiniSplit" Content="Mini Split"
                                   Style="{StaticResource FilterChip}" Margin="0,0,15,0"
                                   Click="OnCategoryFilterClick"/>
                     
@@ -376,16 +375,16 @@
                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
                     <StackPanel Grid.Column="2" Orientation="Horizontal">
-                        <Button x:Name="FirstPageBtn" Content="|" Click="OnFirstPageClick"
+                        <Button x:Name="FirstPageBtn" Content="|&lt;" Click="OnFirstPageClick"
                                 Style="{StaticResource SecondaryButton}" Padding="8,4" Margin="0,0,5,0"/>
-                        <Button x:Name="PrevPageBtn" Content="?" Click="OnPrevPageClick"
+                        <Button x:Name="PrevPageBtn" Content="&lt;" Click="OnPrevPageClick"
                                 Style="{StaticResource SecondaryButton}" Padding="8,4" Margin="0,0,5,0"/>
                         <TextBlock x:Name="CurrentPageText" Text="Page 1" FontSize="12" 
                                    Foreground="{DynamicResource TextBrush}"
                                    VerticalAlignment="Center" Margin="10,0"/>
-                        <Button x:Name="NextPageBtn" Content="?" Click="OnNextPageClick"
+                        <Button x:Name="NextPageBtn" Content="&gt;" Click="OnNextPageClick"
                                 Style="{StaticResource SecondaryButton}" Padding="8,4" Margin="0,0,5,0"/>
-                        <Button x:Name="LastPageBtn" Content="|" Click="OnLastPageClick"
+                        <Button x:Name="LastPageBtn" Content="&gt;|" Click="OnLastPageClick"
                                 Style="{StaticResource SecondaryButton}" Padding="8,4"/>
                     </StackPanel>
                 </Grid>
@@ -398,7 +397,6 @@
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <!-- No Selection State -->
                 <StackPanel x:Name="NoSelectionPanel" VerticalAlignment="Center" HorizontalAlignment="Center">
-                    <TextBlock Text="" FontSize="64" HorizontalAlignment="Center" Opacity="0.3"/>
                     <TextBlock Text="Select a product" FontSize="18" 
                                Foreground="{DynamicResource SubtextBrush}"
                                HorizontalAlignment="Center" Margin="0,15,0,0"/>
@@ -423,29 +421,27 @@
                         
                         <StackPanel Grid.Column="0">
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock x:Name="DetailCategoryIcon" Text="" FontSize="24" 
-                                           VerticalAlignment="Center" Margin="0,0,10,0"/>
                                 <TextBlock x:Name="DetailModelNumber" Text="Model Number" 
                                            FontSize="20" FontWeight="Bold"
                                            Foreground="{DynamicResource TextBrush}"/>
                             </StackPanel>
                             <TextBlock x:Name="DetailManufacturer" Text="Manufacturer" 
                                        FontSize="14" Foreground="{DynamicResource SubtextBrush}" 
-                                       Margin="34,2,0,0"/>
+                                       Margin="0,2,0,0"/>
                             <TextBlock x:Name="DetailProductName" Text="Product Name" 
                                        FontSize="13" Foreground="{DynamicResource SubtextBrush}" 
-                                       Margin="34,2,0,0" TextWrapping="Wrap"/>
+                                       Margin="0,2,0,0" TextWrapping="Wrap"/>
                         </StackPanel>
                         
                         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
-                            <Button Content="?" ToolTip="Edit Product" Click="OnEditProductClick"
+                            <Button Content="Edit" ToolTip="Edit Product" Click="OnEditProductClick"
                                     Style="{StaticResource SecondaryButton}" 
                                     Foreground="{DynamicResource PrimaryBrush}"
-                                    FontSize="14" Padding="8,6" Margin="0,0,5,0"/>
-                            <Button Content="" ToolTip="Delete Product" Click="OnDeleteProductClick"
+                                    FontSize="13" Padding="12,6" Margin="0,0,5,0"/>
+                            <Button Content="Delete" ToolTip="Delete Product" Click="OnDeleteProductClick"
                                     Style="{StaticResource SecondaryButton}" 
                                     Foreground="{DynamicResource ErrorBrush}"
-                                    FontSize="14" Padding="8,6"/>
+                                    FontSize="13" Padding="12,6"/>
                         </StackPanel>
                     </Grid>
 

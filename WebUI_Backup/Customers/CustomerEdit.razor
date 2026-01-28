@@ -1,0 +1,386 @@
+@page "/customers/new"
+@page "/customers/{Id:int}/edit"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@using OneManVan.Shared.Models.Enums
+@using OneManVan.Shared.Utilities
+@attribute [Authorize]
+@inject IDbContextFactory<OneManVanDbContext> DbFactory
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<PageTitle>@(IsNew ? "New Customer" : "Edit Customer") - TradeFlow</PageTitle>
+
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="mb-4">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/customers">Customers</a></li>
+                        <li class="breadcrumb-item active">@(IsNew ? "New" : "Edit")</li>
+                    </ol>
+                </nav>
+                <h1 class="h2">@(IsNew ? "Add New Customer" : $"Edit {model.Name}")</h1>
+            </div>
+
+            @if (isLoading)
+            {
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary"></div>
+                </div>
+            }
+            else
+            {
+                <EditForm Model="@model" OnValidSubmit="HandleSubmit">
+                    <DataAnnotationsValidator />
+
+                    <!-- Basic Information -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0">Basic Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">First Name *</label>
+                                    <InputText class="form-control" @bind-Value="model.FirstName" />
+                                    <ValidationMessage For="@(() => model.FirstName)" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Last Name *</label>
+                                    <InputText class="form-control" @bind-Value="model.LastName" />
+                                    <ValidationMessage For="@(() => model.LastName)" />
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Company Name</label>
+                                    <InputText class="form-control" @bind-Value="model.CompanyName" placeholder="Optional" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contact Information -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0">Contact Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Email</label>
+                                    <InputText type="email" class="form-control" @bind-Value="model.Email" />
+                                    <ValidationMessage For="@(() => model.Email)" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Phone *</label>
+                                    <InputText class="form-control" @bind-Value="phoneDisplay" @oninput="OnPhoneInput" placeholder="555-123-4567" />
+                                    <small class="text-muted">Format: xxx-xxx-xxxx</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Mobile</label>
+                                    <InputText class="form-control" @bind-Value="mobileDisplay" @oninput="OnMobileInput" placeholder="555-123-4567" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Secondary Email</label>
+                                    <InputText type="email" class="form-control" @bind-Value="model.SecondaryEmail" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Address -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0">Address</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label">Home Address</label>
+                                    <InputTextArea class="form-control" rows="3" @bind-Value="model.HomeAddress" 
+                                                   placeholder="123 Main St, City, State ZIP" />
+                                    @if (!string.IsNullOrWhiteSpace(model.HomeAddress))
+                                    {
+                                        <div class="mt-2">
+                                            <a href="@GetMapsUrl(model.HomeAddress)" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                                <i class="bi bi-map me-1"></i>View on Map
+                                            </a>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Customer Details -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0">Customer Details</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Type</label>
+                                    <InputSelect class="form-select" @bind-Value="model.CustomerType">
+                                        <option value="@CustomerType.Residential">Residential</option>
+                                        <option value="@CustomerType.Commercial">Commercial</option>
+                                        <option value="@CustomerType.PropertyManager">Property Manager</option>
+                                        <option value="@CustomerType.Government">Government</option>
+                                    </InputSelect>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Status</label>
+                                    <InputSelect class="form-select" @bind-Value="model.Status">
+                                        <option value="@CustomerStatus.Active">Active</option>
+                                        <option value="@CustomerStatus.Inactive">Inactive</option>
+                                        <option value="@CustomerStatus.Lead">Prospect</option>
+                                        <option value="@CustomerStatus.VIP">VIP</option>
+                                    </InputSelect>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Payment Terms</label>
+                                    <InputSelect class="form-select" @bind-Value="model.PaymentTerms">
+                                        <option value="@PaymentTerms.DueOnReceipt">Due on Receipt</option>
+                                        <option value="@PaymentTerms.COD">COD</option>
+                                        <option value="@PaymentTerms.Net15">Net 15</option>
+                                        <option value="@PaymentTerms.Net30">Net 30</option>
+                                        <option value="@PaymentTerms.Net45">Net 45</option>
+                                        <option value="@PaymentTerms.Net60">Net 60</option>
+                                    </InputSelect>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Preferred Contact Method</label>
+                                    <InputSelect class="form-select" @bind-Value="model.PreferredContact">
+                                        <option value="@ContactMethod.Any">Any</option>
+                                        <option value="@ContactMethod.Email">Email</option>
+                                        <option value="@ContactMethod.Phone">Phone</option>
+                                        <option value="@ContactMethod.Text">Text Message</option>
+                                    </InputSelect>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0">Notes</h5>
+                        </div>
+                        <div class="card-body">
+                            <InputTextArea class="form-control" rows="4" @bind-Value="model.Notes" 
+                                           placeholder="Add any additional notes about this customer..." />
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <button type="button" class="btn btn-outline-secondary" @onclick="Cancel" disabled="@isSaving">
+                                    Cancel
+                                </button>
+                                <div class="d-flex gap-2">
+                                    @if (!IsNew)
+                                    {
+                                        <button type="button" class="btn btn-outline-danger" @onclick="DeleteCustomer" disabled="@isSaving">
+                                            <i class="bi bi-trash me-2"></i>Delete
+                                        </button>
+                                    }
+                                    <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                                        @if (isSaving)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-2"></span>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-check-circle me-2"></i>
+                                        }
+                                        @(IsNew ? "Create Customer" : "Save Changes")
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger mt-3">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>@errorMessage
+                        </div>
+                    }
+                </EditForm>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int? Id { get; set; }
+
+    private bool IsNew => !Id.HasValue;
+    private bool isLoading = true;
+    private bool isSaving = false;
+    private string errorMessage = "";
+    private Customer model = new();
+    private string phoneDisplay = "";
+    private string mobileDisplay = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (IsNew)
+        {
+            model = new Customer
+            {
+                CustomerType = CustomerType.Residential,
+                Status = CustomerStatus.Active,
+                PaymentTerms = PaymentTerms.Net30,
+                PreferredContact = ContactMethod.Any
+            };
+            isLoading = false;
+        }
+        else
+        {
+            await LoadCustomerAsync();
+        }
+
+        // Initialize phone display
+        phoneDisplay = PhoneNumberFormatter.Format(model.Phone) ?? "";
+        mobileDisplay = PhoneNumberFormatter.Format(model.Mobile) ?? "";
+    }
+
+    private async Task LoadCustomerAsync()
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            
+            var customer = await db.Customers.FindAsync(Id!.Value);
+            if (customer != null)
+            {
+                model = customer;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load customer: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void OnPhoneInput(ChangeEventArgs e)
+    {
+        phoneDisplay = PhoneNumberFormatter.FormatAsTyping(e.Value?.ToString());
+        model.Phone = PhoneNumberFormatter.Unformat(phoneDisplay);
+    }
+
+    private void OnMobileInput(ChangeEventArgs e)
+    {
+        mobileDisplay = PhoneNumberFormatter.FormatAsTyping(e.Value?.ToString());
+        model.Mobile = PhoneNumberFormatter.Unformat(mobileDisplay);
+    }
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            isSaving = true;
+            errorMessage = "";
+
+            // Construct full name
+            model.Name = $"{model.FirstName} {model.LastName}".Trim();
+
+            // Unformat phone numbers for storage
+            model.Phone = PhoneNumberFormatter.Unformat(phoneDisplay);
+            model.Mobile = PhoneNumberFormatter.Unformat(mobileDisplay);
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+
+            if (IsNew)
+            {
+                // Generate customer number
+                var maxNumber = await db.Customers
+                    .Where(c => c.CustomerNumber != null && c.CustomerNumber.StartsWith("C-"))
+                    .Select(c => c.CustomerNumber)
+                    .ToListAsync();
+
+                var nextNumber = 1;
+                if (maxNumber.Any())
+                {
+                    nextNumber = maxNumber
+                        .Select(n => int.TryParse(n?.Substring(2), out int num) ? num : 0)
+                        .DefaultIfEmpty(0)
+                        .Max() + 1;
+                }
+                model.CustomerNumber = $"C-{nextNumber:D4}";
+                model.CreatedAt = DateTime.UtcNow;
+
+                db.Customers.Add(model);
+            }
+            else
+            {
+                // ModifiedAt not in model
+                db.Customers.Update(model);
+            }
+
+            await db.SaveChangesAsync();
+
+            // Navigate back to customer list or detail
+            Navigation.NavigateTo(IsNew ? "/customers" : $"/customers/{model.Id}");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to save customer: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task DeleteCustomer()
+    {
+        if (!await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this customer?"))
+            return;
+
+        try
+        {
+            isSaving = true;
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+            db.Customers.Remove(model);
+            await db.SaveChangesAsync();
+
+            Navigation.NavigateTo("/customers");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to delete customer: {ex.Message}";
+            isSaving = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        if (IsNew)
+        {
+            Navigation.NavigateTo("/customers");
+        }
+        else
+        {
+            Navigation.NavigateTo($"/customers/{Id}");
+        }
+    }
+
+    private string GetMapsUrl(string address)
+    {
+        var encoded = Uri.EscapeDataString(address);
+        return $"https://www.google.com/maps/search/?api=1&query={encoded}";
+    }
+}

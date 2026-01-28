@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="OneManVan.Mobile.Controls.AlertCard">
+    
+    <Border x:Name="CardBorder"
+            BackgroundColor="{AppThemeBinding Light=White, Dark=#2D2D2D}"
+            StrokeShape="RoundRectangle 12"
+            Stroke="Transparent"
+            Padding="16,12">
+        
+        <Border.Shadow>
+            <Shadow Brush="Black" Offset="0,1" Radius="4" Opacity="0.08"/>
+        </Border.Shadow>
+
+        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+            
+            <!-- Icon -->
+            <Border x:Name="IconBorder"
+                    WidthRequest="40"
+                    HeightRequest="40"
+                    StrokeShape="RoundRectangle 20"
+                    Stroke="Transparent"
+                    BackgroundColor="#FFF3E0"
+                    VerticalOptions="Center">
+                <Label x:Name="IconLabel"
+                       Text="?"
+                       FontSize="20"
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center"/>
+            </Border>
+
+            <!-- Content -->
+            <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                <Label x:Name="TitleLabel"
+                       Text="Alert Title"
+                       FontSize="14"
+                       FontAttributes="Bold"
+                       TextColor="{AppThemeBinding Light=#333, Dark=#FFF}"/>
+                <Label x:Name="DescriptionLabel"
+                       Text="Alert description"
+                       FontSize="12"
+                       TextColor="{AppThemeBinding Light=#757575, Dark=#B0B0B0}"/>
+            </VerticalStackLayout>
+
+            <!-- Count Badge -->
+            <Border x:Name="CountBadge"
+                    Grid.Column="2"
+                    BackgroundColor="#FF9800"
+                    StrokeShape="RoundRectangle 12"
+                    Stroke="Transparent"
+                    Padding="10,6"
+                    VerticalOptions="Center">
+                <Label x:Name="CountLabel"
+                       Text="5"
+                       FontSize="13"
+                       FontAttributes="Bold"
+                       TextColor="White"/>
+            </Border>
+        </Grid>
+    </Border>
+</ContentView>

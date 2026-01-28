@@ -10,5 +10,6 @@ public enum CompanyType
     Supplier,
     Partner,
     PropertyManagement,
-    Contractor
+    Contractor,
+    Competitor
 }

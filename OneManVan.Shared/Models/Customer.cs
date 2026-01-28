@@ -52,6 +52,20 @@ public class Customer
     private string _name = string.Empty;
 
     /// <summary>
+    /// Full name for display purposes (with email if available).
+    /// </summary>
+    [NotMapped]
+    public string FullName => $"{FirstName} {LastName}".Trim();
+
+    /// <summary>
+    /// Full name with email for dropdown display.
+    /// </summary>
+    [NotMapped]
+    public string FullNameWithEmail => !string.IsNullOrEmpty(Email)
+        ? $"{FullName} ({Email})"
+        : FullName;
+
+    /// <summary>
     /// Company name for commercial customers.
     /// </summary>
     [MaxLength(200)]
@@ -110,6 +124,15 @@ public class Customer
     [MaxLength(20)]
     [Phone]
     public string? EmergencyPhone { get; set; }
+
+    // === Address ===
+
+    /// <summary>
+    /// Home address for residential customers or primary service location.
+    /// Used for navigation and service calls.
+    /// </summary>
+    [MaxLength(500)]
+    public string? HomeAddress { get; set; }
 
     // === Billing & Payment ===
 

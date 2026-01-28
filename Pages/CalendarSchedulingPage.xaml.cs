@@ -34,7 +34,9 @@ public partial class CalendarSchedulingPage : UserControl
     {
         private readonly Action _execute;
         public RelayCommand(Action execute) => _execute = execute;
+#pragma warning disable CS0067 // Event never used but required by ICommand interface
         public event EventHandler? CanExecuteChanged;
+#pragma warning restore CS0067
         public bool CanExecute(object? parameter) => true;
         public void Execute(object? parameter) => _execute();
     }
@@ -588,18 +590,6 @@ public partial class CalendarSchedulingPage : UserControl
                 }
             }
         );
-        return;
-        
-        // Old code below
-        // Open detail dialog first, which has Edit button
-        var detailDialog = new Dialogs.JobDetailDialog(_dbContext, job);
-        detailDialog.ShowDialog();
-        
-        // Refresh if job was edited
-        if (detailDialog.JobWasEdited)
-        {
-            _ = LoadCalendarAsync();
-        }
     }
 
     private void OnDayDragOver(object sender, DragEventArgs e)

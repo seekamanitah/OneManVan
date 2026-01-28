@@ -84,6 +84,18 @@
                                        TextChanged="OnTaxRateChanged"/>
                             </VerticalStackLayout>
                         </Grid>
+
+                        <!-- Tax Included Toggle -->
+                        <HorizontalStackLayout Spacing="8">
+                            <Switch x:Name="TaxIncludedSwitch" 
+                                    OnColor="{StaticResource Primary}"
+                                    ThumbColor="White"
+                                    Toggled="OnTaxIncludedToggled"/>
+                            <Label Text="Tax Already Included in Price" 
+                                   FontSize="14" 
+                                   TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"
+                                   VerticalOptions="Center"/>
+                        </HorizontalStackLayout>
                     </VerticalStackLayout>
                 </Border>
 

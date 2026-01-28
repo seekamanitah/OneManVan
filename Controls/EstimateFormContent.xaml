@@ -19,15 +19,60 @@
         <!-- Customer -->
         <TextBlock Text="Customer *" FontSize="12" FontWeight="SemiBold"
                    Foreground="{DynamicResource TextBrush}" Margin="0,0,0,4"/>
-        <ComboBox x:Name="CustomerCombo"
-                  Background="{DynamicResource SurfaceBrush}"
-                  Foreground="{DynamicResource TextBrush}"
-                  BorderBrush="{DynamicResource Surface2Brush}"
-                  BorderThickness="1"
-                  Padding="10,8"
-                  FontSize="13"
-                  SelectionChanged="OnCustomerChanged"
-                  Margin="0,0,0,15"/>
+        <Grid Margin="0,0,0,15">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            
+            <ComboBox x:Name="CustomerCombo"
+                      Grid.Column="0"
+                      Background="{DynamicResource SurfaceBrush}"
+                      Foreground="{DynamicResource TextBrush}"
+                      BorderBrush="{DynamicResource Surface2Brush}"
+                      BorderThickness="1"
+                      Padding="10,8"
+                      FontSize="13"
+                      SelectionChanged="OnCustomerChanged"/>
+            
+            <Button x:Name="QuickAddCustomerButton"
+                    Grid.Column="2"
+                    Content="Quick Add"
+                    Click="OnQuickAddCustomerClick"
+                    Background="{DynamicResource SecondaryBrush}"
+                    Foreground="White"
+                    BorderThickness="0"
+                    Padding="15,8"
+                    FontSize="12"
+                    FontWeight="SemiBold"
+                    Cursor="Hand"
+                    ToolTip="Create a new customer"
+                    VerticalAlignment="Top">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}"
+                                            CornerRadius="4"
+                                            Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+        </Grid>
+        
         
         <!-- Site -->
         <TextBlock Text="Site" FontSize="12" FontWeight="SemiBold"
@@ -63,7 +108,15 @@
                  BorderThickness="1"
                  Padding="10,8"
                  FontSize="13"
-                 Margin="0,0,0,15"/>
+                 Margin="0,0,0,8"/>
+        
+        <!-- Tax Included Checkbox -->
+        <CheckBox x:Name="TaxIncludedCheckBox"
+                  Content="Tax Already Included in Price"
+                  Foreground="{DynamicResource TextBrush}"
+                  FontSize="12"
+                  Margin="0,0,0,15"
+                  ToolTip="Check this if the price already includes tax (flat rate with tax)"/>
         
         <!-- Description -->
         <TextBlock Text="Description" FontSize="12" FontWeight="SemiBold"

@@ -54,14 +54,23 @@
                             </VerticalStackLayout>
                         </Grid>
 
-                        <!-- Name -->
-                        <VerticalStackLayout Spacing="4">
-                            <Label Text="Name *" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}" FontAttributes="Bold"/>
-                            <Entry x:Name="NameEntry"
-                                   Placeholder="Customer name (required)"
-                                   Text="{Binding Customer.Name}"
-                                   FontSize="16"/>
-                        </VerticalStackLayout>
+                        <!-- First Name and Last Name -->
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                            <VerticalStackLayout Spacing="4">
+                                <Label Text="First Name *" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}" FontAttributes="Bold"/>
+                                <Entry x:Name="FirstNameEntry"
+                                       Placeholder="First name"
+                                       Text="{Binding Customer.FirstName}"
+                                       FontSize="16"/>
+                            </VerticalStackLayout>
+                            <VerticalStackLayout Grid.Column="1" Spacing="4">
+                                <Label Text="Last Name *" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}" FontAttributes="Bold"/>
+                                <Entry x:Name="LastNameEntry"
+                                       Placeholder="Last name"
+                                       Text="{Binding Customer.LastName}"
+                                       FontSize="16"/>
+                            </VerticalStackLayout>
+                        </Grid>
 
                         <!-- Company Name (for Commercial) -->
                         <VerticalStackLayout x:Name="CompanySection" Spacing="4">
@@ -88,7 +97,7 @@
                                FontAttributes="Bold"
                                TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"/>
 
-                        <!-- Primary Phone -->
+                        <!-- Primary Phone and Mobile -->
                         <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
                             <VerticalStackLayout Spacing="4">
                                 <Label Text="Primary Phone" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
@@ -99,14 +108,24 @@
                                        FontSize="16"/>
                             </VerticalStackLayout>
                             <VerticalStackLayout Grid.Column="1" Spacing="4">
-                                <Label Text="Secondary Phone" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
-                                <Entry x:Name="SecondaryPhoneEntry"
-                                       Placeholder="Spouse/Alt number"
-                                       Text="{Binding Customer.SecondaryPhone}"
+                                <Label Text="Mobile" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                                <Entry x:Name="MobileEntry"
+                                       Placeholder="Mobile number"
+                                       Text="{Binding Customer.Mobile}"
                                        Keyboard="Telephone"
                                        FontSize="16"/>
                             </VerticalStackLayout>
                         </Grid>
+
+                        <!-- Secondary Phone -->
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Secondary Phone" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Entry x:Name="SecondaryPhoneEntry"
+                                   Placeholder="Spouse/Alt number"
+                                   Text="{Binding Customer.SecondaryPhone}"
+                                   Keyboard="Telephone"
+                                   FontSize="16"/>
+                        </VerticalStackLayout>
 
                         <!-- Email -->
                         <VerticalStackLayout Spacing="4">
@@ -115,6 +134,16 @@
                                    Placeholder="customer@email.com"
                                    Text="{Binding Customer.Email}"
                                    Keyboard="Email"
+                                   FontSize="16"/>
+                        </VerticalStackLayout>
+
+                        <!-- Website -->
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Website" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"/>
+                            <Entry x:Name="WebsiteEntry"
+                                   Placeholder="https://example.com"
+                                   Text="{Binding Customer.Website}"
+                                   Keyboard="Url"
                                    FontSize="16"/>
                         </VerticalStackLayout>
 
@@ -205,6 +234,100 @@
                                    Keyboard="Email"
                                    FontSize="16"/>
                         </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Company Relationship Section -->
+                <Border x:Name="CompanyRelationshipCard" IsVisible="False"
+                        BackgroundColor="{AppThemeBinding Light={StaticResource LightCardBackground}, Dark={StaticResource DarkCardBackground}}" 
+                        StrokeShape="RoundRectangle 12" 
+                        Stroke="Transparent"
+                        Padding="16">
+                    <Border.Shadow>
+                        <Shadow Brush="{AppThemeBinding Light=Black, Dark={StaticResource Gray900}}" Offset="0,2" Radius="4" Opacity="0.1"/>
+                    </Border.Shadow>
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="Company Relationship" 
+                               FontSize="18" 
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"/>
+
+                        <!-- Linked Company -->
+                        <Grid ColumnDefinitions="Auto, *" ColumnSpacing="12">
+                            <Label Grid.Column="0" 
+                                   Text="Company:" 
+                                   FontSize="14" 
+                                   FontAttributes="Bold"
+                                   TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"
+                                   VerticalOptions="Center"/>
+                            <Label Grid.Column="1" 
+                                   x:Name="LinkedCompanyNameLabel"
+                                   FontSize="14"
+                                   TextColor="#6366F1"
+                                   TextDecorations="Underline"
+                                   VerticalOptions="Center">
+                                <Label.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnLinkedCompanyTapped"/>
+                                </Label.GestureRecognizers>
+                            </Label>
+                        </Grid>
+
+                        <!-- Role in Company -->
+                        <Grid ColumnDefinitions="Auto, *" ColumnSpacing="12" x:Name="RoleGrid">
+                            <Label Grid.Column="0" 
+                                   Text="Role:" 
+                                   FontSize="14" 
+                                   FontAttributes="Bold"
+                                   TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"
+                                   VerticalOptions="Center"/>
+                            <Label Grid.Column="1" 
+                                   x:Name="RoleLabel"
+                                   FontSize="14"
+                                   TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"
+                                   VerticalOptions="Center"/>
+                        </Grid>
+
+                        <!-- Title -->
+                        <Grid ColumnDefinitions="Auto, *" ColumnSpacing="12" x:Name="TitleGrid">
+                            <Label Grid.Column="0" 
+                                   Text="Title:" 
+                                   FontSize="14" 
+                                   FontAttributes="Bold"
+                                   TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"
+                                   VerticalOptions="Center"/>
+                            <Label Grid.Column="1" 
+                                   x:Name="CompanyTitleLabel"
+                                   FontSize="14"
+                                   TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"
+                                   VerticalOptions="Center"/>
+                        </Grid>
+
+                        <!-- Department -->
+                        <Grid ColumnDefinitions="Auto, *" ColumnSpacing="12" x:Name="DepartmentGrid">
+                            <Label Grid.Column="0" 
+                                   Text="Department:" 
+                                   FontSize="14" 
+                                   FontAttributes="Bold"
+                                   TextColor="{AppThemeBinding Light={StaticResource LightTextSecondary}, Dark={StaticResource DarkTextSecondary}}"
+                                   VerticalOptions="Center"/>
+                            <Label Grid.Column="1" 
+                                   x:Name="DepartmentLabel"
+                                   FontSize="14"
+                                   TextColor="{AppThemeBinding Light={StaticResource LightTextPrimary}, Dark={StaticResource DarkTextPrimary}}"
+                                   VerticalOptions="Center"/>
+                        </Grid>
+
+                        <!-- Primary Contact Badge -->
+                        <Border x:Name="PrimaryContactBadge" IsVisible="False"
+                                BackgroundColor="#10B981"
+                                StrokeShape="RoundRectangle 10"
+                                Padding="8,4"
+                                HorizontalOptions="Start">
+                            <Label Text="Primary Contact"
+                                   FontSize="11"
+                                   FontAttributes="Bold"
+                                   TextColor="White"/>
+                        </Border>
                     </VerticalStackLayout>
                 </Border>
 

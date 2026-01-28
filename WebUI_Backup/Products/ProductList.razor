@@ -1,0 +1,339 @@
+@page "/products"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@attribute [Authorize]
+@inject IDbContextFactory<OneManVanDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Products - TradeFlow</PageTitle>
+
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-0">Products</h1>
+            <p class="text-muted mb-0">Manage your product catalog</p>
+        </div>
+        <button class="btn btn-primary" @onclick="CreateProduct">
+            <i class="bi bi-plus-circle me-2"></i>Add Product
+        </button>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" class="form-control border-start-0" 
+                               placeholder="Search products..." 
+                               @bind="searchText" 
+                               @bind:event="oninput"
+                               @onkeyup="OnSearchChanged" />
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" @bind="filterCategory">
+                        <option value="">All Categories</option>
+                        <option value="HVAC">HVAC</option>
+                        <option value="Plumbing">Plumbing</option>
+                        <option value="Electrical">Electrical</option>
+                        <option value="Tools">Tools</option>
+                        <option value="Parts">Parts</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" @bind="filterHasSerial">
+                        <option value="">All Products</option>
+                        <option value="true">With Serial Numbers</option>
+                        <option value="false">No Serial Numbers</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-outline-secondary w-100" @onclick="ApplyFilters">
+                        <i class="bi bi-funnel me-2"></i>Filter
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Grid -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            @if (isLoading)
+            {
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Loading products...</p>
+                </div>
+            }
+            else if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger m-3" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    @errorMessage
+                </div>
+            }
+            else if (filteredProducts.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th @onclick='@(() => SortBy("Name"))' style="cursor: pointer;">
+                                    Name
+                                    @if (sortColumn == "Name")
+                                    {
+                                        <i class="bi @(sortAscending ? "bi-arrow-up" : "bi-arrow-down")"></i>
+                                    }
+                                </th>
+                                <th>SKU</th>
+                                <th>Manufacturer</th>
+                                <th>Category</th>
+                                <th>Price</th>
+                                <th>Serial Required</th>
+                                <th>Assets</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var product in filteredProducts)
+                            {
+                                <tr style="cursor: pointer;" @onclick="@(() => ViewProduct(product.Id))">
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-circle bg-info bg-opacity-10 text-info me-2">
+                                                <i class="bi bi-box"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-semibold">@product.ProductName</div>
+                                                @if (!string.IsNullOrEmpty(product.ModelNumber))
+                                                {
+                                                    <small class="text-muted">@product.ModelNumber</small>
+                                                }
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(product.ProductNumber))
+                                        {
+                                            <span class="badge bg-secondary">@product.ProductNumber</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">—</span>
+                                        }
+                                    </td>
+                                    <td>@(product.Manufacturer ?? "—")</td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(product.Category))
+                                        {
+                                            <span class="badge bg-info">@product.Category</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">—</span>
+                                        }
+                                    </td>
+                                    <td>@product.SuggestedSellPrice.ToString("C")</td>
+                                    <td>
+                                        @if (product.RegistrationRequired)
+                                        {
+                                            <span class="badge bg-warning">Required</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">No</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="text-muted">@(new List<Asset>()?.Count ?? 0)</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="btn-group btn-group-sm" @onclick:stopPropagation="true">
+                                            <button class="btn btn-outline-primary" @onclick="@(() => ViewProduct(product.Id))">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            <button class="btn btn-outline-secondary" @onclick="@(() => EditProduct(product.Id))">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="card-footer bg-white border-top">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            Showing @filteredProducts.Count of @allProducts.Count products
+                        </small>
+                        @if (filteredProducts.Count < allProducts.Count)
+                        {
+                            <button class="btn btn-sm btn-outline-primary" @onclick="LoadMore">
+                                Load More
+                            </button>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-box fs-1 text-muted mb-3 d-block"></i>
+                    <h5>No products found</h5>
+                    <p class="text-muted mb-3">Get started by adding your first product</p>
+                    <button class="btn btn-primary" @onclick="CreateProduct">
+                        <i class="bi bi-plus-circle me-2"></i>Add Product
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .avatar-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 16px;
+    }
+</style>
+
+@code {
+    private bool isLoading = true;
+    private string errorMessage = "";
+    private List<Product> allProducts = new();
+    private List<Product> filteredProducts = new();
+    
+    private string searchText = "";
+    private string filterCategory = "";
+    private string filterHasSerial = "";
+    private string sortColumn = "Name";
+    private bool sortAscending = true;
+    private int displayCount = 50;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProductsAsync();
+    }
+
+    private async Task LoadProductsAsync()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = "";
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+            
+            allProducts = await db.Products
+                
+                .AsNoTracking()
+                .ToListAsync();
+
+            ApplyFilters();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load products: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void ApplyFilters()
+    {
+        var query = allProducts.AsEnumerable();
+
+        // Search filter
+        if (!string.IsNullOrWhiteSpace(searchText))
+        {
+            var search = searchText.ToLower();
+            query = query.Where(p =>
+                (p.Name?.ToLower().Contains(search) ?? false) ||
+                (p.SKU?.ToLower().Contains(search) ?? false) ||
+                (p.Manufacturer?.ToLower().Contains(search) ?? false) ||
+                (p.Model?.ToLower().Contains(search) ?? false));
+        }
+
+        // Category filter
+        if (!string.IsNullOrWhiteSpace(filterCategory))
+        {
+            query = query.Where(p => p.Category == filterCategory);
+        }
+
+        // Serial number filter
+        if (!string.IsNullOrWhiteSpace(filterHasSerial))
+        {
+            var hasSerial = bool.Parse(filterHasSerial);
+            query = query.Where(p => p.RegistrationRequired == hasSerial);
+        }
+
+        // Sorting
+        query = sortColumn switch
+        {
+            "Name" => sortAscending ? query.OrderBy(p => p.Name) : query.OrderByDescending(p => p.Name),
+            _ => query.OrderBy(p => p.Name)
+        };
+
+        filteredProducts = query.Take(displayCount).ToList();
+    }
+
+    private void OnSearchChanged(KeyboardEventArgs e)
+    {
+        ApplyFilters();
+    }
+
+    private void SortBy(string column)
+    {
+        if (sortColumn == column)
+        {
+            sortAscending = !sortAscending;
+        }
+        else
+        {
+            sortColumn = column;
+            sortAscending = true;
+        }
+        ApplyFilters();
+    }
+
+    private void LoadMore()
+    {
+        displayCount += 50;
+        ApplyFilters();
+    }
+
+    private void CreateProduct()
+    {
+        Navigation.NavigateTo("/products/new");
+    }
+
+    private void ViewProduct(int id)
+    {
+        Navigation.NavigateTo($"/products/{id}");
+    }
+
+    private void EditProduct(int id)
+    {
+        Navigation.NavigateTo($"/products/{id}/edit");
+    }
+}

@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using OneManVan.Shared.Data;
 using OneManVan.Shared.Models;
 using OneManVan.Shared.Models.Enums;
+using OneManVan.Dialogs;
 
 namespace OneManVan.Controls;
 
@@ -103,6 +104,15 @@ public partial class JobFormContent : UserControl
         var selectedJobType = (JobTypeCombo.SelectedItem as ComboBoxItem)?.Tag as JobType? ?? JobType.ServiceCall;
         var selectedPriority = (PriorityCombo.SelectedItem as ComboBoxItem)?.Tag as JobPriority? ?? JobPriority.Normal;
         
+        var laborTotal = decimal.TryParse(LaborTotalTextBox.Text, out var labor) ? labor : 0;
+        var partsTotal = decimal.TryParse(PartsTotalTextBox.Text, out var parts) ? parts : 0;
+        var taxRate = decimal.TryParse(TaxRateTextBox.Text, out var tax) ? tax / 100 : 0.07m; // Convert % to decimal
+        var taxIncluded = TaxIncludedCheckBox.IsChecked == true;
+        
+        var subTotal = laborTotal + partsTotal;
+        var taxAmount = taxIncluded ? 0 : subTotal * taxRate;
+        var total = subTotal + taxAmount;
+        
         return new Job
         {
             Title = TitleTextBox.Text,
@@ -112,6 +122,13 @@ public partial class JobFormContent : UserControl
             JobType = selectedJobType,
             Priority = selectedPriority,
             Description = DescriptionTextBox.Text,
+            LaborTotal = laborTotal,
+            PartsTotal = partsTotal,
+            SubTotal = subTotal,
+            TaxRate = taxRate,
+            TaxAmount = taxAmount,
+            TaxIncluded = taxIncluded,
+            Total = total,
             Status = JobStatus.Scheduled
         };
     }
@@ -121,6 +138,10 @@ public partial class JobFormContent : UserControl
         TitleTextBox.Text = job.Title;
         DescriptionTextBox.Text = job.Description;
         ScheduledDatePicker.SelectedDate = job.ScheduledDate;
+        LaborTotalTextBox.Text = job.LaborTotal.ToString("F2");
+        PartsTotalTextBox.Text = job.PartsTotal.ToString("F2");
+        TaxRateTextBox.Text = (job.TaxRate * 100).ToString("F2"); // Convert decimal to %
+        TaxIncludedCheckBox.IsChecked = job.TaxIncluded;
         
         // Select customer
         CustomerCombo.SelectedValue = job.CustomerId;
@@ -148,6 +169,29 @@ public partial class JobFormContent : UserControl
         if (priorityItem != null)
         {
             PriorityCombo.SelectedItem = priorityItem;
+        }
+    }
+    
+    private void OnQuickAddCustomerClick(object sender, RoutedEventArgs e)
+    {
+        var dialog = new QuickAddCustomerDialog
+        {
+            Owner = Window.GetWindow(this)
+        };
+        
+        if (dialog.ShowDialog() == true && dialog.CreatedCustomer != null)
+        {
+            // Reload customers to include the new one
+            LoadCustomers();
+            
+            // Select the newly created customer
+            System.Threading.Tasks.Task.Delay(100).ContinueWith(_ =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    CustomerCombo.SelectedValue = dialog.CreatedCustomer.Id;
+                });
+            });
         }
     }
     

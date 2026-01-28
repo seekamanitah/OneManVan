@@ -278,7 +278,7 @@ public partial class JobDetailDialog : Window
 
             var timestampText = new TextBlock
             {
-                Text = timestamp.Value.ToString("MMM d, yyyy h:mm tt"),
+                Text = timestamp.HasValue ? timestamp.Value.ToString("MMM d, yyyy h:mm tt") : "No date",
                 FontSize = 11,
                 Foreground = (Brush)FindResource("SubtextBrush")
             };

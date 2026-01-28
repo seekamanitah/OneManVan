@@ -36,6 +36,11 @@ public class Estimate
     [Column(TypeName = "decimal(10,2)")]
     public decimal TaxAmount { get; set; }
 
+    /// <summary>
+    /// When true, the price already includes tax (no additional tax calculation needed).
+    /// </summary>
+    public bool TaxIncluded { get; set; } = false;
+
     [Column(TypeName = "decimal(10,2)")]
     public decimal Total { get; set; }
 
@@ -65,8 +70,17 @@ public class Estimate
     public void RecalculateTotals()
     {
         SubTotal = Lines.Sum(l => l.Total);
-        TaxAmount = SubTotal * (TaxRate / 100);
-        Total = SubTotal + TaxAmount;
+        if (TaxIncluded)
+        {
+            // Tax is already included in prices, no additional tax
+            TaxAmount = 0;
+            Total = SubTotal;
+        }
+        else
+        {
+            TaxAmount = SubTotal * (TaxRate / 100);
+            Total = SubTotal + TaxAmount;
+        }
     }
 
     public string StatusDisplay => Status switch

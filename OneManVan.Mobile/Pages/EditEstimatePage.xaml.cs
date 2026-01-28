@@ -79,6 +79,7 @@ public partial class EditEstimatePage : ContentPage
         DescriptionEditor.Text = _estimate.Description;
         ExpiresDatePicker.Date = _estimate.ExpiresAt ?? DateTime.Today.AddDays(30);
         TaxRateEntry.Text = _estimate.TaxRate.ToString("F2");
+        TaxIncludedSwitch.IsToggled = _estimate.TaxIncluded;
         NotesEditor.Text = _estimate.Notes;
         TermsEditor.Text = _estimate.Terms;
 
@@ -264,6 +265,11 @@ public partial class EditEstimatePage : ContentPage
         UpdateTotals();
     }
 
+    private void OnTaxIncludedToggled(object sender, ToggledEventArgs e)
+    {
+        UpdateTotals();
+    }
+
     private void UpdateTotals()
     {
         var subtotal = _lineItems.Sum(i => i.Total);
@@ -272,8 +278,9 @@ public partial class EditEstimatePage : ContentPage
         if (!decimal.TryParse(TaxRateEntry.Text, out var taxRate))
             taxRate = 0;
 
-        var taxAmount = subtotal * (taxRate / 100);
-        TaxAmountLabel.Text = $"${taxAmount:N2}";
+        var taxIncluded = TaxIncludedSwitch.IsToggled;
+        var taxAmount = taxIncluded ? 0 : subtotal * (taxRate / 100);
+        TaxAmountLabel.Text = taxIncluded ? "Included" : $"${taxAmount:N2}";
 
         var total = subtotal + taxAmount;
         TotalLabel.Text = $"${total:N2}";
@@ -404,6 +411,8 @@ public partial class EditEstimatePage : ContentPage
 
             if (decimal.TryParse(TaxRateEntry.Text, out var taxRate))
                 _estimate.TaxRate = taxRate;
+
+            _estimate.TaxIncluded = TaxIncludedSwitch.IsToggled;
 
             // Delete removed lines
             foreach (var lineId in _deletedLineIds)

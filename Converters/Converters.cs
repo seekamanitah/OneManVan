@@ -7,6 +7,23 @@ using OneManVan.Shared.Models.Enums;
 namespace OneManVan.Converters;
 
 /// <summary>
+/// Converts a string to bool - true if has value, false if null/empty.
+/// Used for enabling/disabling buttons based on text input.
+/// </summary>
+public class StringToBoolConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        return !string.IsNullOrWhiteSpace(value as string);
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+/// <summary>
 /// Converts a string to visibility - Visible when null/empty, Collapsed otherwise.
 /// Used for placeholder text in search boxes.
 /// </summary>
@@ -129,7 +146,8 @@ public class CountToVisibilityConverter : IValueConverter
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        throw new NotImplementedException();
+        // One-way converter - not used for reverse binding
+        return Binding.DoNothing;
     }
 }
 
@@ -150,7 +168,8 @@ public class EnumDisplayConverter : IValueConverter
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        throw new NotImplementedException();
+        // One-way converter - not used for reverse binding
+        return Binding.DoNothing;
     }
 }
 
@@ -209,7 +228,8 @@ public class RelativeTimeConverter : IValueConverter
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        throw new NotImplementedException();
+        // One-way converter - relative time display only
+        return Binding.DoNothing;
     }
 }
 

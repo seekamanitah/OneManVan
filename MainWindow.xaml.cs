@@ -102,7 +102,8 @@ public class StepVisibilityConverter : IValueConverter
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        throw new NotImplementedException();
+        // This converter is only used for one-way bindings (display purposes)
+        return Binding.DoNothing;
     }
 }
 
@@ -131,6 +132,7 @@ public class StepActiveConverter : IValueConverter
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        throw new NotImplementedException();
+        // This converter is only used for one-way bindings (display purposes)
+        return Binding.DoNothing;
     }
 }

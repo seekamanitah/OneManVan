@@ -1,4 +1,4 @@
-using OneManVan.Mobile.Services;
+using OneManVan.Shared.Services;
 
 namespace OneManVan.Mobile.Pages;
 
@@ -46,7 +46,7 @@ public partial class SetupWizardPage : ContentPage
     {
         if (_selectedTrade == null)
         {
-            await DisplayAlert("Select Trade", "Please select a trade to continue.", "OK");
+            await DisplayAlertAsync("Select Trade", "Please select a trade to continue.", "OK");
             return;
         }
 
@@ -72,7 +72,7 @@ public partial class SetupWizardPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("Error", $"Setup failed: {ex.Message}", "OK");
+            await DisplayAlertAsync("Error", $"Setup failed: {ex.Message}", "OK");
             ContinueButton.IsEnabled = true;
             ContinueButton.Text = "Get Started";
         }
