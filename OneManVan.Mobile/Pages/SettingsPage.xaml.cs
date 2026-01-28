@@ -625,7 +625,7 @@ public partial class SettingsPage : ContentPage
         var validation = config.Validate();
         if (!validation.IsValid)
         {
-            ConnectionStatusMobileLabel.Text = $"? {validation.ErrorMessage}";
+            ConnectionStatusMobileLabel.Text = $"Error: {validation.ErrorMessage}";
             ConnectionStatusMobileLabel.TextColor = Colors.Red;
             ConnectionStatusMobileLabel.IsVisible = true;
             return;
@@ -651,27 +651,42 @@ public partial class SettingsPage : ContentPage
 
                 if (canConnect)
                 {
-                    ConnectionStatusMobileLabel.Text = "? SQLite database accessible!";
+                    ConnectionStatusMobileLabel.Text = "SQLite database accessible!";
                     ConnectionStatusMobileLabel.TextColor = Colors.Green;
                 }
                 else
                 {
-                    ConnectionStatusMobileLabel.Text = "? Unable to access SQLite database";
+                    ConnectionStatusMobileLabel.Text = "Unable to access SQLite database";
                     ConnectionStatusMobileLabel.TextColor = Colors.Red;
                 }
             }
             else
             {
-                // For SQL Server, just show validation success
-                ConnectionStatusMobileLabel.Text = "? Configuration is valid. Save and restart to connect.";
-                ConnectionStatusMobileLabel.TextColor = Colors.Green;
+                // For SQL Server, actually test the connection
+                var connectionString = config.GetConnectionString();
+                var optionsBuilder = new DbContextOptionsBuilder<OneManVanDbContext>();
+                optionsBuilder.UseSqlServer(connectionString);
+
+                await using var context = new OneManVanDbContext(optionsBuilder.Options);
+                var canConnect = await context.Database.CanConnectAsync();
+
+                if (canConnect)
+                {
+                    ConnectionStatusMobileLabel.Text = $"Connected to SQL Server at {config.ServerAddress}!";
+                    ConnectionStatusMobileLabel.TextColor = Colors.Green;
+                }
+                else
+                {
+                    ConnectionStatusMobileLabel.Text = "Unable to connect to SQL Server";
+                    ConnectionStatusMobileLabel.TextColor = Colors.Red;
+                }
             }
 
             ConnectionStatusMobileLabel.IsVisible = true;
         }
         catch (Exception ex)
         {
-            ConnectionStatusMobileLabel.Text = $"? Test failed: {ex.Message}";
+            ConnectionStatusMobileLabel.Text = $"Test failed: {ex.Message}";
             ConnectionStatusMobileLabel.TextColor = Colors.Red;
             ConnectionStatusMobileLabel.IsVisible = true;
         }

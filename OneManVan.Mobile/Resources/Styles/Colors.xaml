@@ -5,28 +5,28 @@
 
     <!-- Note: For Android please see also Platforms\Android\Resources\values\colors.xml -->
 
-    <!-- Primary Brand Colors -->
-    <Color x:Key="Primary">#2196F3</Color>
-    <Color x:Key="PrimaryDark">#1E88E5</Color>
+    <!-- Primary Brand Colors - Matching Web UI (#3b82f6) -->
+    <Color x:Key="Primary">#3b82f6</Color>
+    <Color x:Key="PrimaryDark">#2563eb</Color>
     <Color x:Key="PrimaryDarkText">#FFFFFF</Color>
-    <Color x:Key="PrimaryDarker">#1976D2</Color>
-    <Color x:Key="PrimaryLight">#BBDEFB</Color>
-    <Color x:Key="PrimarySurface">#E3F2FD</Color>
+    <Color x:Key="PrimaryDarker">#1d4ed8</Color>
+    <Color x:Key="PrimaryLight">#93c5fd</Color>
+    <Color x:Key="PrimarySurface">#dbeafe</Color>
     
     <!-- Secondary / Accent -->
-    <Color x:Key="Secondary">#DFD8F7</Color>
-    <Color x:Key="SecondaryDarkText">#9880e5</Color>
-    <Color x:Key="Tertiary">#2B0B98</Color>
+    <Color x:Key="Secondary">#10b981</Color>
+    <Color x:Key="SecondaryDarkText">#065f46</Color>
+    <Color x:Key="Tertiary">#f59e0b</Color>
 
     <!-- Semantic Colors -->
-    <Color x:Key="Success">#4CAF50</Color>
-    <Color x:Key="SuccessSurface">#E8F5E9</Color>
-    <Color x:Key="Warning">#FF9800</Color>
-    <Color x:Key="WarningSurface">#FFF3E0</Color>
-    <Color x:Key="Error">#F44336</Color>
-    <Color x:Key="ErrorSurface">#FFEBEE</Color>
-    <Color x:Key="Info">#009688</Color>
-    <Color x:Key="InfoSurface">#E0F2F1</Color>
+    <Color x:Key="Success">#10b981</Color>
+    <Color x:Key="SuccessSurface">#d1fae5</Color>
+    <Color x:Key="Warning">#f59e0b</Color>
+    <Color x:Key="WarningSurface">#fef3c7</Color>
+    <Color x:Key="Error">#ef4444</Color>
+    <Color x:Key="ErrorSurface">#fee2e2</Color>
+    <Color x:Key="Info">#06b6d4</Color>
+    <Color x:Key="InfoSurface">#cffafe</Color>
 
     <!-- Basic Colors -->
     <Color x:Key="White">White</Color>

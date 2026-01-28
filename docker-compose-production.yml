@@ -1,0 +1,99 @@
+# Production-Ready Docker Compose Configuration
+# Includes security hardening and production settings
+
+version: '3.8'
+
+services:
+  # SQL Server Database
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: tradeflow-db
+    hostname: tradeflow-sql
+    ports:
+      - "1433:1433"
+    environment:
+      - ACCEPT_EULA=Y
+      # SECURITY: Change this password before deploying!
+      - MSSQL_SA_PASSWORD=${SA_PASSWORD:-TradeFlow2025!}
+      - MSSQL_PID=Express
+      - MSSQL_TCP_PORT=1433
+    volumes:
+      - tradeflow-data:/var/opt/mssql/data
+      - tradeflow-log:/var/opt/mssql/log
+      - tradeflow-backup:/var/opt/mssql/backup
+      - ./docker/init:/docker-entrypoint-initdb.d
+    networks:
+      - tradeflow-network
+    restart: unless-stopped
+    healthcheck:
+      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "${SA_PASSWORD:-TradeFlow2025!}" -Q "SELECT 1" || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    # Resource limits for production
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 1G
+
+  # Web UI Application
+  webui:
+    build:
+      context: .
+      dockerfile: OneManVan.Web/Dockerfile
+    container_name: tradeflow-webui
+    hostname: tradeflow-web
+    ports:
+      - "5000:8080"     # HTTP
+      - "5001:8081"     # HTTPS (if configured)
+    environment:
+      # Set to Production for deployment
+      - ASPNETCORE_ENVIRONMENT=${ASPNET_ENVIRONMENT:-Production}
+      - ASPNETCORE_URLS=http://+:8080
+      # Database connection with environment variable support
+      - ConnectionStrings__BusinessConnection=Server=sqlserver,1433;Database=${DB_NAME:-TradeFlowFSM};User Id=sa;Password=${SA_PASSWORD:-TradeFlow2025!};TrustServerCertificate=True;Encrypt=False;
+      # Logging
+      - Logging__LogLevel__Default=Information
+      - Logging__LogLevel__Microsoft.AspNetCore=Warning
+    volumes:
+      - webui-data:/app/AppData
+      - webui-logs:/app/logs
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    networks:
+      - tradeflow-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+
+volumes:
+  tradeflow-data:
+    name: tradeflow-sqldata
+  tradeflow-log:
+    name: tradeflow-sqllogs
+  tradeflow-backup:
+    name: tradeflow-backups
+  webui-data:
+    name: tradeflow-webui-data
+  webui-logs:
+    name: tradeflow-webui-logs
+
+networks:
+  tradeflow-network:
+    name: tradeflow-net
+    driver: bridge

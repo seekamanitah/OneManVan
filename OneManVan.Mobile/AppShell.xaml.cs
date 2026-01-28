@@ -48,6 +48,12 @@ public partial class AppShell : Shell
 		Routing.RegisterRoute("SyncSettings", typeof(SyncSettingsPage));
 		Routing.RegisterRoute("SyncStatus", typeof(SyncStatusPage));
 		Routing.RegisterRoute("SetupWizard", typeof(SetupWizardPage));
+		
+		// New pages - Calendar, Sites, Warranty Claims
+		Routing.RegisterRoute("SiteDetail", typeof(SiteListPage));
+		Routing.RegisterRoute("CalendarPage", typeof(CalendarPage));
+		Routing.RegisterRoute("WarrantyClaimDetail", typeof(WarrantyClaimsListPage));
+		Routing.RegisterRoute("AddWarrantyClaim", typeof(WarrantyClaimsListPage));
 	}
 
 	/// <summary>

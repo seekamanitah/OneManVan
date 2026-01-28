@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:OneManVan.Mobile.Controls"
+             x:Class="OneManVan.Mobile.Pages.WarrantyClaimsListPage"
+             Title="Warranty Claims"
+             BackgroundColor="{DynamicResource PageBackgroundColor}">
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Header with Search and Add -->
+        <Grid Grid.Row="0" Padding="16" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+            <SearchBar x:Name="SearchBar"
+                       Grid.Column="0"
+                       Placeholder="Search claims..."
+                       SearchButtonPressed="OnSearchPressed"
+                       TextChanged="OnSearchTextChanged"/>
+            <Button Grid.Column="1"
+                    Text="+ Add"
+                    BackgroundColor="{DynamicResource Primary}"
+                    TextColor="White"
+                    Clicked="OnAddClaimClicked"/>
+        </Grid>
+
+        <!-- Claims List -->
+        <RefreshView Grid.Row="1"
+                     x:Name="ClaimsRefreshView"
+                     IsRefreshing="{Binding IsRefreshing}"
+                     Refreshing="OnRefreshing">
+            <CollectionView x:Name="ClaimsCollectionView"
+                            SelectionMode="Single"
+                            SelectionChanged="OnClaimSelected"
+                            RemainingItemsThreshold="5">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Frame Padding="12"
+                               Margin="16,4"
+                               BackgroundColor="{DynamicResource CardBackgroundColor}"
+                               BorderColor="{DynamicResource BorderColor}"
+                               CornerRadius="8"
+                               HasShadow="True">
+                            <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="*,Auto">
+                                <!-- Claim Number -->
+                                <Label Grid.Row="0" Grid.Column="0"
+                                       Text="{Binding ClaimNumber}"
+                                       FontSize="16"
+                                       FontAttributes="Bold"
+                                       TextColor="{DynamicResource PrimaryTextColor}"/>
+
+                                <!-- Asset Info -->
+                                <Label Grid.Row="1" Grid.ColumnSpan="2"
+                                       Text="{Binding AssetDescription}"
+                                       FontSize="14"
+                                       TextColor="{DynamicResource PrimaryTextColor}"/>
+
+                                <!-- Customer Name -->
+                                <Label Grid.Row="2" Grid.ColumnSpan="2"
+                                       Text="{Binding CustomerName}"
+                                       FontSize="13"
+                                       TextColor="{DynamicResource SecondaryTextColor}"/>
+
+                                <!-- Date and Amount -->
+                                <HorizontalStackLayout Grid.Row="3" Grid.Column="0" Spacing="8">
+                                    <Label Text="{Binding ClaimDate, StringFormat='{0:MMM dd, yyyy}'}"
+                                           FontSize="12"
+                                           TextColor="{DynamicResource TertiaryTextColor}"/>
+                                </HorizontalStackLayout>
+                                <Label Grid.Row="3" Grid.Column="1"
+                                       Text="{Binding ClaimAmount, StringFormat='${0:N2}'}"
+                                       FontSize="14"
+                                       FontAttributes="Bold"
+                                       TextColor="{DynamicResource Primary}"/>
+                            </Grid>
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+                <CollectionView.EmptyView>
+                    <controls:EmptyStateView 
+                        Message="No warranty claims found"
+                        Icon="shield"/>
+                </CollectionView.EmptyView>
+            </CollectionView>
+        </RefreshView>
+
+        <!-- Loading Indicator -->
+        <ActivityIndicator x:Name="LoadingIndicator"
+                           Grid.Row="1"
+                           IsRunning="False"
+                           IsVisible="False"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center"
+                           Color="{DynamicResource Primary}"/>
+    </Grid>
+</ContentPage>

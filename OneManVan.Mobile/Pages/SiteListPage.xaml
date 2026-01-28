@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:OneManVan.Mobile.Controls"
+             x:Class="OneManVan.Mobile.Pages.SiteListPage"
+             Title="Sites"
+             BackgroundColor="{DynamicResource PageBackgroundColor}">
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Header with Search and Add -->
+        <Grid Grid.Row="0" Padding="16" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+            <SearchBar x:Name="SearchBar"
+                       Grid.Column="0"
+                       Placeholder="Search sites..."
+                       SearchButtonPressed="OnSearchPressed"
+                       TextChanged="OnSearchTextChanged"/>
+            <Button Grid.Column="1"
+                    Text="+ Add"
+                    BackgroundColor="{DynamicResource Primary}"
+                    TextColor="White"
+                    Clicked="OnAddSiteClicked"/>
+        </Grid>
+
+        <!-- Sites List -->
+        <RefreshView Grid.Row="1"
+                     x:Name="SitesRefreshView"
+                     IsRefreshing="{Binding IsRefreshing}"
+                     Refreshing="OnRefreshing">
+            <CollectionView x:Name="SitesCollectionView"
+                            SelectionMode="Single"
+                            SelectionChanged="OnSiteSelected"
+                            RemainingItemsThreshold="5">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Frame Padding="12"
+                               Margin="16,4"
+                               BackgroundColor="{DynamicResource CardBackgroundColor}"
+                               BorderColor="{DynamicResource BorderColor}"
+                               CornerRadius="8"
+                               HasShadow="True">
+                            <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="*,Auto">
+                                <!-- Site Name -->
+                                <Label Grid.Row="0" Grid.Column="0"
+                                       Text="{Binding Name}"
+                                       FontSize="16"
+                                       FontAttributes="Bold"
+                                       TextColor="{DynamicResource PrimaryTextColor}"/>
+                                
+                                <!-- Primary Badge -->
+                                <Frame Grid.Row="0" Grid.Column="1"
+                                       Padding="8,4"
+                                       CornerRadius="4"
+                                       BackgroundColor="{DynamicResource Primary}"
+                                       IsVisible="{Binding IsPrimary}">
+                                    <Label Text="Primary"
+                                           FontSize="10"
+                                           TextColor="White"/>
+                                </Frame>
+
+                                <!-- Customer Name -->
+                                <Label Grid.Row="1" Grid.ColumnSpan="2"
+                                       Text="{Binding CustomerName}"
+                                       FontSize="14"
+                                       TextColor="{DynamicResource SecondaryTextColor}"/>
+
+                                <!-- Address -->
+                                <Label Grid.Row="2" Grid.ColumnSpan="2"
+                                       Text="{Binding FullAddress}"
+                                       FontSize="13"
+                                       TextColor="{DynamicResource TertiaryTextColor}"
+                                       LineBreakMode="TailTruncation"
+                                       MaxLines="2"/>
+
+                                <!-- Asset Count -->
+                                <HorizontalStackLayout Grid.Row="3" Grid.Column="0" Spacing="12">
+                                    <HorizontalStackLayout Spacing="4">
+                                        <Label Text="Assets:" FontSize="11" TextColor="{DynamicResource TertiaryTextColor}"/>
+                                        <Label Text="{Binding AssetCount}" FontSize="11" FontAttributes="Bold" TextColor="{DynamicResource Primary}"/>
+                                    </HorizontalStackLayout>
+                                </HorizontalStackLayout>
+                                
+                                <!-- Navigate Button -->
+                                <Button Grid.Row="3" Grid.Column="1"
+                                        Text="Map"
+                                        FontSize="11"
+                                        Padding="8,4"
+                                        BackgroundColor="{DynamicResource Secondary}"
+                                        TextColor="White"
+                                        Clicked="OnNavigateClicked"
+                                        CommandParameter="{Binding .}"/>
+                            </Grid>
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+                <CollectionView.EmptyView>
+                    <controls:EmptyStateView 
+                        Message="No sites found"
+                        Icon="location"/>
+                </CollectionView.EmptyView>
+            </CollectionView>
+        </RefreshView>
+
+        <!-- Loading Indicator -->
+        <ActivityIndicator x:Name="LoadingIndicator"
+                           Grid.Row="1"
+                           IsRunning="False"
+                           IsVisible="False"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center"
+                           Color="{DynamicResource Primary}"/>
+    </Grid>
+</ContentPage>

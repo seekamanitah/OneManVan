@@ -1,8 +1,10 @@
 @page "/settings"
 @using OneManVan.Shared.Services
+@using OneManVan.Shared.Models
 @attribute [Authorize]
 @inject TradeConfigurationService TradeService
 @inject ISettingsStorage SettingsStorage
+@inject DatabaseConfigService DbConfigService
 @inject NavigationManager Navigation
 
 <PageTitle>Settings - OneManVan</PageTitle>
@@ -135,6 +137,95 @@
                 </div>
             </div>
 
+            <!-- Database Configuration -->
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0"><i class="bi bi-database me-2"></i>Database Configuration</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">Database Type</label>
+                            <select class="form-select" @bind="dbConfig.Type" style="max-width: 300px;">
+                                <option value="@DatabaseType.SQLite">SQLite (Local File)</option>
+                                <option value="@DatabaseType.SqlServer">SQL Server (Remote)</option>
+                            </select>
+                        </div>
+
+                        @if (dbConfig.Type == DatabaseType.SQLite)
+                        {
+                            <div class="col-12">
+                                <label class="form-label">SQLite Database Path</label>
+                                <input type="text" class="form-control" @bind="dbConfig.SqliteFilePath" placeholder="OneManVan.db" />
+                                <small class="text-muted">Relative or absolute path to the database file</small>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="col-md-6">
+                                <label class="form-label">Server Address</label>
+                                <input type="text" class="form-control" @bind="dbConfig.ServerAddress" placeholder="192.168.100.107" />
+                                <small class="text-muted">IP address or hostname</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Port</label>
+                                <input type="number" class="form-control" @bind="dbConfig.ServerPort" />
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label">Database Name</label>
+                                <input type="text" class="form-control" @bind="dbConfig.DatabaseName" placeholder="TradeFlowFSM" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Username</label>
+                                <input type="text" class="form-control" @bind="dbConfig.Username" placeholder="sa" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Password</label>
+                                <input type="password" class="form-control" @bind="dbConfig.Password" />
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" @bind="dbConfig.TrustServerCertificate" id="trustCertCheck" />
+                                    <label class="form-check-label" for="trustCertCheck">
+                                        Trust Server Certificate
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" @bind="dbConfig.UseEncryption" id="encryptCheck" />
+                                    <label class="form-check-label" for="encryptCheck">
+                                        Use Encryption
+                                    </label>
+                                </div>
+                            </div>
+                        }
+
+                        <div class="col-12">
+                            <button class="btn btn-primary me-2" @onclick="TestDatabaseConnection">
+                                <i class="bi bi-plug me-2"></i>Test Connection
+                            </button>
+                            <button class="btn btn-success me-2" @onclick="SaveDatabaseConfig">
+                                <i class="bi bi-check-circle me-2"></i>Save & Apply
+                            </button>
+                            <button class="btn btn-outline-secondary" @onclick="ResetDatabaseConfig">
+                                <i class="bi bi-arrow-counterclockwise me-2"></i>Reset to Default
+                            </button>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(dbTestMessage))
+                        {
+                            <div class="col-12">
+                                <div class="alert @(dbTestSuccess ? "alert-success" : "alert-danger") mb-0">
+                                    <i class="bi @(dbTestSuccess ? "bi-check-circle" : "bi-exclamation-triangle") me-2"></i>
+                                    @dbTestMessage
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
             <!-- About -->
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white border-0 py-3">
@@ -185,12 +276,19 @@
     private int paymentTermsDays = 30;
     private bool showToast = false;
     private string toastMessage = "";
+    
+    private DatabaseConfig dbConfig = new();
+    private string dbTestMessage = "";
+    private bool dbTestSuccess = false;
 
     protected override void OnInitialized()
     {
         selectedTrade = TradeService.CurrentTrade;
         taxRate = SettingsStorage.GetDecimal("DefaultTaxRate", 7.0m);
         paymentTermsDays = SettingsStorage.GetInt("DefaultPaymentTermsDays", 30);
+        
+        // Load database configuration
+        dbConfig = DbConfigService.GetCurrentConfiguration();
     }
 
     private async Task ChangeTrade()
@@ -205,6 +303,61 @@
         SettingsStorage.SetDecimal("DefaultTaxRate", taxRate);
         SettingsStorage.SetInt("DefaultPaymentTermsDays", paymentTermsDays);
         ShowToast("Settings saved successfully");
+    }
+
+    private async Task TestDatabaseConnection()
+    {
+        dbTestMessage = "";
+        dbTestSuccess = false;
+
+        try
+        {
+            var connectionString = dbConfig.GetConnectionString();
+            
+            if (dbConfig.Type == DatabaseType.SQLite)
+            {
+                dbTestMessage = "SQLite connection OK - Local file will be created/used";
+                dbTestSuccess = true;
+            }
+            else
+            {
+                // Test SQL Server connection
+                using var connection = new Microsoft.Data.SqlClient.SqlConnection(connectionString);
+                await connection.OpenAsync();
+                dbTestMessage = $"Successfully connected to {dbConfig.ServerAddress}:{dbConfig.ServerPort}";
+                dbTestSuccess = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            dbTestMessage = $"Connection failed: {ex.Message}";
+            dbTestSuccess = false;
+        }
+    }
+
+    private void SaveDatabaseConfig()
+    {
+        try
+        {
+            DbConfigService.SaveConfiguration(dbConfig);
+            ShowToast("Database configuration saved! Please restart the application for changes to take effect.");
+            dbTestMessage = "Configuration saved - Restart required";
+            dbTestSuccess = true;
+        }
+        catch (Exception ex)
+        {
+            dbTestMessage = $"Failed to save: {ex.Message}";
+            dbTestSuccess = false;
+        }
+    }
+
+    private void ResetDatabaseConfig()
+    {
+        DbConfigService.ResetToDefault();
+        dbConfig = DbConfigService.GetCurrentConfiguration();
+        ShowToast("Database configuration reset to default");
+        dbTestMessage = "";
+        StateHasChanged();
     }
 
     private void ShowToast(string message)

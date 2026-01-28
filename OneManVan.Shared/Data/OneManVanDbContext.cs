@@ -70,6 +70,9 @@ public class OneManVanDbContext : DbContext
     
     // Service Agreements
     public DbSet<ServiceAgreement> ServiceAgreements => Set<ServiceAgreement>();
+    
+    // Quick Notes (standalone notes/reminders)
+    public DbSet<QuickNote> QuickNotes => Set<QuickNote>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -188,7 +191,7 @@ public class OneManVanDbContext : DbContext
             entity.HasOne(e => e.ReplacedByAsset)
                 .WithMany()
                 .HasForeignKey(e => e.ReplacedByAssetId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.NoAction); // Prevent cascade conflict in SQL Server
 
             entity.HasMany(e => e.CustomFields)
                 .WithOne(cf => cf.Asset)
@@ -364,12 +367,12 @@ public class OneManVanDbContext : DbContext
             entity.HasOne(e => e.FollowUpJob)
                 .WithMany()
                 .HasForeignKey(e => e.FollowUpJobId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.NoAction); // Prevent cascade conflict in SQL Server
 
             entity.HasOne(e => e.FollowUpFromJob)
                 .WithMany()
                 .HasForeignKey(e => e.FollowUpFromJobId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.NoAction); // Prevent cascade conflict in SQL Server
 
             entity.HasMany(e => e.TimeEntries)
                 .WithOne(t => t.Job)
@@ -502,7 +505,7 @@ public class OneManVanDbContext : DbContext
             entity.HasOne(e => e.ReplacementProduct)
                 .WithMany()
                 .HasForeignKey(e => e.ReplacementProductId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.NoAction); // Prevent cascade conflict in SQL Server
 
             entity.HasMany(e => e.Documents)
                 .WithOne(d => d.Product)

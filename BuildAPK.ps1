@@ -1,9 +1,9 @@
-# Build APK Script for TradeFlow FSM Mobile App
+# Build APK Script for OneManVan FSM Mobile App
 # Usage: .\BuildAPK.ps1 [-Configuration Debug|Release] [-Install] [-Launch]
 
 param(
     [ValidateSet("Debug", "Release")]
-    [string]$Configuration = "Debug",
+    [string]$Configuration = "Release",
     [switch]$Install,
     [switch]$Launch
 )
@@ -13,7 +13,7 @@ $ErrorActionPreference = "Stop"
 # Configuration
 $ProjectPath = "OneManVan.Mobile"
 $ProjectFile = "$ProjectPath\OneManVan.Mobile.csproj"
-$AppPackageId = "com.tradeflow.onemanvan"
+$AppPackageId = "com.onemanvan.fsm"
 
 # Colors
 function Write-ColorOutput($ForegroundColor) {
@@ -26,54 +26,54 @@ function Write-ColorOutput($ForegroundColor) {
 }
 
 Write-Host ""
-Write-ColorOutput Cyan "???????????????????????????????????????????????????????"
-Write-ColorOutput Cyan "  TradeFlow FSM - Android APK Build Script"
-Write-ColorOutput Cyan "???????????????????????????????????????????????????????"
+Write-ColorOutput Cyan "========================================="
+Write-ColorOutput Cyan "  OneManVan FSM - Android APK Build"
+Write-ColorOutput Cyan "========================================="
 Write-Host ""
 
 # Check prerequisites
-Write-Host "?? Checking prerequisites..." -ForegroundColor Yellow
+Write-Host "Checking prerequisites..." -ForegroundColor Yellow
 
 # Check if project exists
 if (-not (Test-Path $ProjectFile)) {
-    Write-Host "? Project file not found: $ProjectFile" -ForegroundColor Red
+    Write-Host "[ERROR] Project file not found: $ProjectFile" -ForegroundColor Red
     exit 1
 }
 
 # Check .NET SDK
 try {
     $dotnetVersion = dotnet --version
-    Write-Host "? .NET SDK: $dotnetVersion" -ForegroundColor Green
+    Write-Host "[OK] .NET SDK: $dotnetVersion" -ForegroundColor Green
 } catch {
-    Write-Host "? .NET SDK not found. Please install .NET 10 SDK." -ForegroundColor Red
+    Write-Host "[ERROR] .NET SDK not found. Please install .NET 10 SDK." -ForegroundColor Red
     exit 1
 }
 
 # Check Android workload
 $workloads = dotnet workload list
 if ($workloads -notmatch "maui-android") {
-    Write-Host "??  Android workload not installed. Installing..." -ForegroundColor Yellow
+    Write-Host "[INFO] Android workload not installed. Installing..." -ForegroundColor Yellow
     dotnet workload install maui-android
 }
 
 Write-Host ""
-Write-Host "?? Building Configuration: $Configuration" -ForegroundColor Cyan
+Write-Host "Building Configuration: $Configuration" -ForegroundColor Cyan
 Write-Host ""
 
 # Clean previous builds
-Write-Host "?? Cleaning previous builds..." -ForegroundColor Yellow
+Write-Host "[STEP 1/4] Cleaning previous builds..." -ForegroundColor Yellow
 dotnet clean $ProjectFile -c $Configuration -v quiet
 
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "??  Clean failed, continuing anyway..." -ForegroundColor Yellow
+    Write-Host "[WARN] Clean failed, continuing anyway..." -ForegroundColor Yellow
 }
 
 # Restore packages
-Write-Host "?? Restoring NuGet packages..." -ForegroundColor Yellow
+Write-Host "[STEP 2/4] Restoring NuGet packages..." -ForegroundColor Yellow
 dotnet restore $ProjectFile
 
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "? Package restore failed!" -ForegroundColor Red
+    Write-Host "[ERROR] Package restore failed!" -ForegroundColor Red
     exit 1
 }
 
@@ -81,11 +81,11 @@ if ($LASTEXITCODE -ne 0) {
 $StartTime = Get-Date
 
 if ($Configuration -eq "Release") {
-    Write-Host "?? Publishing Release APK (this may take a few minutes)..." -ForegroundColor Green
+    Write-Host "[STEP 3/4] Publishing Release APK (this may take 5-10 minutes)..." -ForegroundColor Green
     dotnet publish $ProjectFile -f net10.0-android -c Release /p:AndroidPackageFormat=apk
     $ApkPath = "$ProjectPath\bin\Release\net10.0-android\publish\$AppPackageId-Signed.apk"
 } else {
-    Write-Host "?? Building Debug APK (this may take a few minutes)..." -ForegroundColor Green
+    Write-Host "[STEP 3/4] Building Debug APK (this may take 5-10 minutes)..." -ForegroundColor Green
     dotnet build $ProjectFile -f net10.0-android -c Debug
     $ApkPath = "$ProjectPath\bin\Debug\net10.0-android\$AppPackageId-Signed.apk"
 }
@@ -95,7 +95,7 @@ $BuildTime = (Get-Date) - $StartTime
 # Check if build succeeded
 if ($LASTEXITCODE -ne 0) {
     Write-Host ""
-    Write-Host "? Build failed! Check the output above for errors." -ForegroundColor Red
+    Write-Host "[ERROR] Build failed! Check the output above for errors." -ForegroundColor Red
     exit 1
 }
 
@@ -116,7 +116,7 @@ if (-not (Test-Path $ApkPath)) {
     
     if (-not (Test-Path $ApkPath)) {
         Write-Host ""
-        Write-Host "? APK not found! Expected location:" -ForegroundColor Red
+        Write-Host "[ERROR] APK not found! Expected location:" -ForegroundColor Red
         Write-Host "   $ApkPath" -ForegroundColor Gray
         Write-Host ""
         Write-Host "Searched in:" -ForegroundColor Yellow
@@ -132,14 +132,14 @@ $ApkSize = (Get-Item $ApkPath).Length / 1MB
 $ApkSizeFormatted = "{0:N2}" -f $ApkSize
 
 Write-Host ""
-Write-ColorOutput Green "???????????????????????????????????????????????????????"
-Write-ColorOutput Green "  ? BUILD SUCCESSFUL!"
-Write-ColorOutput Green "???????????????????????????????????????????????????????"
+Write-ColorOutput Green "========================================="
+Write-ColorOutput Green "  [SUCCESS] BUILD COMPLETE!"
+Write-ColorOutput Green "========================================="
 Write-Host ""
-Write-Host "?? APK Location:" -ForegroundColor Cyan
+Write-Host "[INFO] APK Location:" -ForegroundColor Cyan
 Write-Host "   $ApkPath" -ForegroundColor White
 Write-Host ""
-Write-Host "?? APK Info:" -ForegroundColor Cyan
+Write-Host "[INFO] APK Details:" -ForegroundColor Cyan
 Write-Host "   Configuration: $Configuration" -ForegroundColor White
 Write-Host "   Size: $ApkSizeFormatted MB" -ForegroundColor White
 Write-Host "   Build Time: $($BuildTime.ToString('mm\:ss'))" -ForegroundColor White
@@ -147,17 +147,17 @@ Write-Host ""
 
 # Install on device if requested
 if ($Install) {
-    Write-ColorOutput Yellow "???????????????????????????????????????????????????????"
-    Write-ColorOutput Yellow "  ?? Installing on Device..."
-    Write-ColorOutput Yellow "???????????????????????????????????????????????????????"
+    Write-ColorOutput Yellow "========================================="
+    Write-ColorOutput Yellow "  [STEP 4/4] Installing on Device..."
+    Write-ColorOutput Yellow "========================================="
     Write-Host ""
     
     # Check if adb is available
     try {
         $adbVersion = adb version 2>&1 | Select-Object -First 1
-        Write-Host "? ADB: $adbVersion" -ForegroundColor Green
+        Write-Host "[OK] ADB: $adbVersion" -ForegroundColor Green
     } catch {
-        Write-Host "? ADB not found! Please install Android SDK Platform Tools." -ForegroundColor Red
+        Write-Host "[ERROR] ADB not found! Please install Android SDK Platform Tools." -ForegroundColor Red
         Write-Host "   Download: https://developer.android.com/studio/releases/platform-tools" -ForegroundColor Yellow
         exit 1
     }
@@ -166,7 +166,7 @@ if ($Install) {
     $devices = adb devices | Select-Object -Skip 1 | Where-Object { $_ -match "\t" }
     
     if (-not $devices) {
-        Write-Host "? No Android devices connected!" -ForegroundColor Red
+        Write-Host "[ERROR] No Android devices connected!" -ForegroundColor Red
         Write-Host ""
         Write-Host "Please:" -ForegroundColor Yellow
         Write-Host "  1. Enable USB Debugging on your device" -ForegroundColor Gray
@@ -176,28 +176,28 @@ if ($Install) {
         exit 1
     }
     
-    Write-Host "?? Connected Devices:" -ForegroundColor Cyan
+    Write-Host "[INFO] Connected Devices:" -ForegroundColor Cyan
     foreach ($device in $devices) {
         Write-Host "   $device" -ForegroundColor White
     }
     Write-Host ""
     
     # Uninstall old version first (ignore errors if not installed)
-    Write-Host "???  Uninstalling old version (if exists)..." -ForegroundColor Yellow
+    Write-Host "[INFO] Uninstalling old version (if exists)..." -ForegroundColor Yellow
     adb uninstall $AppPackageId 2>&1 | Out-Null
     
     # Install APK
-    Write-Host "?? Installing APK..." -ForegroundColor Yellow
+    Write-Host "[INFO] Installing APK..." -ForegroundColor Yellow
     adb install -r $ApkPath
     
     if ($LASTEXITCODE -eq 0) {
         Write-Host ""
-        Write-ColorOutput Green "? Installation successful!"
+        Write-ColorOutput Green "[SUCCESS] Installation complete!"
         Write-Host ""
         
         # Launch app if requested
         if ($Launch) {
-            Write-Host "?? Launching app..." -ForegroundColor Yellow
+            Write-Host "[INFO] Launching app..." -ForegroundColor Yellow
             Start-Sleep -Seconds 1
             adb shell am start -n "$AppPackageId/crc64.MainActivity"
             

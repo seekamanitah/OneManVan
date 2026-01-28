@@ -1,12 +1,16 @@
 ﻿@using OneManVan.Web.Components.Account.Shared
+@using Microsoft.AspNetCore.Components.Web
+
 <Router AppAssembly="typeof(Program).Assembly">
     <Found Context="routeData">
         <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
             <NotAuthorized>
-                @if (routeData.PageType == typeof(OneManVan.Web.Components.Account.Pages.Login) ||
-                     routeData.PageType.Namespace?.Contains("Account") == true)
+                @if (routeData.PageType.Namespace?.Contains("Account") == true)
                 {
-                    <RouteView RouteData="routeData" />
+                    @* Render Account pages without InteractiveServer mode to avoid auth loops *@
+                    <CascadingValue Value="@((IComponentRenderMode?)null)" Name="RendererInfo">
+                        <RouteView RouteData="routeData" />
+                    </CascadingValue>
                 }
                 else
                 {

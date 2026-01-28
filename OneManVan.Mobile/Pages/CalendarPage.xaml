@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:OneManVan.Mobile.Controls"
+             x:Class="OneManVan.Mobile.Pages.CalendarPage"
+             Title="Calendar"
+             BackgroundColor="{DynamicResource PageBackgroundColor}">
+
+    <Grid RowDefinitions="Auto,Auto,*">
+        <!-- Header with Month Navigation -->
+        <Grid Grid.Row="0" 
+              Padding="16" 
+              BackgroundColor="{DynamicResource Primary}"
+              ColumnDefinitions="Auto,*,Auto">
+            <Button Grid.Column="0"
+                    Text="Previous"
+                    TextColor="White"
+                    BackgroundColor="Transparent"
+                    Clicked="OnPreviousMonthClicked"/>
+            <Label Grid.Column="1"
+                   x:Name="MonthYearLabel"
+                   HorizontalOptions="Center"
+                   VerticalOptions="Center"
+                   FontSize="20"
+                   FontAttributes="Bold"
+                   TextColor="White"/>
+            <Button Grid.Column="2"
+                    Text="Next"
+                    TextColor="White"
+                    BackgroundColor="Transparent"
+                    Clicked="OnNextMonthClicked"/>
+        </Grid>
+
+        <!-- Day Headers -->
+        <Grid Grid.Row="1" 
+              Padding="8,4"
+              BackgroundColor="{DynamicResource CardBackgroundColor}"
+              ColumnDefinitions="*,*,*,*,*,*,*">
+            <Label Grid.Column="0" Text="Sun" HorizontalOptions="Center" FontSize="12" TextColor="{DynamicResource SecondaryTextColor}"/>
+            <Label Grid.Column="1" Text="Mon" HorizontalOptions="Center" FontSize="12" TextColor="{DynamicResource SecondaryTextColor}"/>
+            <Label Grid.Column="2" Text="Tue" HorizontalOptions="Center" FontSize="12" TextColor="{DynamicResource SecondaryTextColor}"/>
+            <Label Grid.Column="3" Text="Wed" HorizontalOptions="Center" FontSize="12" TextColor="{DynamicResource SecondaryTextColor}"/>
+            <Label Grid.Column="4" Text="Thu" HorizontalOptions="Center" FontSize="12" TextColor="{DynamicResource SecondaryTextColor}"/>
+            <Label Grid.Column="5" Text="Fri" HorizontalOptions="Center" FontSize="12" TextColor="{DynamicResource SecondaryTextColor}"/>
+            <Label Grid.Column="6" Text="Sat" HorizontalOptions="Center" FontSize="12" TextColor="{DynamicResource SecondaryTextColor}"/>
+        </Grid>
+
+        <!-- Calendar Grid and Jobs List -->
+        <ScrollView Grid.Row="2">
+            <VerticalStackLayout Spacing="0">
+                <!-- Calendar Grid -->
+                <Grid x:Name="CalendarGrid"
+                      Padding="8"
+                      BackgroundColor="{DynamicResource CardBackgroundColor}"/>
+
+                <!-- Selected Day Jobs -->
+                <VerticalStackLayout x:Name="SelectedDayPanel" 
+                                     Padding="16"
+                                     Spacing="8"
+                                     IsVisible="False">
+                    <Label x:Name="SelectedDayLabel"
+                           FontSize="18"
+                           FontAttributes="Bold"
+                           TextColor="{DynamicResource PrimaryTextColor}"/>
+                    
+                    <CollectionView x:Name="JobsCollectionView"
+                                    SelectionMode="Single"
+                                    SelectionChanged="OnJobSelected">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Frame Padding="12" 
+                                       Margin="0,4" 
+                                       BackgroundColor="{DynamicResource CardBackgroundColor}"
+                                       BorderColor="{DynamicResource BorderColor}"
+                                       CornerRadius="8"
+                                       HasShadow="True">
+                                    <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto">
+                                        <Label Grid.Row="0" Grid.Column="0"
+                                               Text="{Binding Title}"
+                                               FontSize="16"
+                                               FontAttributes="Bold"
+                                               TextColor="{DynamicResource PrimaryTextColor}"/>
+                                        <Label Grid.Row="1" Grid.ColumnSpan="2"
+                                               Text="{Binding CustomerName}"
+                                               FontSize="14"
+                                               TextColor="{DynamicResource SecondaryTextColor}"/>
+                                        <Label Grid.Row="2" Grid.ColumnSpan="2"
+                                               Text="{Binding ScheduledTime, StringFormat='{0:h\\:mm}'}"
+                                               FontSize="12"
+                                               TextColor="{DynamicResource TertiaryTextColor}"/>
+                                    </Grid>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                        <CollectionView.EmptyView>
+                            <controls:EmptyStateView 
+                                Message="No jobs scheduled for this day"
+                                Icon="calendar"/>
+                        </CollectionView.EmptyView>
+                    </CollectionView>
+                </VerticalStackLayout>
+
+                <!-- Job Legend -->
+                <Grid Padding="16" 
+                      ColumnDefinitions="*,*,*"
+                      RowDefinitions="Auto,Auto"
+                      ColumnSpacing="8"
+                      RowSpacing="8">
+                    <HorizontalStackLayout Grid.Row="0" Grid.Column="0" Spacing="4">
+                        <BoxView WidthRequest="12" HeightRequest="12" Color="#007bff" CornerRadius="2"/>
+                        <Label Text="Draft" FontSize="11" TextColor="{DynamicResource SecondaryTextColor}"/>
+                    </HorizontalStackLayout>
+                    <HorizontalStackLayout Grid.Row="0" Grid.Column="1" Spacing="4">
+                        <BoxView WidthRequest="12" HeightRequest="12" Color="#28a745" CornerRadius="2"/>
+                        <Label Text="Scheduled" FontSize="11" TextColor="{DynamicResource SecondaryTextColor}"/>
+                    </HorizontalStackLayout>
+                    <HorizontalStackLayout Grid.Row="0" Grid.Column="2" Spacing="4">
+                        <BoxView WidthRequest="12" HeightRequest="12" Color="#ffc107" CornerRadius="2"/>
+                        <Label Text="In Progress" FontSize="11" TextColor="{DynamicResource SecondaryTextColor}"/>
+                    </HorizontalStackLayout>
+                    <HorizontalStackLayout Grid.Row="1" Grid.Column="0" Spacing="4">
+                        <BoxView WidthRequest="12" HeightRequest="12" Color="#17a2b8" CornerRadius="2"/>
+                        <Label Text="Completed" FontSize="11" TextColor="{DynamicResource SecondaryTextColor}"/>
+                    </HorizontalStackLayout>
+                    <HorizontalStackLayout Grid.Row="1" Grid.Column="1" Spacing="4">
+                        <BoxView WidthRequest="12" HeightRequest="12" Color="#6c757d" CornerRadius="2"/>
+                        <Label Text="Cancelled" FontSize="11" TextColor="{DynamicResource SecondaryTextColor}"/>
+                    </HorizontalStackLayout>
+                </Grid>
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage>

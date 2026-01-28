@@ -34,7 +34,7 @@
 
     <!-- Flyout Items -->
     <FlyoutItem Title="Home" Icon="{OnPlatform Default=home.png}">
-        <ShellContent ContentTemplate="{DataTemplate local:MainPage}" Route="Home"/>
+        <ShellContent ContentTemplate="{DataTemplate local:MainPageModern}" Route="Home"/>
     </FlyoutItem>
 
     <FlyoutItem Title="Customers" Icon="{OnPlatform Default=person.png}">
@@ -53,6 +53,11 @@
         <ShellContent ContentTemplate="{DataTemplate pages:JobListPage}" Route="Jobs"/>
     </FlyoutItem>
 
+    <!-- Calendar temporarily disabled for performance optimization -->
+    <!--<FlyoutItem Title="Calendar" Icon="{OnPlatform Default=calendar.png}">
+        <ShellContent ContentTemplate="{DataTemplate pages:CalendarPage}" Route="Calendar"/>
+    </FlyoutItem>-->
+
     <FlyoutItem Title="Invoices" Icon="{OnPlatform Default=dotnet_bot.png}">
         <ShellContent ContentTemplate="{DataTemplate pages:InvoiceListPage}" Route="Invoices"/>
     </FlyoutItem>
@@ -64,6 +69,16 @@
     <FlyoutItem Title="Products" Icon="{OnPlatform Default=dotnet_bot.png}">
         <ShellContent ContentTemplate="{DataTemplate pages:ProductListPage}" Route="Products"/>
     </FlyoutItem>
+
+    <!-- Sites temporarily disabled for performance optimization -->
+    <!--<FlyoutItem Title="Sites" Icon="{OnPlatform Default=dotnet_bot.png}">
+        <ShellContent ContentTemplate="{DataTemplate pages:SiteListPage}" Route="Sites"/>
+    </FlyoutItem>-->
+
+    <!-- Warranty Claims temporarily disabled for performance optimization -->
+    <!--<FlyoutItem Title="Warranty Claims" Icon="{OnPlatform Default=dotnet_bot.png}">
+        <ShellContent ContentTemplate="{DataTemplate pages:WarrantyClaimsListPage}" Route="WarrantyClaims"/>
+    </FlyoutItem>-->
 
     <FlyoutItem Title="Companies" Icon="{OnPlatform Default=dotnet_bot.png}">
         <ShellContent ContentTemplate="{DataTemplate pages:CompanyListPage}" Route="Companies"/>

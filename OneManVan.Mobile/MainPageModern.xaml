@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:OneManVan.Mobile.Controls"
+             x:Class="OneManVan.Mobile.MainPageModern"
+             Title="Dashboard"
+             BackgroundColor="{AppThemeBinding Light={StaticResource LightBackground}, Dark={StaticResource DarkBackground}}">
+
+    <!-- Simple Grid - Works on all orientations -->
+    <Grid x:Name="RootGrid">
+        <RefreshView x:Name="RefreshView"
+                     IsRefreshing="{Binding IsRefreshing}"
+                     Command="{Binding RefreshCommand}">
+            <ScrollView>
+                <VerticalStackLayout Padding="16" Spacing="20">
+                    
+                    <!-- Welcome Header -->
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Welcome back!"
+                               FontSize="14"
+                               TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray400}}"/>
+                        <Label x:Name="WelcomeLabel"
+                               Text="OneManVan FSM"
+                               FontSize="28"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource Gray50}}"/>
+                    </VerticalStackLayout>
+
+                    <!-- Key Metrics Grid -->
+                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="12">
+                        
+                        <!-- Revenue Card -->
+                        <Frame Grid.Row="0" Grid.Column="0"
+                               Padding="16"
+                               CornerRadius="12"
+                               HasShadow="True"
+                               BackgroundColor="{AppThemeBinding Light={StaticResource LightCard}, Dark={StaticResource DarkCard}}"
+                               BorderColor="Transparent">
+                            <VerticalStackLayout Spacing="8">
+                                <Label Text="??" FontSize="24"/>
+                                <Label x:Name="RevenueLabel"
+                                       Text="$0"
+                                       FontSize="24"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource Primary}"/>
+                                <Label Text="Revenue"
+                                       FontSize="12"
+                                       TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray400}}"/>
+                            </VerticalStackLayout>
+                        </Frame>
+
+                        <!-- Jobs Card -->
+                        <Frame Grid.Row="0" Grid.Column="1"
+                               Padding="16"
+                               CornerRadius="12"
+                               HasShadow="True"
+                               BackgroundColor="{AppThemeBinding Light={StaticResource LightCard}, Dark={StaticResource DarkCard}}"
+                               BorderColor="Transparent">
+                            <VerticalStackLayout Spacing="8">
+                                <Label Text="??" FontSize="24"/>
+                                <Label x:Name="JobsLabel"
+                                       Text="0"
+                                       FontSize="24"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource Success}"/>
+                                <Label Text="Active Jobs"
+                                       FontSize="12"
+                                       TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray400}}"/>
+                            </VerticalStackLayout>
+                        </Frame>
+
+                        <!-- Customers Card -->
+                        <Frame Grid.Row="1" Grid.Column="0"
+                               Padding="16"
+                               CornerRadius="12"
+                               HasShadow="True"
+                               BackgroundColor="{AppThemeBinding Light={StaticResource LightCard}, Dark={StaticResource DarkCard}}"
+                               BorderColor="Transparent">
+                            <VerticalStackLayout Spacing="8">
+                                <Label Text="??" FontSize="24"/>
+                                <Label x:Name="CustomersLabel"
+                                       Text="0"
+                                       FontSize="24"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource Info}"/>
+                                <Label Text="Customers"
+                                       FontSize="12"
+                                       TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray400}}"/>
+                            </VerticalStackLayout>
+                        </Frame>
+
+                        <!-- Invoices Card -->
+                        <Frame Grid.Row="1" Grid.Column="1"
+                               Padding="16"
+                               CornerRadius="12"
+                               HasShadow="True"
+                               BackgroundColor="{AppThemeBinding Light={StaticResource LightCard}, Dark={StaticResource DarkCard}}"
+                               BorderColor="Transparent">
+                            <VerticalStackLayout Spacing="8">
+                                <Label Text="??" FontSize="24"/>
+                                <Label x:Name="InvoicesLabel"
+                                       Text="0"
+                                       FontSize="24"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource Warning}"/>
+                                <Label Text="Invoices"
+                                       FontSize="12"
+                                       TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray400}}"/>
+                            </VerticalStackLayout>
+                        </Frame>
+                    </Grid>
+
+                    <!-- Recent Activity Section -->
+                    <VerticalStackLayout Spacing="12">
+                        <HorizontalStackLayout Spacing="8" HorizontalOptions="FillAndExpand">
+                            <Label Text="Recent Activity"
+                                   FontSize="20"
+                                   FontAttributes="Bold"
+                                   HorizontalOptions="StartAndExpand"
+                                   TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource Gray50}}"/>
+                            <Button Text="View All"
+                                    BackgroundColor="Transparent"
+                                    TextColor="{StaticResource Primary}"
+                                    FontSize="14"
+                                    Padding="0"
+                                    Clicked="OnViewAllClicked"/>
+                        </HorizontalStackLayout>
+
+                        <!-- Activity List -->
+                        <CollectionView x:Name="RecentActivityList"
+                                        HeightRequest="400">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Frame Padding="16"
+                                           Margin="0,0,0,8"
+                                           CornerRadius="12"
+                                           HasShadow="True"
+                                           BackgroundColor="{AppThemeBinding Light={StaticResource LightCard}, Dark={StaticResource DarkCard}}"
+                                           BorderColor="Transparent">
+                                        <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto">
+                                            <!-- Title -->
+                                            <Label Grid.Row="0" Grid.Column="0"
+                                                   Text="{Binding Title}"
+                                                   FontSize="16"
+                                                   FontAttributes="Bold"
+                                                   TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource Gray50}}"/>
+                                            
+                                            <!-- Status Badge -->
+                                            <Frame Grid.Row="0" Grid.Column="1"
+                                                   Padding="8,4"
+                                                   CornerRadius="12"
+                                                   BackgroundColor="{Binding StatusColor}"
+                                                   BorderColor="Transparent">
+                                                <Label Text="{Binding Status}"
+                                                       TextColor="White"
+                                                       FontSize="11"
+                                                       FontAttributes="Bold"/>
+                                            </Frame>
+
+                                            <!-- Subtitle -->
+                                            <Label Grid.Row="1" Grid.ColumnSpan="2"
+                                                   Text="{Binding Subtitle}"
+                                                   FontSize="14"
+                                                   TextColor="{AppThemeBinding Light={StaticResource Gray600}, Dark={StaticResource Gray400}}"/>
+
+                                            <!-- Footer Meta -->
+                                            <HorizontalStackLayout Grid.Row="2" Grid.ColumnSpan="2" Spacing="16">
+                                                <Label Text="{Binding Date, StringFormat='{0:MMM dd}'}"
+                                                       FontSize="12"
+                                                       TextColor="{AppThemeBinding Light={StaticResource Gray500}, Dark={StaticResource Gray500}}"/>
+                                                <Label Text="{Binding Amount, StringFormat='${0:N2}'}"
+                                                       FontSize="14"
+                                                       FontAttributes="Bold"
+                                                       TextColor="{StaticResource Primary}"/>
+                                            </HorizontalStackLayout>
+                                        </Grid>
+                                    </Frame>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                            <CollectionView.EmptyView>
+                                <controls:EmptyStateView 
+                                    Message="No recent activity"
+                                    Icon="clipboard"/>
+                            </CollectionView.EmptyView>
+                        </CollectionView>
+                    </VerticalStackLayout>
+
+                    <!-- Quick Actions -->
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="Quick Actions"
+                               FontSize="20"
+                               FontAttributes="Bold"
+                               TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource Gray50}}"/>
+                        
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="12" RowSpacing="12">
+                            <Button Grid.Column="0"
+                                    Text="New Customer"
+                                    BackgroundColor="{StaticResource Primary}"
+                                    TextColor="White"
+                                    CornerRadius="12"
+                                    HeightRequest="50"
+                                    FontSize="14"
+                                    FontAttributes="Bold"
+                                    Clicked="OnNewCustomerClicked"/>
+                            
+                            <Button Grid.Column="1"
+                                    Text="New Job"
+                                    BackgroundColor="{StaticResource Success}"
+                                    TextColor="White"
+                                    CornerRadius="12"
+                                    HeightRequest="50"
+                                    FontSize="14"
+                                    FontAttributes="Bold"
+                                    Clicked="OnNewJobClicked"/>
+                        </Grid>
+                    </VerticalStackLayout>
+
+                </VerticalStackLayout>
+            </ScrollView>
+        </RefreshView>
+
+        <!-- Loading Overlay -->
+        <ActivityIndicator x:Name="LoadingIndicator"
+                           IsRunning="False"
+                           IsVisible="False"
+                           Color="{StaticResource Primary}"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center"/>
+    </Grid>
+
+</ContentPage>

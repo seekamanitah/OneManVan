@@ -1,0 +1,449 @@
+@page "/notes"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@attribute [Authorize]
+@inject IDbContextFactory<OneManVanDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Quick Notes - OneManVan</PageTitle>
+
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h2 mb-1">Quick Notes</h1>
+                    <p class="text-muted mb-0">Capture quick notes, reminders, and ideas on the fly</p>
+                </div>
+                <button class="btn btn-primary" @onclick="ShowNewNoteForm">
+                    <i class="bi bi-plus-lg me-1"></i> New Note
+                </button>
+            </div>
+
+            <!-- Quick Add Form (Collapsible) -->
+            @if (showNewNoteForm)
+            {
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Title (optional)</label>
+                                <input type="text" class="form-control" @bind="newNote.Title" placeholder="Note title..."/>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label">Category</label>
+                                <select class="form-select" @bind="newNote.Category">
+                                    <option value="">None</option>
+                                    <option value="Customer">Customer Info</option>
+                                    <option value="Material">Material List</option>
+                                    <option value="Reminder">Reminder</option>
+                                    <option value="Quote">Quote/Pricing</option>
+                                    <option value="Phone">Phone Number</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label">Color</label>
+                                <select class="form-select" @bind="newNote.Color">
+                                    <option value="">Default</option>
+                                    <option value="#FFE082">Yellow</option>
+                                    <option value="#A5D6A7">Green</option>
+                                    <option value="#90CAF9">Blue</option>
+                                    <option value="#F48FB1">Pink</option>
+                                    <option value="#CE93D8">Purple</option>
+                                    <option value="#FFAB91">Orange</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Note Content</label>
+                            <textarea class="form-control" rows="5" @bind="newNote.Content" 
+                                      placeholder="Enter your note here... phone numbers, customer info, material lists, reminders, anything!"></textarea>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-success" @onclick="SaveNote" disabled="@string.IsNullOrWhiteSpace(newNote.Content)">
+                                <i class="bi bi-check-lg me-1"></i> Save Note
+                            </button>
+                            <button class="btn btn-outline-secondary" @onclick="CancelNewNote">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Filter/Search -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body py-2">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <div class="input-group">
+                                <span class="input-group-text bg-transparent border-end-0">
+                                    <i class="bi bi-search"></i>
+                                </span>
+                                <input type="text" class="form-control border-start-0" 
+                                       placeholder="Search notes..." @bind="searchText" @bind:event="oninput"/>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-select" @bind="filterCategory">
+                                <option value="">All Categories</option>
+                                <option value="Customer">Customer Info</option>
+                                <option value="Material">Material List</option>
+                                <option value="Reminder">Reminder</option>
+                                <option value="Quote">Quote/Pricing</option>
+                                <option value="Phone">Phone Number</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="showArchived" @bind="showArchived"/>
+                                <label class="form-check-label" for="showArchived">Show Archived</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <span class="text-muted">@FilteredNotes.Count() notes</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notes Grid -->
+            @if (isLoading)
+            {
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary"></div>
+                    <p class="text-muted mt-2">Loading notes...</p>
+                </div>
+            }
+            else if (!FilteredNotes.Any())
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-sticky display-1 text-muted"></i>
+                    <h4 class="mt-3">No notes yet</h4>
+                    <p class="text-muted">Click "New Note" to capture your first quick note!</p>
+                    <button class="btn btn-primary" @onclick="ShowNewNoteForm">
+                        <i class="bi bi-plus-lg me-1"></i> Create Your First Note
+                    </button>
+                </div>
+            }
+            else
+            {
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
+                    @foreach (var note in FilteredNotes)
+                    {
+                        <div class="col">
+                            <div class="card h-100 border-0 shadow-sm note-card @(note.IsArchived ? "opacity-75" : "")"
+                                 style="@(string.IsNullOrEmpty(note.Color) ? "" : $"background-color: {note.Color};")">
+                                <div class="card-body">
+                                    <!-- Header -->
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div>
+                                            @if (note.IsPinned)
+                                            {
+                                                <i class="bi bi-pin-angle-fill text-danger me-1" title="Pinned"></i>
+                                            }
+                                            @if (!string.IsNullOrEmpty(note.Category))
+                                            {
+                                                <span class="badge bg-secondary">@note.Category</span>
+                                            }
+                                        </div>
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-link text-muted p-0" data-bs-toggle="dropdown">
+                                                <i class="bi bi-three-dots-vertical"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                <li><button class="dropdown-item" @onclick="() => EditNote(note)">
+                                                    <i class="bi bi-pencil me-2"></i>Edit</button></li>
+                                                <li><button class="dropdown-item" @onclick="() => TogglePin(note)">
+                                                    <i class="bi @(note.IsPinned ? "bi-pin-angle" : "bi-pin-angle-fill") me-2"></i>
+                                                    @(note.IsPinned ? "Unpin" : "Pin")</button></li>
+                                                <li><button class="dropdown-item" @onclick="() => ToggleArchive(note)">
+                                                    <i class="bi @(note.IsArchived ? "bi-archive" : "bi-archive-fill") me-2"></i>
+                                                    @(note.IsArchived ? "Unarchive" : "Archive")</button></li>
+                                                <li><hr class="dropdown-divider"/></li>
+                                                <li><button class="dropdown-item text-danger" @onclick="() => DeleteNote(note)">
+                                                    <i class="bi bi-trash me-2"></i>Delete</button></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+
+                                    <!-- Title -->
+                                    @if (!string.IsNullOrEmpty(note.Title))
+                                    {
+                                        <h6 class="card-title fw-bold mb-2">@note.Title</h6>
+                                    }
+
+                                    <!-- Content Preview -->
+                                    <p class="card-text small" style="white-space: pre-wrap;">@note.ContentPreview</p>
+                                </div>
+                                <div class="card-footer bg-transparent border-0 py-2">
+                                    <small class="text-muted">
+                                        @note.CreatedAt.ToString("MMM dd, yyyy h:mm tt")
+                                        @if (note.UpdatedAt > note.CreatedAt.AddMinutes(1))
+                                        {
+                                            <span class="ms-2">(edited)</span>
+                                        }
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Edit Note Modal -->
+@if (editingNote != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Note</h5>
+                    <button type="button" class="btn-close" @onclick="CancelEdit"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Title</label>
+                            <input type="text" class="form-control" @bind="editingNote.Title"/>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Category</label>
+                            <select class="form-select" @bind="editingNote.Category">
+                                <option value="">None</option>
+                                <option value="Customer">Customer Info</option>
+                                <option value="Material">Material List</option>
+                                <option value="Reminder">Reminder</option>
+                                <option value="Quote">Quote/Pricing</option>
+                                <option value="Phone">Phone Number</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Color</label>
+                            <select class="form-select" @bind="editingNote.Color">
+                                <option value="">Default</option>
+                                <option value="#FFE082">Yellow</option>
+                                <option value="#A5D6A7">Green</option>
+                                <option value="#90CAF9">Blue</option>
+                                <option value="#F48FB1">Pink</option>
+                                <option value="#CE93D8">Purple</option>
+                                <option value="#FFAB91">Orange</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Content</label>
+                        <textarea class="form-control" rows="10" @bind="editingNote.Content"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CancelEdit">Cancel</button>
+                    <button type="button" class="btn btn-primary" @onclick="SaveEditedNote">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .note-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .note-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+</style>
+
+@code {
+    private List<QuickNote> notes = new();
+    private QuickNote newNote = new();
+    private QuickNote? editingNote;
+    private bool isLoading = true;
+    private bool showNewNoteForm = false;
+    private string searchText = "";
+    private string filterCategory = "";
+    private bool showArchived = false;
+
+    private IEnumerable<QuickNote> FilteredNotes => notes
+        .Where(n => showArchived || !n.IsArchived)
+        .Where(n => string.IsNullOrEmpty(filterCategory) || n.Category == filterCategory)
+        .Where(n => string.IsNullOrEmpty(searchText) || 
+                    (n.Title?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    n.Content.Contains(searchText, StringComparison.OrdinalIgnoreCase))
+        .OrderByDescending(n => n.IsPinned)
+        .ThenByDescending(n => n.CreatedAt);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadNotes();
+    }
+
+    private async Task LoadNotes()
+    {
+        isLoading = true;
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            notes = await db.QuickNotes
+                .OrderByDescending(n => n.IsPinned)
+                .ThenByDescending(n => n.CreatedAt)
+                .ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading notes: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void ShowNewNoteForm()
+    {
+        showNewNoteForm = true;
+        newNote = new QuickNote();
+    }
+
+    private void CancelNewNote()
+    {
+        showNewNoteForm = false;
+        newNote = new QuickNote();
+    }
+
+    private async Task SaveNote()
+    {
+        if (string.IsNullOrWhiteSpace(newNote.Content))
+            return;
+
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            newNote.CreatedAt = DateTime.UtcNow;
+            newNote.UpdatedAt = DateTime.UtcNow;
+            db.QuickNotes.Add(newNote);
+            await db.SaveChangesAsync();
+            
+            showNewNoteForm = false;
+            newNote = new QuickNote();
+            await LoadNotes();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving note: {ex.Message}");
+        }
+    }
+
+    private void EditNote(QuickNote note)
+    {
+        editingNote = new QuickNote
+        {
+            Id = note.Id,
+            Title = note.Title,
+            Content = note.Content,
+            Category = note.Category,
+            Color = note.Color,
+            IsPinned = note.IsPinned,
+            IsArchived = note.IsArchived,
+            CreatedAt = note.CreatedAt
+        };
+    }
+
+    private void CancelEdit()
+    {
+        editingNote = null;
+    }
+
+    private async Task SaveEditedNote()
+    {
+        if (editingNote == null) return;
+
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var note = await db.QuickNotes.FindAsync(editingNote.Id);
+            if (note != null)
+            {
+                note.Title = editingNote.Title;
+                note.Content = editingNote.Content;
+                note.Category = editingNote.Category;
+                note.Color = editingNote.Color;
+                note.UpdatedAt = DateTime.UtcNow;
+                await db.SaveChangesAsync();
+            }
+            
+            editingNote = null;
+            await LoadNotes();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating note: {ex.Message}");
+        }
+    }
+
+    private async Task TogglePin(QuickNote note)
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var dbNote = await db.QuickNotes.FindAsync(note.Id);
+            if (dbNote != null)
+            {
+                dbNote.IsPinned = !dbNote.IsPinned;
+                dbNote.UpdatedAt = DateTime.UtcNow;
+                await db.SaveChangesAsync();
+            }
+            await LoadNotes();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error toggling pin: {ex.Message}");
+        }
+    }
+
+    private async Task ToggleArchive(QuickNote note)
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var dbNote = await db.QuickNotes.FindAsync(note.Id);
+            if (dbNote != null)
+            {
+                dbNote.IsArchived = !dbNote.IsArchived;
+                dbNote.UpdatedAt = DateTime.UtcNow;
+                await db.SaveChangesAsync();
+            }
+            await LoadNotes();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error archiving note: {ex.Message}");
+        }
+    }
+
+    private async Task DeleteNote(QuickNote note)
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var dbNote = await db.QuickNotes.FindAsync(note.Id);
+            if (dbNote != null)
+            {
+                db.QuickNotes.Remove(dbNote);
+                await db.SaveChangesAsync();
+            }
+            await LoadNotes();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error deleting note: {ex.Message}");
+        }
+    }
+}

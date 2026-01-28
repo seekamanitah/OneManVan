@@ -29,17 +29,29 @@ public static class MauiProgram
         var dbConfigService = new DatabaseConfigService(configDir);
         var dbConfig = dbConfigService.LoadConfiguration();
 
-        // Configure database based on configuration
-        // Note: Mobile currently supports SQLite only. SQL Server support requires additional packages.
-        var dbPath = Path.Combine(FileSystem.AppDataDirectory, 
-            dbConfig.Type == DatabaseType.SQLite ? dbConfig.SqliteFilePath : "onemanvan.db");
-        
-        builder.Services.AddDbContextFactory<OneManVanDbContext>(options =>
-            options.UseSqlite($"Data Source={dbPath}"));
-        
-        // Also register DbContext for backward compatibility
-        builder.Services.AddDbContext<OneManVanDbContext>(options =>
-            options.UseSqlite($"Data Source={dbPath}"));
+        // Configure database based on configuration - supports both SQLite (local) and SQL Server (remote)
+        if (dbConfig.Type == DatabaseType.SqlServer && !string.IsNullOrEmpty(dbConfig.ServerAddress))
+        {
+            // Use SQL Server for remote connection
+            var connectionString = dbConfig.GetConnectionString();
+            builder.Services.AddDbContextFactory<OneManVanDbContext>(options =>
+                options.UseSqlServer(connectionString));
+            builder.Services.AddDbContext<OneManVanDbContext>(options =>
+                options.UseSqlServer(connectionString));
+            
+            System.Diagnostics.Debug.WriteLine($"Database configured: SQL Server at {dbConfig.ServerAddress}:{dbConfig.ServerPort}");
+        }
+        else
+        {
+            // Use SQLite for local storage (default)
+            var dbPath = Path.Combine(FileSystem.AppDataDirectory, dbConfig.SqliteFilePath ?? "onemanvan.db");
+            builder.Services.AddDbContextFactory<OneManVanDbContext>(options =>
+                options.UseSqlite($"Data Source={dbPath}"));
+            builder.Services.AddDbContext<OneManVanDbContext>(options =>
+                options.UseSqlite($"Data Source={dbPath}"));
+            
+            System.Diagnostics.Debug.WriteLine($"Database configured: SQLite at {dbPath}");
+        }
 
         // Register core services (Singleton - stateless or app-wide state)
         builder.Services.AddSingleton<ISettingsStorage, MobileSettingsStorage>();
@@ -64,6 +76,7 @@ public static class MauiProgram
 
         // Register main pages (Transient - new instance each time)
         builder.Services.AddTransient<MainPage>();
+        builder.Services.AddTransient<MainPageModern>(); // NEW: Modern redesigned dashboard
         builder.Services.AddTransient<CustomerListPage>();
         builder.Services.AddTransient<CustomerDetailPage>();
         builder.Services.AddTransient<EditCustomerPage>();
@@ -73,6 +86,9 @@ public static class MauiProgram
         builder.Services.AddTransient<AddAssetPage>();
         builder.Services.AddTransient<EditAssetPage>();
         builder.Services.AddTransient<AddSitePage>();
+        builder.Services.AddTransient<SiteListPage>();
+        builder.Services.AddTransient<CalendarPage>();
+        builder.Services.AddTransient<WarrantyClaimsListPage>();
         builder.Services.AddTransient<EstimateListPage>();
         builder.Services.AddTransient<EstimateDetailPage>();
         builder.Services.AddTransient<AddEstimatePage>();

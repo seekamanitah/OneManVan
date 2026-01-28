@@ -1,87 +1,75 @@
--- Migration: Add TaxIncluded, ContactName, SiteName, and relationship fields
--- Date: January 26, 2026
--- Description: Comprehensive feature enhancements
+-- AddTaxIncludedAndEnhancements.sql (SQL Server Compatible)
+-- This migration is for SQL Server (not SQLite)
+-- For SQLite, use Entity Framework migrations or different syntax
 
--- =====================================================
--- PHASE 1: Tax Included Fields
--- =====================================================
+-- Add TaxIncluded columns (use IF NOT EXISTS properly)
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Estimates') AND name = 'TaxIncluded')
+BEGIN
+    ALTER TABLE Estimates ADD TaxIncluded BIT NOT NULL DEFAULT 0;
+END
+GO
 
--- Add TaxIncluded to Estimates
-ALTER TABLE Estimates ADD COLUMN TaxIncluded INTEGER NOT NULL DEFAULT 0;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Invoices') AND name = 'TaxIncluded')
+BEGIN
+    ALTER TABLE Invoices ADD TaxIncluded BIT NOT NULL DEFAULT 0;
+END
+GO
 
--- Add TaxIncluded to Invoices
-ALTER TABLE Invoices ADD COLUMN TaxIncluded INTEGER NOT NULL DEFAULT 0;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Jobs') AND name = 'TaxIncluded')
+BEGIN
+    ALTER TABLE Jobs ADD TaxIncluded BIT NOT NULL DEFAULT 0;
+END
+GO
 
--- Add TaxIncluded to Jobs
-ALTER TABLE Jobs ADD COLUMN TaxIncluded INTEGER NOT NULL DEFAULT 0;
+-- Add Company contact fields
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Companies') AND name = 'ContactName')
+BEGIN
+    ALTER TABLE Companies ADD ContactName NVARCHAR(MAX) NULL;
+END
+GO
 
--- =====================================================
--- PHASE 2: Company Contact Enhancement
--- =====================================================
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Companies') AND name = 'ContactCustomerId')
+BEGIN
+    ALTER TABLE Companies ADD ContactCustomerId INT NULL;
+    ALTER TABLE Companies ADD CONSTRAINT FK_Companies_Customers FOREIGN KEY (ContactCustomerId) REFERENCES Customers(Id);
+END
+GO
 
--- Add ContactName and ContactCustomerId to Companies
-ALTER TABLE Companies ADD COLUMN ContactName TEXT;
-ALTER TABLE Companies ADD COLUMN ContactCustomerId INTEGER REFERENCES Customers(Id);
+-- Add Site fields
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Sites') AND name = 'SiteName')
+BEGIN
+    ALTER TABLE Sites ADD SiteName NVARCHAR(MAX) NULL;
+END
+GO
 
--- =====================================================
--- PHASE 3: Site Enhancement (SiteName, CompanyId)
--- =====================================================
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Sites') AND name = 'LocationDescription')
+BEGIN
+    ALTER TABLE Sites ADD LocationDescription NVARCHAR(MAX) NULL;
+END
+GO
 
--- Add SiteName and LocationDescription to Sites
-ALTER TABLE Sites ADD COLUMN SiteName TEXT;
-ALTER TABLE Sites ADD COLUMN LocationDescription TEXT;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Sites') AND name = 'CompanyId')
+BEGIN
+    ALTER TABLE Sites ADD CompanyId INT NULL;
+    ALTER TABLE Sites ADD CONSTRAINT FK_Sites_Companies FOREIGN KEY (CompanyId) REFERENCES Companies(Id);
+END
+GO
 
--- Add CompanyId to Sites (allows sites to belong to companies)
-ALTER TABLE Sites ADD COLUMN CompanyId INTEGER REFERENCES Companies(Id);
+-- Add indexes
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Companies_ContactCustomerId')
+BEGIN
+    CREATE INDEX IX_Companies_ContactCustomerId ON Companies(ContactCustomerId);
+END
+GO
 
--- =====================================================
--- PHASE 4: Create indexes for new relationships
--- =====================================================
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Sites_CompanyId')
+BEGIN
+    CREATE INDEX IX_Sites_CompanyId ON Sites(CompanyId);
+END
+GO
 
--- Index for Company's contact customer lookup
-CREATE INDEX IF NOT EXISTS IX_Companies_ContactCustomerId ON Companies(ContactCustomerId);
-
--- Index for Site's company lookup
-CREATE INDEX IF NOT EXISTS IX_Sites_CompanyId ON Sites(CompanyId);
-
--- Index for Site name search
-CREATE INDEX IF NOT EXISTS IX_Sites_SiteName ON Sites(SiteName);
-
--- =====================================================
--- VERIFICATION QUERIES
--- =====================================================
-
--- Verify Estimates has TaxIncluded
-SELECT sql FROM sqlite_master WHERE type='table' AND name='Estimates';
-
--- Verify Invoices has TaxIncluded
-SELECT sql FROM sqlite_master WHERE type='table' AND name='Invoices';
-
--- Verify Jobs has TaxIncluded
-SELECT sql FROM sqlite_master WHERE type='table' AND name='Jobs';
-
--- Verify Companies has ContactName and ContactCustomerId
-SELECT sql FROM sqlite_master WHERE type='table' AND name='Companies';
-
--- Verify Sites has SiteName, LocationDescription, CompanyId
-SELECT sql FROM sqlite_master WHERE type='table' AND name='Sites';
-
--- =====================================================
--- NOTES
--- =====================================================
--- 
--- TaxIncluded field meaning:
---   0 (false) = Calculate tax normally (add tax to subtotal)
---   1 (true)  = Tax already included in prices (don't add tax)
---
--- Company.ContactCustomerId:
---   Optional foreign key linking to an existing Customer
---   who is the primary contact for this Company
---
--- Site.SiteName:
---   User-friendly name like "Main Office", "Rental #1"
---   Helps distinguish multiple sites under same customer/company
---
--- Site.CompanyId:
---   Optional foreign key linking Site to a Company
---   Allows commercial properties to be linked to Companies
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Sites_SiteName')
+BEGIN
+    CREATE INDEX IX_Sites_SiteName ON Sites(SiteName);
+END
+GO

@@ -1,0 +1,10 @@
+bin
+obj
+*.user
+AppData
+.vs
+Properties
+TestResults
+.idea
+*.DotSettings.user
+

@@ -49,6 +49,15 @@ public class DatabaseConfig
     /// <summary>
     /// Use encryption for connection
     /// </summary>
+    public bool UseEncryption
+    {
+        get => Encrypt;
+        set => Encrypt = value;
+    }
+
+    /// <summary>
+    /// Use encryption for connection (internal)
+    /// </summary>
     public bool Encrypt { get; set; } = false;
 
     /// <summary>
