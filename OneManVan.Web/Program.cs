@@ -179,8 +179,15 @@ else
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
 
+app.UseStaticFiles(); // Serve static files
 
-app.UseAntiforgery();
+app.UseRouting(); // Enable routing
+
+// === AUTHENTICATION TEMPORARILY DISABLED FOR DEVELOPMENT ===
+// Uncomment these when ready to add login:
+// app.UseAuthentication();
+// app.UseAuthorization();
+// app.UseAntiforgery();
 
 // Health check endpoint for Docker
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
@@ -192,7 +199,8 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 // Add additional endpoints required by the Identity /Account Razor components.
-app.MapAdditionalIdentityEndpoints();
+// Commented out for now - no login needed
+// app.MapAdditionalIdentityEndpoints();
 
 app.Run();
 
