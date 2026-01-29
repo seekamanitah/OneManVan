@@ -1,44 +1,63 @@
-# Add QuickNotes Table to Existing Database
-# For SQLite (local development)
+# Fix QuickNotes Table - SQLite
+# Creates the missing QuickNotes table in the SQLite database
 
-Write-Host "Adding QuickNotes table to database..." -ForegroundColor Cyan
+Write-Host "Creating QuickNotes table in SQLite database..." -ForegroundColor Cyan
 Write-Host ""
 
-# Stop the Web app if running
-$webProcess = Get-Process -Name "OneManVan.Web" -ErrorAction SilentlyContinue
-if ($webProcess) {
-    Write-Host "Stopping OneManVan.Web..." -ForegroundColor Yellow
-    Stop-Process -Name "OneManVan.Web" -Force
-    Start-Sleep -Seconds 2
+# Find the SQLite database file
+$dbPath = "OneManVan.Web\AppData\onemanvan.db"
+
+if (-not (Test-Path $dbPath)) {
+    $dbPath = "OneManVan.Web\Data\business.db"
 }
 
-# Path to SQLite database
-$dbPath = "OneManVan.Web\Data\business.db"
+if (-not (Test-Path $dbPath)) {
+    Write-Host "[ERROR] Could not find database file" -ForegroundColor Red
+    Write-Host "Expected locations:" -ForegroundColor Yellow
+    Write-Host "  - OneManVan.Web\AppData\onemanvan.db" -ForegroundColor Gray
+    Write-Host "  - OneManVan.Web\Data\business.db" -ForegroundColor Gray
+    exit 1
+}
 
-if (Test-Path $dbPath) {
-    # Backup existing database
-    $backupPath = "OneManVan.Web\Data\business.db.backup_before_quicknotes"
-    Write-Host "Creating backup: $backupPath" -ForegroundColor Yellow
-    Copy-Item $dbPath $backupPath -Force
-    
-    # Delete the database to trigger recreation
-    Write-Host "Deleting existing database..." -ForegroundColor Yellow
-    Remove-Item $dbPath -Force
-    Remove-Item "$dbPath-shm" -Force -ErrorAction SilentlyContinue
-    Remove-Item "$dbPath-wal" -Force -ErrorAction SilentlyContinue
-    
-    Write-Host "[OK] Database deleted" -ForegroundColor Green
-    Write-Host ""
-    Write-Host "The database will be recreated with QuickNotes table when you start the app." -ForegroundColor Cyan
+Write-Host "Found database: $dbPath" -ForegroundColor Green
+Write-Host ""
+
+# SQLite command to create the table
+$createTableSql = @"
+CREATE TABLE IF NOT EXISTS QuickNotes (
+    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+    Title TEXT,
+    Content TEXT NOT NULL,
+    Category TEXT,
+    IsPinned INTEGER NOT NULL DEFAULT 0,
+    IsArchived INTEGER NOT NULL DEFAULT 0,
+    Color TEXT,
+    CreatedAt TEXT NOT NULL,
+    UpdatedAt TEXT NOT NULL
+);
+"@
+
+# Check if sqlite3 is available
+$sqlite3Path = Get-Command sqlite3 -ErrorAction SilentlyContinue
+
+if ($sqlite3Path) {
+    Write-Host "Using sqlite3 command-line tool..." -ForegroundColor Yellow
+    $createTableSql | sqlite3 $dbPath
+    Write-Host "[SUCCESS] QuickNotes table created!" -ForegroundColor Green
 } else {
-    Write-Host "Database not found at: $dbPath" -ForegroundColor Red
+    Write-Host "sqlite3 command not found." -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "MANUAL STEPS:" -ForegroundColor Cyan
+    Write-Host "1. Stop the Web app if running" -ForegroundColor White
+    Write-Host "2. Delete the database file:" -ForegroundColor White
+    Write-Host "   Remove-Item '$dbPath'" -ForegroundColor Gray
+    Write-Host "3. Restart the Web app - it will recreate the database with QuickNotes" -ForegroundColor White
+    Write-Host ""
+    Write-Host "OR install SQLite command-line tools:" -ForegroundColor Cyan
+    Write-Host "   winget install SQLite.SQLite" -ForegroundColor Gray
 }
 
 Write-Host ""
-Write-Host "Next steps:" -ForegroundColor Yellow
-Write-Host "  1. Start the Web app: cd OneManVan.Web && dotnet run" -ForegroundColor Gray
-Write-Host "  2. The database will be recreated automatically with all tables" -ForegroundColor Gray
-Write-Host "  3. QuickNotes will work!" -ForegroundColor Green
-Write-Host ""
-Write-Host "NOTE: Your old data is backed up at:" -ForegroundColor Cyan
-Write-Host "  $backupPath" -ForegroundColor Gray
+Write-Host "After fixing, restart the Web app:" -ForegroundColor Yellow
+Write-Host "  cd OneManVan.Web" -ForegroundColor Gray
+Write-Host "  dotnet run" -ForegroundColor Gray
