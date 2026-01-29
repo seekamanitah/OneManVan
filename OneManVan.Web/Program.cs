@@ -187,7 +187,9 @@ app.UseRouting(); // Enable routing
 // Uncomment these when ready to add login:
 // app.UseAuthentication();
 // app.UseAuthorization();
-// app.UseAntiforgery();
+
+// Antiforgery is REQUIRED for Blazor forms even without authentication
+app.UseAntiforgery();
 
 // Health check endpoint for Docker
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
