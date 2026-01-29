@@ -11,6 +11,15 @@
 <div class="container-fluid py-4">
     <div class="row">
         <div class="col-12">
+            <!-- Error/Success Message -->
+            @if (!string.IsNullOrEmpty(statusMessage))
+            {
+                <div class="alert @(isError ? "alert-danger" : "alert-success") alert-dismissible fade show" role="alert">
+                    @statusMessage
+                    <button type="button" class="btn-close" @onclick="() => statusMessage = string.Empty"></button>
+                </div>
+            }
+
             <!-- Header -->
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
@@ -262,14 +271,16 @@
 </style>
 
 @code {
-    private List<QuickNote> notes = new();
-    private QuickNote newNote = new();
-    private QuickNote? editingNote;
-    private bool isLoading = true;
-    private bool showNewNoteForm = false;
-    private string searchText = "";
-    private string filterCategory = "";
-    private bool showArchived = false;
+private List<QuickNote> notes = new();
+private QuickNote newNote = new();
+private QuickNote? editingNote;
+private bool isLoading = true;
+private bool showNewNoteForm = false;
+private string searchText = "";
+private string filterCategory = "";
+private bool showArchived = false;
+private string statusMessage = "";
+private bool isError = false;
 
     private IEnumerable<QuickNote> FilteredNotes => notes
         .Where(n => showArchived || !n.IsArchived)
@@ -321,7 +332,11 @@
     private async Task SaveNote()
     {
         if (string.IsNullOrWhiteSpace(newNote.Content))
+        {
+            statusMessage = "Please enter note content";
+            isError = true;
             return;
+        }
 
         try
         {
@@ -331,13 +346,18 @@
             db.QuickNotes.Add(newNote);
             await db.SaveChangesAsync();
             
+            statusMessage = "Note saved successfully!";
+            isError = false;
             showNewNoteForm = false;
             newNote = new QuickNote();
             await LoadNotes();
         }
         catch (Exception ex)
         {
+            statusMessage = $"Error saving note: {ex.Message}";
+            isError = true;
             Console.WriteLine($"Error saving note: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
         }
     }
 
