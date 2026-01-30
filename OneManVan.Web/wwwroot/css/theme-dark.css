@@ -61,19 +61,47 @@
 
 /* Cards - dark theme */
 .dark-theme .card {
-    background-color: var(--surface-color);
-    border-color: var(--border-color);
-    color: var(--text-color);
+    background-color: var(--surface-color) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-color) !important;
 }
 
 .dark-theme .card-header {
-    background-color: var(--surface-color);
-    border-bottom-color: var(--border-color);
+    background-color: var(--surface-color) !important;
+    border-bottom-color: var(--border-color) !important;
+    color: var(--text-color) !important;
+}
+
+.dark-theme .card-body {
+    background-color: var(--surface-color) !important;
+    color: var(--text-color) !important;
 }
 
 .dark-theme .card-footer {
-    background-color: var(--surface-color);
-    border-top-color: var(--border-color);
+    background-color: var(--surface-color) !important;
+    border-top-color: var(--border-color) !important;
+    color: var(--text-color) !important;
+}
+
+/* Override any .bg-white classes in dark mode */
+.dark-theme .bg-white {
+    background-color: var(--surface-color) !important;
+}
+
+/* Card titles and text in dark mode */
+.dark-theme .card .h1,
+.dark-theme .card .h2,
+.dark-theme .card .h3,
+.dark-theme .card .h4,
+.dark-theme .card .h5,
+.dark-theme .card .h6,
+.dark-theme .card h1,
+.dark-theme .card h2,
+.dark-theme .card h3,
+.dark-theme .card h4,
+.dark-theme .card h5,
+.dark-theme .card h6 {
+    color: var(--text-color) !important;
 }
 
 /* Tables - dark theme */
@@ -125,13 +153,19 @@
 
 /* List groups - dark theme */
 .dark-theme .list-group-item {
-    background-color: var(--surface-color);
-    border-color: var(--border-color);
-    color: var(--text-color);
+    background-color: var(--surface-color) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-color) !important;
 }
 
-.dark-theme .list-group-item-action:hover {
-    background-color: #2d3139;
+.dark-theme .list-group-item-action {
+    color: var(--text-color) !important;
+}
+
+.dark-theme .list-group-item-action:hover,
+.dark-theme .list-group-item-action:focus {
+    background-color: #2d3139 !important;
+    color: var(--text-color) !important;
 }
 
 /* Alerts - dark theme */
@@ -322,4 +356,44 @@
 .dark-theme #blazor-error-ui {
     background-color: #dc2626;
     color: #ffffff;
+}
+
+/* Additional dark mode overrides for stubborn Bootstrap classes */
+.dark-theme .bg-light {
+    background-color: var(--surface-color) !important;
+}
+
+.dark-theme .text-dark {
+    color: var(--text-color) !important;
+}
+
+.dark-theme .border-light {
+    border-color: var(--border-color) !important;
+}
+
+/* Ensure all card content is visible */
+.dark-theme .card * {
+    border-color: var(--border-color);
+}
+
+/* Fix for card shadows in dark mode */
+.dark-theme .card,
+.dark-theme .shadow-sm,
+.dark-theme .shadow {
+    box-shadow: 0 0.125rem 0.25rem var(--card-shadow) !important;
+}
+
+/* Empty state icons and text */
+.dark-theme .text-center i,
+.dark-theme .text-center p {
+    color: var(--text-muted) !important;
+}
+
+/* Make sure links in cards are visible */
+.dark-theme .card a {
+    color: #60a5fa;
+}
+
+.dark-theme .card a:hover {
+    color: #93c5fd;
 }
