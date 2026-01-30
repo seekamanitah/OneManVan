@@ -402,7 +402,54 @@
    Calendar Dark Mode Styles
    =================================== */
 
-/* Calendar container */
+/* Target the actual calendar component classes */
+.dark-theme .calendar-month {
+    background: var(--border-color) !important;
+}
+
+/* Calendar day headers (Sunday, Monday, etc.) */
+.dark-theme .calendar-day-header {
+    background: var(--surface-color) !important;
+    color: #e9ecef !important;
+    font-weight: 600 !important;
+    border-color: var(--border-color) !important;
+}
+
+/* Calendar day cells */
+.dark-theme .calendar-day-cell {
+    background: #2d3139 !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-color) !important;
+}
+
+.dark-theme .calendar-day-cell.other-month {
+    background: var(--surface-color) !important;
+    opacity: 0.5 !important;
+}
+
+.dark-theme .calendar-day-cell.today {
+    background: rgba(59, 130, 246, 0.2) !important;
+}
+
+.dark-theme .calendar-day-number {
+    color: var(--text-color) !important;
+}
+
+/* Calendar events */
+.dark-theme .calendar-event {
+    color: #ffffff !important;
+}
+
+/* Time slots */
+.dark-theme .time-slot {
+    border-bottom-color: var(--border-color) !important;
+}
+
+.dark-theme .time-label {
+    color: var(--text-muted) !important;
+}
+
+/* Generic calendar selectors (keeping for compatibility) */
 .dark-theme .calendar-container,
 .dark-theme .calendar,
 .dark-theme .calendar-grid {
@@ -417,7 +464,7 @@
     color: var(--text-color) !important;
 }
 
-/* Calendar day cells */
+/* Calendar day cells - generic */
 .dark-theme .calendar-day,
 .dark-theme .calendar-cell,
 .dark-theme .day-cell,
@@ -438,7 +485,7 @@
 /* Calendar cells should be darker */
 .dark-theme .calendar td,
 .dark-theme .calendar th {
-    background-color: #2d3139 !important; /* Slightly darker than surface */
+    background-color: #2d3139 !important;
     color: var(--text-color) !important;
     border-color: var(--border-color) !important;
 }
@@ -446,8 +493,9 @@
 /* Calendar day hover */
 .dark-theme .calendar-day:hover,
 .dark-theme .calendar-cell:hover,
-.dark-theme .day-cell:hover {
-    background-color: #2d3139 !important;
+.dark-theme .day-cell:hover,
+.dark-theme .calendar-day-cell:hover {
+    background-color: #353a43 !important;
 }
 
 /* Calendar today */
@@ -464,17 +512,17 @@
     color: #ffffff !important;
 }
 
-/* Calendar weekday headers */
+/* Calendar weekday headers - generic */
 .dark-theme .calendar-weekday,
 .dark-theme .weekday-header,
 .dark-theme th {
     background-color: var(--surface-color) !important;
-    color: #e9ecef !important; /* Bright text for readability */
+    color: #e9ecef !important;
     font-weight: 600 !important;
     border-bottom-color: var(--border-color) !important;
 }
 
-/* Calendar events */
+/* Calendar events - generic */
 .dark-theme .calendar-event {
     background-color: rgba(59, 130, 246, 0.3) !important;
     border-left-color: var(--sidebar-bg) !important;
@@ -483,6 +531,7 @@
 
 .dark-theme .calendar-event:hover {
     background-color: rgba(59, 130, 246, 0.4) !important;
+    opacity: 0.9 !important;
 }
 
 /* Calendar other month days */
@@ -590,6 +639,12 @@
 /* Ensure all content areas in calendar are dark */
 .dark-theme .content.px-4,
 .dark-theme article.content {
+    background-color: var(--background-color) !important;
+}
+
+/* Calendar week and day views */
+.dark-theme .calendar-week,
+.dark-theme .calendar-day {
     background-color: var(--background-color) !important;
 }
 
