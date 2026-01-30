@@ -55,44 +55,44 @@ Directory.CreateDirectory(configDirectory);
 var dbConfigService = new DatabaseConfigService(configDirectory);
 builder.Services.AddSingleton(dbConfigService);
 
-// Shared business database (OneManVanDbContext) - using DatabaseConfigService
-var dbConfig = dbConfigService.GetCurrentConfiguration();
-var businessConnectionString = builder.Configuration.GetConnectionString("BusinessConnection");
+// Shared business database (OneManVanDbContext)
+// Priority: 1. Environment variable (Docker), 2. appsettings.json, 3. DatabaseConfig file, 4. SQLite fallback
+var businessConnectionString = builder.Configuration.GetConnectionString("BusinessConnection")
+    ?? builder.Configuration.GetConnectionString("DefaultConnection");
 
-// Priority: 1. appsettings.json, 2. DatabaseConfig file, 3. SQLite fallback
 if (!string.IsNullOrEmpty(businessConnectionString))
 {
     // Detect if it's SQLite or SQL Server based on connection string format
-    if (businessConnectionString.Contains("DataSource=", StringComparison.OrdinalIgnoreCase) ||
-        businessConnectionString.Contains("Data Source=", StringComparison.OrdinalIgnoreCase) && 
-        businessConnectionString.Contains(".db", StringComparison.OrdinalIgnoreCase))
+    if (businessConnectionString.Contains("Server=", StringComparison.OrdinalIgnoreCase))
     {
-        // SQLite connection string detected
+        // SQL Server connection string (Docker/Production)
+        builder.Services.AddDbContextFactory<OneManVanDbContext>(options =>
+            options.UseSqlServer(businessConnectionString));
+    }
+    else if (businessConnectionString.Contains("DataSource=", StringComparison.OrdinalIgnoreCase) ||
+             businessConnectionString.Contains("Data Source=", StringComparison.OrdinalIgnoreCase))
+    {
+        // SQLite connection string (Local development)
         builder.Services.AddDbContextFactory<OneManVanDbContext>(options =>
             options.UseSqlite(businessConnectionString));
     }
     else
     {
-        // SQL Server connection string
-        builder.Services.AddDbContextFactory<OneManVanDbContext>(options =>
-            options.UseSqlServer(businessConnectionString));
+        throw new InvalidOperationException($"Unknown connection string format: {businessConnectionString}");
     }
-}
-else if (dbConfig.Type == DatabaseType.SqlServer && !string.IsNullOrEmpty(dbConfig.ServerAddress))
-{
-    // Use SQL Server configuration from DatabaseConfigService
-    var configConnectionString = dbConfig.GetConnectionString();
-    builder.Services.AddDbContextFactory<OneManVanDbContext>(options =>
-        options.UseSqlServer(configConnectionString));
 }
 else
 {
-    // Fallback to SQLite for local development
+    // Fallback to SQLite for local development (using DatabaseConfigService)
+    var dbConfig = dbConfigService.GetCurrentConfiguration();
     var businessDbPath = Path.Combine(builder.Environment.ContentRootPath, "AppData", dbConfig.SqliteFilePath);
     Directory.CreateDirectory(Path.GetDirectoryName(businessDbPath)!);
     builder.Services.AddDbContextFactory<OneManVanDbContext>(options =>
         options.UseSqlite($"Data Source={businessDbPath}"));
 }
+
+
+
 
 
 
