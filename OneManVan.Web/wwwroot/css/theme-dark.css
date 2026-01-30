@@ -420,10 +420,27 @@
 /* Calendar day cells */
 .dark-theme .calendar-day,
 .dark-theme .calendar-cell,
-.dark-theme .day-cell {
+.dark-theme .day-cell,
+.dark-theme td {
     background-color: var(--surface-color) !important;
     border-color: var(--border-color) !important;
     color: var(--text-color) !important;
+}
+
+/* Make sure all calendar table elements are dark */
+.dark-theme table.calendar,
+.dark-theme .calendar table,
+.dark-theme .fc-scrollgrid,
+.dark-theme .fc-daygrid-body {
+    background-color: var(--surface-color) !important;
+}
+
+/* Calendar cells should be darker */
+.dark-theme .calendar td,
+.dark-theme .calendar th {
+    background-color: #2d3139 !important; /* Slightly darker than surface */
+    color: var(--text-color) !important;
+    border-color: var(--border-color) !important;
 }
 
 /* Calendar day hover */
@@ -449,9 +466,11 @@
 
 /* Calendar weekday headers */
 .dark-theme .calendar-weekday,
-.dark-theme .weekday-header {
+.dark-theme .weekday-header,
+.dark-theme th {
     background-color: var(--surface-color) !important;
-    color: var(--text-muted) !important;
+    color: #e9ecef !important; /* Bright text for readability */
+    font-weight: 600 !important;
     border-bottom-color: var(--border-color) !important;
 }
 
