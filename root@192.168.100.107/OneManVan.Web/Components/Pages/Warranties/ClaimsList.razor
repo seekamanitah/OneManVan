@@ -1,0 +1,367 @@
+@page "/warranties/claims"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@using OneManVan.Shared.Models.Enums
+@* [Authorize] temporarily disabled for development *@
+@inject IDbContextFactory<OneManVanDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Warranty Claims - OneManVan</PageTitle>
+
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-0">Warranty Claims</h1>
+            <p class="text-muted mb-0">Track equipment warranty repairs and manufacturer claims</p>
+        </div>
+        <button class="btn btn-primary" @onclick="CreateClaim">
+            <i class="bi bi-plus-circle me-2"></i>File New Claim
+        </button>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted d-block">Total Claims</small>
+                            <h3 class="mb-0">@allClaims.Count</h3>
+                        </div>
+                        <div class="text-primary">
+                            <i class="bi bi-file-earmark-text fs-2"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted d-block">Pending Review</small>
+                            <h3 class="mb-0 text-warning">@pendingCount</h3>
+                        </div>
+                        <div class="text-warning">
+                            <i class="bi bi-clock-history fs-2"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted d-block">Approved</small>
+                            <h3 class="mb-0 text-success">@approvedCount</h3>
+                        </div>
+                        <div class="text-success">
+                            <i class="bi bi-check-circle fs-2"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted d-block">Total Repair Cost</small>
+                            <h3 class="mb-0">@totalRepairCost.ToString("C")</h3>
+                        </div>
+                        <div class="text-info">
+                            <i class="bi bi-currency-dollar fs-2"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" class="form-control border-start-0" 
+                               placeholder="Search by claim #, asset, or customer..." 
+                               @bind="searchText" 
+                               @bind:event="oninput"
+                               @onkeyup="ApplyFilters" />
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" @bind="filterStatus" @bind:after="ApplyFilters">
+                        <option value="">All Statuses</option>
+                        @foreach (var status in Enum.GetValues<ClaimStatus>())
+                        {
+                            <option value="@status">@status</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" @bind="filterCoverage" @bind:after="ApplyFilters">
+                        <option value="">All Coverage</option>
+                        <option value="covered">Covered</option>
+                        <option value="not-covered">Not Covered</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" @bind="sortBy" @bind:after="ApplyFilters">
+                        <option value="recent">Most Recent</option>
+                        <option value="oldest">Oldest First</option>
+                        <option value="status">Status</option>
+                        <option value="cost">Repair Cost</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-outline-secondary w-100" @onclick="ClearFilters">
+                        <i class="bi bi-x-circle me-2"></i>Clear
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Claims List -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            @if (isLoading)
+            {
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary"></div>
+                </div>
+            }
+            else if (filteredClaims.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Claim #</th>
+                                <th>Asset</th>
+                                <th>Customer</th>
+                                <th>Issue</th>
+                                <th>Filed Date</th>
+                                <th>Status</th>
+                                <th>Coverage</th>
+                                <th class="text-end">Repair Cost</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var claim in filteredClaims)
+                            {
+                                <tr style="cursor: pointer;" @onclick="@(() => ViewClaim(claim.Id))">
+                                    <td>
+                                        <span class="fw-semibold">@(claim.ClaimNumber ?? $"CLM-{claim.Id:D4}")</span>
+                                    </td>
+                                    <td>
+                                        @(claim.Asset?.AssetTag ?? "-")
+                                        @if (!string.IsNullOrEmpty(claim.Asset?.Description))
+                                        {
+                                            <br /><small class="text-muted">@claim.Asset.Description</small>
+                                        }
+                                    </td>
+                                    <td>@(claim.Asset?.Customer?.Name ?? "-")</td>
+                                    <td>
+                                        <div class="text-truncate" style="max-width: 250px;" title="@claim.IssueDescription">
+                                            @claim.IssueDescription
+                                        </div>
+                                    </td>
+                                    <td>@claim.ClaimDate.ToString("MMM dd, yyyy")</td>
+                                    <td>
+                                        <span class="badge @GetStatusBadge(claim.Status)">
+                                            @claim.Status
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @if (claim.IsCoveredByWarranty)
+                                        {
+                                            <span class="badge bg-success">Covered</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">Not Covered</span>
+                                        }
+                                    </td>
+                                    <td class="text-end">@claim.RepairCost.ToString("C")</td>
+                                    <td class="text-end">
+                                        <div class="btn-group btn-group-sm" @onclick:stopPropagation="true">
+                                            <button class="btn btn-outline-primary" 
+                                                    @onclick="@(() => ViewClaim(claim.Id))"
+                                                    title="View Details">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            <button class="btn btn-outline-secondary" 
+                                                    @onclick="@(() => EditClaim(claim.Id))"
+                                                    title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination Info -->
+                <div class="card-footer bg-white border-top">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            Showing @filteredClaims.Count of @allClaims.Count claims
+                        </small>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox fs-1 text-muted mb-3 d-block"></i>
+                    <h5>No Claims Found</h5>
+                    <p class="text-muted mb-3">
+                        @if (!string.IsNullOrEmpty(searchText) || !string.IsNullOrEmpty(filterStatus))
+                        {
+                            <text>Try adjusting your search or filters.</text>
+                        }
+                        else
+                        {
+                            <text>Start by filing a warranty claim for an asset.</text>
+                        }
+                    </p>
+                    <button class="btn btn-primary" @onclick="CreateClaim">
+                        <i class="bi bi-plus-circle me-2"></i>File First Claim
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool isLoading = true;
+    private List<WarrantyClaim> allClaims = new();
+    private List<WarrantyClaim> filteredClaims = new();
+
+    private string searchText = "";
+    private string filterStatus = "";
+    private string filterCoverage = "";
+    private string sortBy = "recent";
+
+    private int pendingCount = 0;
+    private int approvedCount = 0;
+    private decimal totalRepairCost = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadClaimsAsync();
+    }
+
+    private async Task LoadClaimsAsync()
+    {
+        try
+        {
+            isLoading = true;
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+            allClaims = await db.WarrantyClaims
+                .Include(c => c.Asset)
+                .ThenInclude(a => a.Customer)
+                .OrderByDescending(c => c.ClaimDate)
+                .AsNoTracking()
+                .ToListAsync();
+
+            // Calculate stats
+            pendingCount = allClaims.Count(c => c.Status == ClaimStatus.Pending || c.Status == ClaimStatus.UnderReview);
+            approvedCount = allClaims.Count(c => c.Status == ClaimStatus.Approved || c.Status == ClaimStatus.Completed);
+            totalRepairCost = allClaims.Sum(c => c.RepairCost);
+
+            ApplyFilters();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void ApplyFilters()
+    {
+        var query = allClaims.AsEnumerable();
+
+        // Search
+        if (!string.IsNullOrWhiteSpace(searchText))
+        {
+            var search = searchText.ToLower();
+            query = query.Where(c =>
+                (c.ClaimNumber?.ToLower().Contains(search) ?? false) ||
+                (c.Asset?.AssetTag?.ToLower().Contains(search) ?? false) ||
+                (c.Asset?.Customer?.Name?.ToLower().Contains(search) ?? false) ||
+                (c.IssueDescription?.ToLower().Contains(search) ?? false));
+        }
+
+        // Status filter
+        if (!string.IsNullOrWhiteSpace(filterStatus) && Enum.TryParse<ClaimStatus>(filterStatus, out var status))
+        {
+            query = query.Where(c => c.Status == status);
+        }
+
+        // Coverage filter
+        if (!string.IsNullOrWhiteSpace(filterCoverage))
+        {
+            if (filterCoverage == "covered")
+                query = query.Where(c => c.IsCoveredByWarranty);
+            else if (filterCoverage == "not-covered")
+                query = query.Where(c => !c.IsCoveredByWarranty);
+        }
+
+        // Sort
+        query = sortBy switch
+        {
+            "oldest" => query.OrderBy(c => c.ClaimDate),
+            "status" => query.OrderBy(c => c.Status),
+            "cost" => query.OrderByDescending(c => c.RepairCost),
+            _ => query.OrderByDescending(c => c.ClaimDate)
+        };
+
+        filteredClaims = query.ToList();
+    }
+
+    private void ClearFilters()
+    {
+        searchText = "";
+        filterStatus = "";
+        filterCoverage = "";
+        sortBy = "recent";
+        ApplyFilters();
+    }
+
+    private void CreateClaim() => Navigation.NavigateTo("/warranties/claims/add");
+    private void ViewClaim(int id) => Navigation.NavigateTo($"/warranties/claims/{id}");
+    private void EditClaim(int id) => Navigation.NavigateTo($"/warranties/claims/{id}/edit");
+
+    private string GetStatusBadge(ClaimStatus status) => status switch
+    {
+        ClaimStatus.Pending => "bg-secondary",
+        ClaimStatus.UnderReview => "bg-info",
+        ClaimStatus.Approved => "bg-success",
+        ClaimStatus.Denied => "bg-danger",
+        ClaimStatus.Completed => "bg-primary",
+        ClaimStatus.Cancelled => "bg-dark",
+        _ => "bg-secondary"
+    };
+}

@@ -1,0 +1,238 @@
+@page "/agreements/{Id:int}"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@using OneManVan.Shared.Models.Enums
+@* [Authorize] temporarily disabled for development *@
+@inject IDbContextFactory<OneManVanDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>@(agreement?.Name ?? "Agreement") - OneManVan</PageTitle>
+
+<div class="container-fluid py-4">
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary"></div>
+        </div>
+    }
+    else if (agreement == null)
+    {
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>Agreement not found
+        </div>
+    }
+    else
+    {
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-start mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/agreements">Agreements</a></li>
+                        <li class="breadcrumb-item active">@(agreement.AgreementNumber ?? $"SA-{agreement.Id:D4}")</li>
+                    </ol>
+                </nav>
+                <div class="d-flex align-items-center">
+                    <div class="avatar-circle bg-success bg-opacity-10 text-success me-3" style="width: 60px; height: 60px; font-size: 24px;">
+                        <i class="bi bi-file-earmark-text"></i>
+                    </div>
+                    <div>
+                        <h1 class="h2 mb-1">@agreement.Name</h1>
+                        <span class="badge @GetStatusBadge()">@agreement.Status</span>
+                        @if (agreement.AutoRenew)
+                        {
+                            <span class="badge bg-info ms-1">Auto-Renew</span>
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary" @onclick="GoBack">
+                    <i class="bi bi-arrow-left me-2"></i>Back
+                </button>
+                <button class="btn btn-primary" @onclick="EditAgreement">
+                    <i class="bi bi-pencil me-2"></i>Edit
+                </button>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <!-- Main Info -->
+            <div class="col-md-8">
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0">Agreement Details</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Agreement Number</label>
+                                <span>@(agreement.AgreementNumber ?? "-")</span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Type</label>
+                                <span>@agreement.Type</span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Start Date</label>
+                                <span>@agreement.StartDate.ToString("MMM dd, yyyy")</span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">End Date</label>
+                                <span class="@(IsExpiringSoon() ? "text-warning fw-bold" : "")">
+                                    @agreement.EndDate.ToString("MMM dd, yyyy")
+                                </span>
+                            </div>
+                            @if (!string.IsNullOrEmpty(agreement.Description))
+                            {
+                                <div class="col-12">
+                                    <label class="text-muted small d-block mb-1">Description</label>
+                                    <p class="mb-0">@agreement.Description</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pricing -->
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0">Pricing</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Annual Price</label>
+                                <span class="h4">@agreement.AnnualPrice.ToString("C")</span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Visits Included</label>
+                                <span>@agreement.IncludedVisitsPerYear per year</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Renewal -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0">Renewal Settings</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Auto Renew</label>
+                                <span>@(agreement.AutoRenew ? "Yes" : "No")</span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Reminder Days Before Expiry</label>
+                                <span>@agreement.RenewalReminderDays days</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-md-4">
+                <!-- Customer -->
+                @if (agreement.Customer != null)
+                {
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0">Customer</h5>
+                        </div>
+                        <div class="card-body">
+                            <a href="/customers/@agreement.CustomerId" class="text-decoration-none">
+                                <div class="fw-semibold">@agreement.Customer.Name</div>
+                            </a>
+                            @if (!string.IsNullOrEmpty(agreement.Customer.Email))
+                            {
+                                <div class="text-muted small">@agreement.Customer.Email</div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- Quick Actions -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-primary" @onclick="EditAgreement">
+                                <i class="bi bi-pencil me-2"></i>Edit Agreement
+                            </button>
+                            @if (agreement.Status == AgreementStatus.Draft)
+                            {
+                                <button class="btn btn-success">
+                                    <i class="bi bi-check-circle me-2"></i>Activate
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .avatar-circle {
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private bool isLoading = true;
+    private ServiceAgreement? agreement;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAgreementAsync();
+    }
+
+    private async Task LoadAgreementAsync()
+    {
+        try
+        {
+            isLoading = true;
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+            
+            agreement = await db.ServiceAgreements
+                .Include(a => a.Customer)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(a => a.Id == Id);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private bool IsExpiringSoon()
+    {
+        if (agreement == null) return false;
+        var daysToExpire = (agreement.EndDate - DateTime.Today).TotalDays;
+        return daysToExpire > 0 && daysToExpire <= 30;
+    }
+
+    private void GoBack() => Navigation.NavigateTo("/agreements");
+    private void EditAgreement() => Navigation.NavigateTo($"/agreements/{Id}/edit");
+
+    private string GetStatusBadge() => agreement?.Status switch
+    {
+        AgreementStatus.Draft => "bg-secondary",
+        AgreementStatus.Active => "bg-success",
+        AgreementStatus.Expired => "bg-warning text-dark",
+        AgreementStatus.Cancelled => "bg-danger",
+        _ => "bg-secondary"
+    };
+}

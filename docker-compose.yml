@@ -13,27 +13,38 @@ services:
       - MSSQL_PID=Express
       - MSSQL_TCP_PORT=1433
     volumes:
-      - tradeflow-data:/var/opt/mssql/data
-      - tradeflow-log:/var/opt/mssql/log
-      - tradeflow-backup:/var/opt/mssql/backup
+      - /media/onemanvanDB/:/var/opt/mssql/data
+      - /media/onemanvanDB/log:/var/opt/mssql/log
+      - /media/onemanvanDB/backup:/var/opt/mssql/backup
       - ./docker/init:/docker-entrypoint-initdb.d
     networks:
       - tradeflow-network
     restart: unless-stopped
     healthcheck:
-      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "TradeFlow2025!" -Q "SELECT 1" || exit 1
+      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "TradeFlow2025!" -C -Q "SELECT 1" || exit 1
       interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
 
-volumes:
-  tradeflow-data:
-    name: tradeflow-sqldata
-  tradeflow-log:
-    name: tradeflow-sqllogs
-  tradeflow-backup:
-    name: tradeflow-backups
+  webui:
+    build:
+      context: .
+      dockerfile: OneManVan.Web/Dockerfile
+    container_name: tradeflow-webui
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=TradeFlowFSM;User Id=sa;Password=TradeFlow2025!;TrustServerCertificate=True;
+      - ConnectionStrings__IdentityConnection=Server=sqlserver;Database=TradeFlowIdentity;User Id=sa;Password=TradeFlow2025!;TrustServerCertificate=True;
+    ports:
+      - "7159:8080"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    networks:
+      - tradeflow-network
+    restart: unless-stopped
 
 networks:
   tradeflow-network:

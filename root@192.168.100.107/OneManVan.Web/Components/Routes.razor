@@ -1,0 +1,42 @@
+﻿@using OneManVan.Web.Components.Account.Shared
+@using Microsoft.AspNetCore.Components.Web
+
+<Router AppAssembly="typeof(Program).Assembly">
+    <Found Context="routeData">
+        <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
+            <NotAuthorized>
+                @if (routeData.PageType.Namespace?.Contains("Account") == true)
+                {
+                    @* Render Account pages without InteractiveServer mode to avoid auth loops *@
+                    <CascadingValue Value="@((IComponentRenderMode?)null)" Name="RendererInfo">
+                        <RouteView RouteData="routeData" />
+                    </CascadingValue>
+                }
+                else
+                {
+                    <RedirectToLogin />
+                }
+            </NotAuthorized>
+            <Authorizing>
+                <div class="d-flex justify-content-center align-items-center" style="height: 100vh;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </Authorizing>
+        </AuthorizeRouteView>
+        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <PageTitle>Not found</PageTitle>
+        <LayoutView Layout="typeof(Layout.MainLayout)">
+            <div class="container mt-5">
+                <div class="alert alert-warning">
+                    <h4>Not Found</h4>
+                    <p>Sorry, the content you are looking for does not exist.</p>
+                    <a href="/" class="btn btn-primary">Go to Home</a>
+                </div>
+            </div>
+        </LayoutView>
+    </NotFound>
+</Router>

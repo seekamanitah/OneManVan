@@ -1,0 +1,36 @@
+OneManVan Deployment Package
+=============================
+
+Created: 2026-01-29 19:30:23
+Source: C:\Users\tech\source\repos\TradeFlow
+Package: OneManVan-Deployment-2026-01-29-1930
+
+Contents:
+---------
+- Docker configuration files (docker-compose.yml, .env, etc.)
+- Deployment scripts (docker-complete-reset-deploy.*)
+- OneManVan.Web folder (application code)
+- OneManVan.Shared folder (shared libraries)
+- Documentation (guides and instructions)
+
+Excluded:
+---------
+- bin/ and obj/ folders
+- node_modules/
+- .vs/ and TestResults/
+- .user and .suo files
+- Build artifacts
+
+Next Steps:
+-----------
+1. Copy this entire folder to your Docker server
+2. Follow instructions in DOCKER_COMPLETE_RESET_GUIDE.md
+3. Or run docker-complete-reset-deploy.sh (Linux/Mac)
+4. Or run docker-complete-reset-deploy.ps1 (Windows)
+
+Important:
+----------
+- Review .env file and update passwords before deployment
+- Ensure Docker is installed on target server
+- Backup any existing data if needed
+

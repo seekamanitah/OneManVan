@@ -29,9 +29,24 @@ builder.Services.AddAuthentication(options =>
     .AddIdentityCookies();
 
 // Identity database
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+var identityConnectionString = builder.Configuration.GetConnectionString("IdentityConnection") 
+    ?? builder.Configuration.GetConnectionString("DefaultConnection") 
+    ?? throw new InvalidOperationException("Connection string 'IdentityConnection' or 'DefaultConnection' not found.");
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite(connectionString));
+{
+    // Check if running in Docker (SQL Server) or local (SQLite)
+    if (identityConnectionString.Contains("Server=", StringComparison.OrdinalIgnoreCase))
+    {
+        // SQL Server for Docker
+        options.UseSqlServer(identityConnectionString);
+    }
+    else
+    {
+        // SQLite for local development
+        options.UseSqlite(identityConnectionString);
+    }
+});
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 // Database Configuration Service

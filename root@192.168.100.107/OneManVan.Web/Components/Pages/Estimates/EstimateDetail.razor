@@ -1,0 +1,366 @@
+@page "/estimates/{Id:int}"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@using OneManVan.Shared.Models.Enums
+@* [Authorize] temporarily disabled for development *@
+@inject IDbContextFactory<OneManVanDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>@(estimate?.Title ?? "Estimate") - OneManVan</PageTitle>
+
+<div class="container-fluid py-4">
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary"></div>
+        </div>
+    }
+    else if (estimate == null)
+    {
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>Estimate not found
+        </div>
+    }
+    else
+    {
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-start mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/estimates">Estimates</a></li>
+                        <li class="breadcrumb-item active">@estimate.Title</li>
+                    </ol>
+                </nav>
+                <div class="d-flex align-items-center">
+                    <div class="avatar-circle bg-info bg-opacity-10 text-info me-3" style="width: 60px; height: 60px; font-size: 24px;">
+                        <i class="bi bi-file-earmark-text"></i>
+                    </div>
+                    <div>
+                        <h1 class="h2 mb-1">Estimate @estimate.Title</h1>
+                        <div class="d-flex gap-2">
+                            <span class="badge @GetStatusBadgeClass(estimate.Status)">@estimate.Status</span>
+                            @if (estimate.ExpiresAt.HasValue && estimate.ExpiresAt < DateTime.Now && estimate.Status != EstimateStatus.Accepted)
+                            {
+                                <span class="badge bg-warning">Expired</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary" @onclick="GoBack">
+                    <i class="bi bi-arrow-left me-2"></i>Back
+                </button>
+                @if (estimate.Status == EstimateStatus.Accepted)
+                {
+                    <button class="btn btn-success" @onclick="ConvertToInvoice">
+                        <i class="bi bi-receipt me-2"></i>Convert to Invoice
+                    </button>
+                }
+                <button class="btn btn-primary" @onclick="EditEstimate">
+                    <i class="bi bi-pencil me-2"></i>Edit
+                </button>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <!-- Estimate Details -->
+            <div class="col-md-8">
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0">Estimate Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Customer</label>
+                                @if (estimate.Customer != null)
+                                {
+                                    <a href="/customers/@estimate.CustomerId" class="text-decoration-none">
+                                        <i class="bi bi-person me-1"></i>@estimate.Customer.Name
+                                    </a>
+                                }
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Estimate Date</label>
+                                <span>@estimate.CreatedAt.ToString("MMM dd, yyyy")</span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Valid Until</label>
+                                @if (estimate.ExpiresAt.HasValue)
+                                {
+                                    <span class="@(estimate.ExpiresAt < DateTime.Now ? "text-danger fw-bold" : "")">
+                                        @estimate.ExpiresAt.Value.ToString("MMM dd, yyyy")
+                                    </span>
+                                }
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small d-block mb-1">Expires In</label>
+                                @if (estimate.ExpiresAt.HasValue)
+                                {
+                                    var daysLeft = (estimate.ExpiresAt.Value - DateTime.Now).Days;
+                                    <span class="@(daysLeft < 0 ? "text-danger" : daysLeft < 7 ? "text-warning" : "")">
+                                        @(daysLeft < 0 ? "Expired" : $"{daysLeft} days")
+                                    </span>
+                                }
+                            </div>
+                            @if (!string.IsNullOrEmpty(estimate.Notes))
+                            {
+                                <div class="col-12">
+                                    <label class="text-muted small d-block mb-1">Notes</label>
+                                    <p class="mb-0">@estimate.Notes</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Line Items -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0">Line Items</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (estimate.Lines?.Any() == true)
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Description</th>
+                                            <th class="text-center">Quantity</th>
+                                            <th class="text-end">Unit Price</th>
+                                            <th class="text-end">Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in estimate.Lines)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <div>@item.Description</div>
+                                                    @if (!string.IsNullOrEmpty(item.Notes))
+                                                    {
+                                                        <small class="text-muted">@item.Notes</small>
+                                                    }
+                                                </td>
+                                                <td class="text-center">@item.Quantity</td>
+                                                <td class="text-end">@item.UnitPrice.ToString("C")</td>
+                                                <td class="text-end fw-semibold">@item.Total.ToString("C")</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                    <tfoot class="table-light">
+                                        <tr>
+                                            <td colspan="3" class="text-end fw-semibold">Subtotal:</td>
+                                            <td class="text-end fw-semibold">@estimate.SubTotal.ToString("C")</td>
+                                        </tr>
+                                        @if (estimate.TaxAmount > 0)
+                                        {
+                                            <tr>
+                                                <td colspan="3" class="text-end">Tax:</td>
+                                                <td class="text-end">@estimate.TaxAmount.ToString("C")</td>
+                                            </tr>
+                                        }
+                                        <tr class="fw-bold">
+                                            <td colspan="3" class="text-end">Total:</td>
+                                            <td class="text-end">@estimate.Total.ToString("C")</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-4 text-muted">
+                                <i class="bi bi-inbox fs-3 mb-2 d-block"></i>
+                                <p class="mb-0">No line items</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-md-4">
+                <!-- Summary -->
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0">Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3 pb-3 border-bottom">
+                            <label class="text-muted small d-block mb-1">Total Amount</label>
+                            <span class="h3 mb-0">@estimate.Total.ToString("C")</span>
+                        </div>
+                        <div>
+                            <label class="text-muted small d-block mb-1">Status</label>
+                            <span class="badge @GetStatusBadgeClass(estimate.Status) fs-6">@estimate.Status</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            @if (estimate.Status == EstimateStatus.Draft)
+                            {
+                                <button class="btn btn-primary" @onclick="SendEstimate">
+                                    <i class="bi bi-send me-2"></i>Send Estimate
+                                </button>
+                            }
+                            @if (estimate.Status == EstimateStatus.Sent)
+                            {
+                                <button class="btn btn-success" @onclick="MarkAccepted">
+                                    <i class="bi bi-check-circle me-2"></i>Mark Accepted
+                                </button>
+                                <button class="btn btn-danger" @onclick="MarkRejected">
+                                    <i class="bi bi-x-circle me-2"></i>Mark Rejected
+                                </button>
+                            }
+                            @if (estimate.Status == EstimateStatus.Accepted)
+                            {
+                                <button class="btn btn-success" @onclick="ConvertToInvoice">
+                                    <i class="bi bi-receipt me-2"></i>Convert to Invoice
+                                </button>
+                            }
+                            <button class="btn btn-outline-secondary" @onclick="ViewCustomer">
+                                <i class="bi bi-person me-2"></i>View Customer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .avatar-circle {
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private bool isLoading = true;
+    private Estimate? estimate;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEstimateAsync();
+    }
+
+    private async Task LoadEstimateAsync()
+    {
+        try
+        {
+            isLoading = true;
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+            
+            estimate = await db.Estimates
+                .Include(e => e.Customer)
+                .Include(e => e.Lines)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(e => e.Id == Id);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/estimates");
+    }
+
+    private void EditEstimate()
+    {
+        Navigation.NavigateTo($"/estimates/{Id}/edit");
+    }
+
+    private void ViewCustomer()
+    {
+        if (estimate?.CustomerId != null)
+        {
+            Navigation.NavigateTo($"/customers/{estimate.CustomerId}");
+        }
+    }
+
+    private async Task SendEstimate()
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var estimateToUpdate = await db.Estimates.FindAsync(Id);
+            if (estimateToUpdate != null)
+            {
+                estimateToUpdate.Status = EstimateStatus.Sent;
+                await db.SaveChangesAsync();
+                await LoadEstimateAsync();
+            }
+        }
+        catch (Exception) { }
+    }
+
+    private async Task MarkAccepted()
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var estimateToUpdate = await db.Estimates.FindAsync(Id);
+            if (estimateToUpdate != null)
+            {
+                estimateToUpdate.Status = EstimateStatus.Accepted;
+                await db.SaveChangesAsync();
+                await LoadEstimateAsync();
+            }
+        }
+        catch (Exception) { }
+    }
+
+    private async Task MarkRejected()
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var estimateToUpdate = await db.Estimates.FindAsync(Id);
+            if (estimateToUpdate != null)
+            {
+                estimateToUpdate.Status = EstimateStatus.Declined;
+                await db.SaveChangesAsync();
+                await LoadEstimateAsync();
+            }
+        }
+        catch (Exception) { }
+    }
+
+    private void ConvertToInvoice()
+    {
+        Navigation.NavigateTo($"/invoices/new?estimateId={Id}");
+    }
+
+    private string GetStatusBadgeClass(EstimateStatus status)
+    {
+        return status switch
+        {
+            EstimateStatus.Draft => "bg-secondary",
+            EstimateStatus.Sent => "bg-info",
+            EstimateStatus.Accepted => "bg-success",
+            EstimateStatus.Declined => "bg-danger",
+            EstimateStatus.Expired => "bg-warning",
+            _ => "bg-secondary"
+        };
+    }
+}

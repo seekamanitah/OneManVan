@@ -1,0 +1,450 @@
+@page "/companies/new"
+@page "/companies/{Id:int}/edit"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@using OneManVan.Shared.Models.Enums
+@* [Authorize] temporarily disabled for development *@
+@inject IDbContextFactory<OneManVanDbContext> DbFactory
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<PageTitle>@(IsNew ? "New Company" : $"Edit Company") - OneManVan</PageTitle>
+
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="mb-4">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/companies">Companies</a></li>
+                        <li class="breadcrumb-item active">@(IsNew ? "New" : "Edit")</li>
+                    </ol>
+                </nav>
+                <h1 class="h2">@(IsNew ? "New Company" : $"Edit: {model.Name}")</h1>
+            </div>
+
+            @if (isLoading)
+            {
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary"></div>
+                </div>
+            }
+            else
+            {
+                <EditForm Model="@model" OnValidSubmit="HandleSubmit">
+                    <DataAnnotationsValidator />
+
+                    <!-- Basic Info -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0">Company Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-8">
+                                    <label class="form-label">Company Name *</label>
+                                    <InputText class="form-control" @bind-Value="model.Name" />
+                                    <ValidationMessage For="@(() => model.Name)" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Type</label>
+                                    <InputSelect class="form-select" @bind-Value="model.CompanyType">
+                                        @foreach (var t in Enum.GetValues<CompanyType>())
+                                        {
+                                            <option value="@t">@t</option>
+                                        }
+                                    </InputSelect>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Legal Name</label>
+                                    <InputText class="form-control" @bind-Value="model.LegalName" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Tax ID</label>
+                                    <InputText class="form-control" @bind-Value="model.TaxId" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Industry</label>
+                                    <InputText class="form-control" @bind-Value="model.Industry" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Website</label>
+                                    <InputText class="form-control" @bind-Value="model.Website" placeholder="https://..." />
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check mt-4">
+                                        <InputCheckbox class="form-check-input" @bind-Value="model.IsActive" id="isActive" />
+                                        <label class="form-check-label" for="isActive">Active</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contact Info -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0">Contact Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label">Primary Contact</label>
+                                    <div class="d-flex gap-2">
+                                        <select class="form-select" @bind="model.ContactCustomerId">
+                                            <option value="">Select a contact...</option>
+                                            @foreach (var customer in customers)
+                                            {
+                                                <option value="@customer.Id">@customer.FirstName @customer.LastName (@customer.Email)</option>
+                                            }
+                                        </select>
+                                        <button type="button" class="btn btn-outline-primary" @onclick="ShowQuickAddCustomer">
+                                            <i class="bi bi-plus-circle me-1"></i>New
+                                        </button>
+                                    </div>
+                                    @if (model.ContactCustomerId.HasValue && selectedContact != null)
+                                    {
+                                        <div class="mt-2 p-2 bg-light rounded">
+                                            <small class="d-block"><strong>@selectedContact.FirstName @selectedContact.LastName</strong></small>
+                                            @if (!string.IsNullOrEmpty(selectedContact.Email))
+                                            {
+                                                <small class="d-block text-muted"><i class="bi bi-envelope me-1"></i>@selectedContact.Email</small>
+                                            }
+                                            @if (!string.IsNullOrEmpty(selectedContact.Phone))
+                                            {
+                                                <small class="d-block text-muted"><i class="bi bi-telephone me-1"></i>@selectedContact.Phone</small>
+                                            }
+                                        </div>
+                                    }
+                                    <small class="text-muted">Select or create a customer to be the primary contact for this company</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Company Phone</label>
+                                    <InputText class="form-control" @bind-Value="model.Phone" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Company Email</label>
+                                    <InputText class="form-control" @bind-Value="model.Email" type="email" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Add Customer Modal -->
+                    @if (showQuickAddModal)
+                    {
+                        <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Add New Contact</h5>
+                                        <button type="button" class="btn-close" @onclick="HideQuickAddCustomer"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="mb-3">
+                                            <label class="form-label">First Name *</label>
+                                            <input type="text" class="form-control" @bind="newCustomer.FirstName" />
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Last Name *</label>
+                                            <input type="text" class="form-control" @bind="newCustomer.LastName" />
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Email</label>
+                                            <input type="email" class="form-control" @bind="newCustomer.Email" />
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Phone</label>
+                                            <input type="tel" class="form-control" @bind="newCustomer.Phone" />
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" @onclick="HideQuickAddCustomer">Cancel</button>
+                                        <button type="button" class="btn btn-primary" @onclick="SaveQuickAddCustomer" disabled="@(string.IsNullOrWhiteSpace(newCustomer.FirstName) || string.IsNullOrWhiteSpace(newCustomer.LastName))">
+                                            <i class="bi bi-check-circle me-1"></i>Add Contact
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Billing Address -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0">Billing Address</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label">Street Address</label>
+                                    <InputText class="form-control" @bind-Value="model.BillingAddress" />
+                                </div>
+                                <div class="col-md-5">
+                                    <label class="form-label">City</label>
+                                    <InputText class="form-control" @bind-Value="model.BillingCity" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">State</label>
+                                    <InputText class="form-control" @bind-Value="model.BillingState" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">ZIP Code</label>
+                                    <InputText class="form-control" @bind-Value="model.BillingZipCode" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0">Notes</h5>
+                        </div>
+                        <div class="card-body">
+                            <InputTextArea class="form-control" rows="3" @bind-Value="model.Notes" placeholder="Additional notes..." />
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <button type="button" class="btn btn-outline-secondary" @onclick="Cancel" disabled="@isSaving">
+                                    Cancel
+                                </button>
+                                <div class="d-flex gap-2">
+                                    @if (!IsNew)
+                                    {
+                                        <button type="button" class="btn btn-outline-danger" @onclick="DeleteCompany" disabled="@isSaving">
+                                            <i class="bi bi-trash me-2"></i>Delete
+                                        </button>
+                                    }
+                                    <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                                        @if (isSaving)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-2"></span>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-check-circle me-2"></i>
+                                        }
+                                        @(IsNew ? "Create Company" : "Save Changes")
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger mt-3">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>@errorMessage
+                        </div>
+                    }
+                </EditForm>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+[Parameter]
+public int? Id { get; set; }
+
+private bool IsNew => !Id.HasValue;
+private bool isLoading = true;
+private bool isSaving = false;
+private string errorMessage = "";
+private Company model = new();
+    private List<Customer> customers = new();
+    private Customer? selectedContact = null;
+    private bool showQuickAddModal = false;
+    private Customer newCustomer = new();
+
+    private int? _previousContactCustomerId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCustomersAsync();
+        
+        if (IsNew)
+        {
+            model = new Company
+            {
+                CompanyType = CompanyType.Customer,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+            isLoading = false;
+        }
+        else
+        {
+            await LoadCompanyAsync();
+        }
+        
+        _previousContactCustomerId = model.ContactCustomerId;
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (_previousContactCustomerId != model.ContactCustomerId)
+        {
+            _previousContactCustomerId = model.ContactCustomerId;
+            selectedContact = customers.FirstOrDefault(c => c.Id == model.ContactCustomerId);
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadCustomersAsync()
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            customers = await db.Customers
+                .OrderBy(c => c.LastName)
+                .ThenBy(c => c.FirstName)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load customers: {ex.Message}";
+        }
+    }
+
+private async Task LoadCompanyAsync()
+{
+    try
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+            
+        var company = await db.Companies
+            .Include(c => c.ContactCustomer)
+            .FirstOrDefaultAsync(c => c.Id == Id!.Value);
+
+        if (company != null)
+        {
+            model = company;
+            selectedContact = company.ContactCustomer;
+        }
+    }
+    catch (Exception ex)
+    {
+        errorMessage = $"Failed to load company: {ex.Message}";
+    }
+    finally
+    {
+        isLoading = false;
+        }
+    }
+
+    private void ShowQuickAddCustomer()
+    {
+        newCustomer = new Customer
+        {
+            CreatedAt = DateTime.UtcNow
+        };
+        showQuickAddModal = true;
+    }
+
+    private void HideQuickAddCustomer()
+    {
+        showQuickAddModal = false;
+        newCustomer = new();
+    }
+
+    private async Task SaveQuickAddCustomer()
+    {
+        if (string.IsNullOrWhiteSpace(newCustomer.FirstName) || string.IsNullOrWhiteSpace(newCustomer.LastName))
+        {
+            return;
+        }
+
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            
+            db.Customers.Add(newCustomer);
+            await db.SaveChangesAsync();
+
+            // Reload customers and select the new one
+            await LoadCustomersAsync();
+            model.ContactCustomerId = newCustomer.Id;
+            selectedContact = newCustomer;
+
+            HideQuickAddCustomer();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to create customer: {ex.Message}";
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            isSaving = true;
+            errorMessage = "";
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+
+            if (IsNew)
+            {
+                model.CreatedAt = DateTime.UtcNow;
+                db.Companies.Add(model);
+            }
+            else
+            {
+                model.UpdatedAt = DateTime.UtcNow;
+                db.Companies.Update(model);
+            }
+
+
+            await db.SaveChangesAsync();
+
+            Navigation.NavigateTo(IsNew ? "/companies" : $"/companies/{model.Id}");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to save: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task DeleteCompany()
+    {
+        if (!await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this company?"))
+            return;
+
+        try
+        {
+            isSaving = true;
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+            db.Companies.Remove(model);
+            await db.SaveChangesAsync();
+
+            Navigation.NavigateTo("/companies");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to delete: {ex.Message}";
+            isSaving = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        if (IsNew)
+            Navigation.NavigateTo("/companies");
+        else
+            Navigation.NavigateTo($"/companies/{Id}");
+    }
+}
