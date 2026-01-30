@@ -1,0 +1,325 @@
+/* ===================================
+   Dark Theme Styles for OneManVan
+   =================================== */
+
+/* Root color variables for both themes */
+:root {
+    /* Light theme colors (default) */
+    --background-color: #ffffff;
+    --surface-color: #f8f9fa;
+    --text-color: #212529;
+    --text-muted: #6c757d;
+    --border-color: #dee2e6;
+    --sidebar-bg: #3b82f6;
+    --sidebar-text: #ffffff;
+    --card-shadow: rgba(0, 0, 0, 0.1);
+}
+
+/* Dark theme colors */
+[data-bs-theme="dark"],
+.dark-theme {
+    --background-color: #1a1d23;
+    --surface-color: #242830;
+    --text-color: #e9ecef;
+    --text-muted: #adb5bd;
+    --border-color: #3a3f47;
+    --sidebar-bg: #2563eb;
+    --sidebar-text: #ffffff;
+    --card-shadow: rgba(0, 0, 0, 0.3);
+    
+    /* Override Bootstrap variables */
+    --bs-body-bg: #1a1d23;
+    --bs-body-color: #e9ecef;
+    --bs-card-bg: #242830;
+    --bs-border-color: #3a3f47;
+}
+
+/* Main layout - dark theme */
+.dark-theme .page {
+    background-color: var(--background-color);
+    color: var(--text-color);
+}
+
+/* Sidebar - dark theme */
+.dark-theme .sidebar {
+    background: linear-gradient(180deg, var(--sidebar-bg) 0%, #1e40af 100%);
+}
+
+/* Top row header - dark theme */
+.dark-theme .top-row {
+    background-color: var(--surface-color);
+    border-bottom-color: var(--border-color);
+}
+
+.dark-theme .top-row a {
+    color: var(--text-color);
+}
+
+.dark-theme .top-row a:hover {
+    color: var(--sidebar-bg);
+}
+
+/* Cards - dark theme */
+.dark-theme .card {
+    background-color: var(--surface-color);
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+.dark-theme .card-header {
+    background-color: var(--surface-color);
+    border-bottom-color: var(--border-color);
+}
+
+.dark-theme .card-footer {
+    background-color: var(--surface-color);
+    border-top-color: var(--border-color);
+}
+
+/* Tables - dark theme */
+.dark-theme .table {
+    color: var(--text-color);
+    --bs-table-bg: var(--surface-color);
+    --bs-table-border-color: var(--border-color);
+}
+
+.dark-theme .table-light {
+    --bs-table-bg: #2d3139;
+    --bs-table-color: var(--text-color);
+}
+
+.dark-theme .table-hover tbody tr:hover {
+    --bs-table-hover-bg: #2d3139;
+}
+
+/* Forms - dark theme */
+.dark-theme .form-control,
+.dark-theme .form-select {
+    background-color: #2d3139;
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+.dark-theme .form-control:focus,
+.dark-theme .form-select:focus {
+    background-color: #2d3139;
+    border-color: var(--sidebar-bg);
+    color: var(--text-color);
+}
+
+.dark-theme .form-control::placeholder {
+    color: var(--text-muted);
+}
+
+/* Buttons - dark theme adjustments */
+.dark-theme .btn-outline-primary {
+    color: #60a5fa;
+    border-color: #60a5fa;
+}
+
+.dark-theme .btn-outline-primary:hover {
+    background-color: #60a5fa;
+    border-color: #60a5fa;
+    color: #ffffff;
+}
+
+/* List groups - dark theme */
+.dark-theme .list-group-item {
+    background-color: var(--surface-color);
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+.dark-theme .list-group-item-action:hover {
+    background-color: #2d3139;
+}
+
+/* Alerts - dark theme */
+.dark-theme .alert {
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+.dark-theme .alert-success {
+    background-color: rgba(16, 185, 129, 0.15);
+    border-color: #10b981;
+    color: #6ee7b7;
+}
+
+.dark-theme .alert-warning {
+    background-color: rgba(245, 158, 11, 0.15);
+    border-color: #f59e0b;
+    color: #fbbf24;
+}
+
+.dark-theme .alert-danger {
+    background-color: rgba(239, 68, 68, 0.15);
+    border-color: #ef4444;
+    color: #fca5a5;
+}
+
+.dark-theme .alert-info {
+    background-color: rgba(6, 182, 212, 0.15);
+    border-color: #06b6d4;
+    color: #67e8f9;
+}
+
+/* Badges - dark theme */
+.dark-theme .badge {
+    /* Badges are already styled well, just slight adjustments */
+}
+
+.dark-theme .badge.bg-secondary {
+    background-color: #4b5563 !important;
+}
+
+/* Dropdown - dark theme */
+.dark-theme .dropdown-menu {
+    background-color: var(--surface-color);
+    border-color: var(--border-color);
+}
+
+.dark-theme .dropdown-item {
+    color: var(--text-color);
+}
+
+.dark-theme .dropdown-item:hover {
+    background-color: #2d3139;
+    color: var(--text-color);
+}
+
+.dark-theme .dropdown-divider {
+    border-top-color: var(--border-color);
+}
+
+/* Modal - dark theme */
+.dark-theme .modal-content {
+    background-color: var(--surface-color);
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+.dark-theme .modal-header {
+    border-bottom-color: var(--border-color);
+}
+
+.dark-theme .modal-footer {
+    border-top-color: var(--border-color);
+}
+
+.dark-theme .btn-close {
+    filter: invert(1);
+}
+
+/* Text colors - dark theme */
+.dark-theme .text-muted {
+    color: var(--text-muted) !important;
+}
+
+/* Input groups - dark theme */
+.dark-theme .input-group-text {
+    background-color: #2d3139;
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+/* Nav pills/tabs - dark theme */
+.dark-theme .nav-pills .nav-link {
+    color: var(--text-color);
+}
+
+.dark-theme .nav-pills .nav-link.active {
+    background-color: var(--sidebar-bg);
+}
+
+/* Pagination - dark theme */
+.dark-theme .pagination {
+    --bs-pagination-bg: var(--surface-color);
+    --bs-pagination-border-color: var(--border-color);
+    --bs-pagination-color: var(--text-color);
+    --bs-pagination-hover-bg: #2d3139;
+    --bs-pagination-hover-border-color: var(--border-color);
+}
+
+/* Progress bars - dark theme */
+.dark-theme .progress {
+    background-color: #2d3139;
+}
+
+/* Toasts - dark theme */
+.dark-theme .toast {
+    background-color: var(--surface-color);
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+/* Spinner - dark theme */
+.dark-theme .spinner-border {
+    /* Spinners work well in both themes */
+}
+
+/* Theme toggle button styling */
+.theme-toggle {
+    padding: 0.5rem;
+    font-size: 1.25rem;
+    color: inherit;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border: none;
+    background: transparent;
+}
+
+.theme-toggle:hover {
+    color: var(--sidebar-bg);
+    transform: scale(1.1);
+}
+
+.theme-toggle:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+.theme-toggle i {
+    transition: transform 0.3s ease;
+}
+
+.theme-toggle:hover i {
+    transform: rotate(20deg);
+}
+
+/* Smooth transition for theme changes */
+* {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Dashboard specific dark theme adjustments */
+.dark-theme .bg-primary.bg-opacity-10 {
+    background-color: rgba(59, 130, 246, 0.2) !important;
+}
+
+.dark-theme .bg-success.bg-opacity-10 {
+    background-color: rgba(16, 185, 129, 0.2) !important;
+}
+
+.dark-theme .bg-warning.bg-opacity-10 {
+    background-color: rgba(245, 158, 11, 0.2) !important;
+}
+
+.dark-theme .bg-info.bg-opacity-10 {
+    background-color: rgba(6, 182, 212, 0.2) !important;
+}
+
+/* Shadow adjustments for dark theme */
+.dark-theme .shadow-sm {
+    box-shadow: 0 0.125rem 0.25rem var(--card-shadow) !important;
+}
+
+.dark-theme .shadow {
+    box-shadow: 0 0.5rem 1rem var(--card-shadow) !important;
+}
+
+/* Blazor error UI - dark theme */
+.dark-theme #blazor-error-ui {
+    background-color: #dc2626;
+    color: #ffffff;
+}
