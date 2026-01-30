@@ -47,16 +47,16 @@
 
 /* Top row header - dark theme */
 .dark-theme .top-row {
-    background-color: var(--surface-color);
-    border-bottom-color: var(--border-color);
+    background-color: var(--surface-color) !important;
+    border-bottom-color: var(--border-color) !important;
 }
 
 .dark-theme .top-row a {
-    color: var(--text-color);
+    color: var(--text-color) !important;
 }
 
 .dark-theme .top-row a:hover {
-    color: var(--sidebar-bg);
+    color: var(--sidebar-bg) !important;
 }
 
 /* Cards - dark theme */
@@ -396,4 +396,180 @@
 
 .dark-theme .card a:hover {
     color: #93c5fd;
+}
+
+/* ===================================
+   Calendar Dark Mode Styles
+   =================================== */
+
+/* Calendar container */
+.dark-theme .calendar-container,
+.dark-theme .calendar,
+.dark-theme .calendar-grid {
+    background-color: var(--surface-color) !important;
+    color: var(--text-color) !important;
+}
+
+/* Calendar header */
+.dark-theme .calendar-header {
+    background-color: var(--surface-color) !important;
+    border-bottom-color: var(--border-color) !important;
+    color: var(--text-color) !important;
+}
+
+/* Calendar day cells */
+.dark-theme .calendar-day,
+.dark-theme .calendar-cell,
+.dark-theme .day-cell {
+    background-color: var(--surface-color) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-color) !important;
+}
+
+/* Calendar day hover */
+.dark-theme .calendar-day:hover,
+.dark-theme .calendar-cell:hover,
+.dark-theme .day-cell:hover {
+    background-color: #2d3139 !important;
+}
+
+/* Calendar today */
+.dark-theme .calendar-today,
+.dark-theme .today {
+    background-color: rgba(59, 130, 246, 0.2) !important;
+    border-color: var(--sidebar-bg) !important;
+}
+
+/* Calendar selected day */
+.dark-theme .calendar-selected,
+.dark-theme .selected {
+    background-color: var(--sidebar-bg) !important;
+    color: #ffffff !important;
+}
+
+/* Calendar weekday headers */
+.dark-theme .calendar-weekday,
+.dark-theme .weekday-header {
+    background-color: var(--surface-color) !important;
+    color: var(--text-muted) !important;
+    border-bottom-color: var(--border-color) !important;
+}
+
+/* Calendar events */
+.dark-theme .calendar-event {
+    background-color: rgba(59, 130, 246, 0.3) !important;
+    border-left-color: var(--sidebar-bg) !important;
+    color: var(--text-color) !important;
+}
+
+.dark-theme .calendar-event:hover {
+    background-color: rgba(59, 130, 246, 0.4) !important;
+}
+
+/* Calendar other month days */
+.dark-theme .calendar-other-month,
+.dark-theme .other-month {
+    color: var(--text-muted) !important;
+    opacity: 0.5;
+}
+
+/* Calendar navigation buttons */
+.dark-theme .calendar-nav button {
+    background-color: transparent !important;
+    color: var(--text-color) !important;
+    border-color: var(--border-color) !important;
+}
+
+.dark-theme .calendar-nav button:hover {
+    background-color: #2d3139 !important;
+}
+
+/* Calendar month/year selector */
+.dark-theme .calendar-month-year {
+    color: var(--text-color) !important;
+}
+
+/* FullCalendar specific styles (if using FullCalendar library) */
+.dark-theme .fc {
+    background-color: var(--surface-color) !important;
+}
+
+.dark-theme .fc-theme-standard td,
+.dark-theme .fc-theme-standard th {
+    border-color: var(--border-color) !important;
+}
+
+.dark-theme .fc-theme-standard .fc-scrollgrid {
+    border-color: var(--border-color) !important;
+}
+
+.dark-theme .fc-col-header-cell {
+    background-color: var(--surface-color) !important;
+    color: var(--text-color) !important;
+}
+
+.dark-theme .fc-daygrid-day {
+    background-color: var(--surface-color) !important;
+    color: var(--text-color) !important;
+}
+
+.dark-theme .fc-daygrid-day:hover {
+    background-color: #2d3139 !important;
+}
+
+.dark-theme .fc-daygrid-day-number {
+    color: var(--text-color) !important;
+}
+
+.dark-theme .fc-day-today {
+    background-color: rgba(59, 130, 246, 0.15) !important;
+}
+
+.dark-theme .fc-event {
+    background-color: var(--sidebar-bg) !important;
+    border-color: var(--sidebar-bg) !important;
+}
+
+.dark-theme .fc-event:hover {
+    background-color: #1e40af !important;
+}
+
+.dark-theme .fc-toolbar-title {
+    color: var(--text-color) !important;
+}
+
+.dark-theme .fc-button {
+    background-color: var(--sidebar-bg) !important;
+    border-color: var(--sidebar-bg) !important;
+    color: #ffffff !important;
+}
+
+.dark-theme .fc-button:hover {
+    background-color: #1e40af !important;
+    border-color: #1e40af !important;
+}
+
+.dark-theme .fc-button-primary:disabled {
+    background-color: #4b5563 !important;
+    border-color: #4b5563 !important;
+}
+
+/* Calendar popover/tooltip */
+.dark-theme .calendar-popover,
+.dark-theme .fc-popover {
+    background-color: var(--surface-color) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-color) !important;
+}
+
+.dark-theme .calendar-popover-header,
+.dark-theme .fc-popover-header {
+    background-color: #2d3139 !important;
+    color: var(--text-color) !important;
+}
+
+/* Ensure all content areas in calendar are dark */
+.dark-theme .content.px-4,
+.dark-theme article.content {
+    background-color: var(--background-color) !important;
 }
