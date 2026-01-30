@@ -108,52 +108,92 @@ mkdir -p ~/Desktop/OneManVan-Deployment
 
 ### Step 1.2: Copy Required Files
 
+**IMPORTANT:** Make sure you're NOT inside your project folder when running these commands!
+
 **Windows (PowerShell):**
 
 ```powershell
+# First, navigate to a safe location (like your home directory)
+cd ~
+
 # Set your project location (CHANGE THIS if different!)
 $ProjectPath = "C:\Users\tech\source\repos\TradeFlow"
 $DeployPath = "$env:USERPROFILE\Desktop\OneManVan-Deployment"
 
+# Check if we're trying to copy to the same location
+if ($ProjectPath -eq $DeployPath) {
+    Write-Host "ERROR: Project and deployment folders are the same!" -ForegroundColor Red
+    Write-Host "Deployment folder created at: $DeployPath" -ForegroundColor Yellow
+    exit
+}
+
 # Copy all necessary files
-Copy-Item "$ProjectPath\docker-compose.yml" -Destination $DeployPath
-Copy-Item "$ProjectPath\.env" -Destination $DeployPath -ErrorAction SilentlyContinue
-Copy-Item "$ProjectPath\.env.example" -Destination $DeployPath -ErrorAction SilentlyContinue
-Copy-Item "$ProjectPath\docker-complete-reset-deploy.sh" -Destination $DeployPath
-Copy-Item "$ProjectPath\docker-complete-reset-deploy.ps1" -Destination $DeployPath
+Write-Host "Copying files from: $ProjectPath" -ForegroundColor Cyan
+Write-Host "To: $DeployPath" -ForegroundColor Cyan
+Write-Host ""
+
+Copy-Item "$ProjectPath\docker-compose.yml" -Destination $DeployPath -Force
+Copy-Item "$ProjectPath\.env" -Destination $DeployPath -ErrorAction SilentlyContinue -Force
+Copy-Item "$ProjectPath\.env.example" -Destination $DeployPath -ErrorAction SilentlyContinue -Force
+Copy-Item "$ProjectPath\docker-complete-reset-deploy.sh" -Destination $DeployPath -Force
+Copy-Item "$ProjectPath\docker-complete-reset-deploy.ps1" -Destination $DeployPath -Force
 
 # Copy OneManVan.Web folder
+Write-Host "Copying OneManVan.Web folder..." -ForegroundColor Yellow
 Copy-Item "$ProjectPath\OneManVan.Web" -Destination $DeployPath -Recurse -Force
 
 # Copy OneManVan.Shared folder
+Write-Host "Copying OneManVan.Shared folder..." -ForegroundColor Yellow
 Copy-Item "$ProjectPath\OneManVan.Shared" -Destination $DeployPath -Recurse -Force
 
+Write-Host ""
 Write-Host "? Files copied successfully!" -ForegroundColor Green
 Write-Host "?? Deployment folder: $DeployPath" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "Next: Go to Part 2 to upload files to server" -ForegroundColor Green
 ```
 
 **Mac/Linux (Terminal):**
 
 ```bash
+# First, navigate to a safe location (like your home directory)
+cd ~
+
 # Set your project location (CHANGE THIS if different!)
 PROJECT_PATH=~/source/repos/TradeFlow
 DEPLOY_PATH=~/Desktop/OneManVan-Deployment
 
+# Check if we're trying to copy to the same location
+if [ "$PROJECT_PATH" = "$DEPLOY_PATH" ]; then
+    echo "ERROR: Project and deployment folders are the same!"
+    echo "Deployment folder created at: $DEPLOY_PATH"
+    exit 1
+fi
+
 # Copy all necessary files
-cp $PROJECT_PATH/docker-compose.yml $DEPLOY_PATH/
-cp $PROJECT_PATH/.env $DEPLOY_PATH/ 2>/dev/null || true
-cp $PROJECT_PATH/.env.example $DEPLOY_PATH/ 2>/dev/null || true
-cp $PROJECT_PATH/docker-complete-reset-deploy.sh $DEPLOY_PATH/
-cp $PROJECT_PATH/docker-complete-reset-deploy.ps1 $DEPLOY_PATH/
+echo "Copying files from: $PROJECT_PATH"
+echo "To: $DEPLOY_PATH"
+echo ""
+
+cp "$PROJECT_PATH/docker-compose.yml" "$DEPLOY_PATH/"
+cp "$PROJECT_PATH/.env" "$DEPLOY_PATH/" 2>/dev/null || true
+cp "$PROJECT_PATH/.env.example" "$DEPLOY_PATH/" 2>/dev/null || true
+cp "$PROJECT_PATH/docker-complete-reset-deploy.sh" "$DEPLOY_PATH/"
+cp "$PROJECT_PATH/docker-complete-reset-deploy.ps1" "$DEPLOY_PATH/"
 
 # Copy OneManVan.Web folder
-cp -r $PROJECT_PATH/OneManVan.Web $DEPLOY_PATH/
+echo "Copying OneManVan.Web folder..."
+cp -r "$PROJECT_PATH/OneManVan.Web" "$DEPLOY_PATH/"
 
 # Copy OneManVan.Shared folder
-cp -r $PROJECT_PATH/OneManVan.Shared $DEPLOY_PATH/
+echo "Copying OneManVan.Shared folder..."
+cp -r "$PROJECT_PATH/OneManVan.Shared" "$DEPLOY_PATH/"
 
+echo ""
 echo "? Files copied successfully!"
 echo "?? Deployment folder: $DEPLOY_PATH"
+echo ""
+echo "Next: Go to Part 2 to upload files to server"
 ```
 
 ### Step 1.3: Verify Files Were Copied
