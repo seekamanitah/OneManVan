@@ -573,3 +573,55 @@
 .dark-theme article.content {
     background-color: var(--background-color) !important;
 }
+
+/* ===================================
+   Navigation Menu Icon Alignment Fix
+   =================================== */
+
+/* Fix icon and text alignment in nav menu */
+.dark-theme .nav-link,
+.nav-link {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+}
+
+/* Ensure icons are properly sized and aligned */
+.dark-theme .nav-link .bi,
+.nav-link .bi {
+    font-size: 1.25rem !important;
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+    flex-shrink: 0 !important;
+    margin-right: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* Remove extra spacing that causes drift */
+.dark-theme .nav-item .nav-link span,
+.nav-item .nav-link span {
+    margin-right: 0 !important;
+}
+
+/* Ensure nav link text doesn't wrap */
+.dark-theme .nav-link,
+.nav-link {
+    white-space: nowrap !important;
+}
+
+/* Dark mode nav menu text */
+.dark-theme .nav-item .nav-link {
+    color: #d7d7d7 !important;
+}
+
+.dark-theme .nav-item a.active {
+    background-color: rgba(255,255,255,0.37) !important;
+    color: white !important;
+}
+
+.dark-theme .nav-item .nav-link:hover {
+    background-color: rgba(255,255,255,0.1) !important;
+    color: white !important;
+}
