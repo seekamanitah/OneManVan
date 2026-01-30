@@ -119,6 +119,189 @@
             </div>
         </div>
 
+        <!-- New Cards Row -->
+        <div class="row g-3 mb-4">
+            <!-- Scheduled Jobs Card -->
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white border-0 py-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">
+                                <i class="bi bi-calendar-check text-success me-2"></i>
+                                Scheduled Jobs
+                            </h6>
+                            <span class="badge bg-success">@scheduledJobs.Count</span>
+                        </div>
+                    </div>
+                    <div class="card-body p-0" style="max-height: 300px; overflow-y: auto;">
+                        @if (scheduledJobs.Any())
+                        {
+                            <div class="list-group list-group-flush">
+                                @foreach (var job in scheduledJobs.Take(5))
+                                {
+                                    <a href="/jobs/@job.Id" class="list-group-item list-group-item-action">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="flex-grow-1">
+                                                <h6 class="mb-1">@job.Title</h6>
+                                                <small class="text-muted">@job.Customer?.DisplayName</small>
+                                            </div>
+                                            <div class="text-end ms-2">
+                                                <small class="d-block text-success">
+                                                    @job.ScheduledDate?.ToString("MMM dd")
+                                                </small>
+                                                <small class="text-muted">
+                                                    @(job.ArrivalWindowStart?.ToString(@"h\:mm") ?? "--") - @(job.ArrivalWindowEnd?.ToString(@"h\:mm") ?? "--")
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </a>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="p-4 text-center text-muted">
+                                <i class="bi bi-calendar-x fs-3 mb-2"></i>
+                                <p class="mb-0">No scheduled jobs</p>
+                            </div>
+                        }
+                    </div>
+                    @if (scheduledJobs.Count > 5)
+                    {
+                        <div class="card-footer bg-white border-0 py-2 text-center">
+                            <a href="/jobs?filter=scheduled" class="btn btn-sm btn-link">
+                                View All @scheduledJobs.Count Scheduled Jobs
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Unscheduled Jobs Card -->
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white border-0 py-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">
+                                <i class="bi bi-clock-history text-warning me-2"></i>
+                                Unscheduled Jobs
+                            </h6>
+                            <span class="badge bg-warning">@unscheduledJobs.Count</span>
+                        </div>
+                    </div>
+                    <div class="card-body p-0" style="max-height: 300px; overflow-y: auto;">
+                        @if (unscheduledJobs.Any())
+                        {
+                            <div class="list-group list-group-flush">
+                                @foreach (var job in unscheduledJobs.Take(5))
+                                {
+                                    <a href="/jobs/@job.Id" class="list-group-item list-group-item-action">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="flex-grow-1">
+                                                <h6 class="mb-1">@job.Title</h6>
+                                                <small class="text-muted">@job.Customer?.DisplayName</small>
+                                            </div>
+                                            <span class="badge bg-@GetPriorityColor(job.Priority)">
+                                                @job.Priority
+                                            </span>
+                                        </div>
+                                        @if (!string.IsNullOrEmpty(job.Description))
+                                        {
+                                            <small class="text-muted d-block mt-1">
+                                                @(job.Description.Length > 60 ? job.Description.Substring(0, 60) + "..." : job.Description)
+                                            </small>
+                                        }
+                                    </a>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="p-4 text-center text-muted">
+                                <i class="bi bi-check-circle fs-3 mb-2"></i>
+                                <p class="mb-0">All jobs are scheduled!</p>
+                            </div>
+                        }
+                    </div>
+                    @if (unscheduledJobs.Count > 5)
+                    {
+                        <div class="card-footer bg-white border-0 py-2 text-center">
+                            <a href="/jobs?filter=unscheduled" class="btn btn-sm btn-link">
+                                View All @unscheduledJobs.Count Unscheduled Jobs
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Quick Notes Card -->
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white border-0 py-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">
+                                <i class="bi bi-sticky text-info me-2"></i>
+                                Quick Notes
+                            </h6>
+                            <a href="/notes" class="btn btn-sm btn-outline-info">
+                                <i class="bi bi-plus-lg"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body p-0" style="max-height: 300px; overflow-y: auto;">
+                        @if (recentNotes.Any())
+                        {
+                            <div class="list-group list-group-flush">
+                                @foreach (var note in recentNotes.Take(5))
+                                {
+                                    <a href="/notes" class="list-group-item list-group-item-action" style="@(string.IsNullOrEmpty(note.Color) ? "" : $"border-left: 4px solid {note.Color};")">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="flex-grow-1">
+                                                @if (!string.IsNullOrEmpty(note.Title))
+                                                {
+                                                    <h6 class="mb-1">
+                                                        @if (note.IsPinned)
+                                                        {
+                                                            <i class="bi bi-pin-angle-fill text-danger me-1"></i>
+                                                        }
+                                                        @note.Title
+                                                    </h6>
+                                                }
+                                                <p class="mb-1 small text-muted" style="white-space: pre-wrap;">
+                                                    @(note.Content.Length > 80 ? note.Content.Substring(0, 80) + "..." : note.Content)
+                                                </p>
+                                            </div>
+                                            @if (!string.IsNullOrEmpty(note.Category))
+                                            {
+                                                <span class="badge bg-secondary ms-2">@note.Category</span>
+                                            }
+                                        </div>
+                                        <small class="text-muted">@note.CreatedAt.ToString("MMM dd, h:mm tt")</small>
+                                    </a>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="p-4 text-center text-muted">
+                                <i class="bi bi-sticky fs-3 mb-2"></i>
+                                <p class="mb-0">No notes yet</p>
+                                <a href="/notes" class="btn btn-sm btn-primary mt-2">Create Note</a>
+                            </div>
+                        }
+                    </div>
+                    @if (recentNotes.Count > 5)
+                    {
+                        <div class="card-footer bg-white border-0 py-2 text-center">
+                            <a href="/notes" class="btn btn-sm btn-link">
+                                View All Notes
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
         <div class="row g-3">
             <!-- Recent Jobs -->
             <div class="col-md-8">
@@ -218,12 +401,15 @@
 </div>
 
 @code {
-    private bool isLoading = true;
-    private string errorMessage = "";
-    private DashboardMetrics metrics = new();
-    private List<Job> recentJobs = new();
+private bool isLoading = true;
+private string errorMessage = "";
+private DashboardMetrics metrics = new();
+private List<Job> recentJobs = new();
+private List<Job> scheduledJobs = new();
+private List<Job> unscheduledJobs = new();
+private List<QuickNote> recentNotes = new();
 
-    protected override async Task OnInitializedAsync()
+protected override async Task OnInitializedAsync()
     {
         try
         {
@@ -247,6 +433,7 @@
         // Load metrics
         var startOfMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
         var startOfWeek = DateTime.Now.AddDays(-(int)DateTime.Now.DayOfWeek);
+        var today = DateTime.Today;
 
         metrics.TotalCustomers = await db.Customers.CountAsync();
         metrics.ActiveCustomers = await db.Customers.CountAsync(c => c.Status == CustomerStatus.Active);
@@ -273,6 +460,36 @@
             .Take(5)
             .AsNoTracking()
             .ToListAsync();
+
+        // Load scheduled jobs (next 30 days)
+        scheduledJobs = await db.Jobs
+            .Include(j => j.Customer)
+            .Where(j => j.ScheduledDate.HasValue && 
+                        j.ScheduledDate >= today &&
+                        j.ScheduledDate <= today.AddDays(30) &&
+                        (j.Status == JobStatus.Draft || j.Status == JobStatus.Scheduled))
+            .OrderBy(j => j.ScheduledDate)
+            .AsNoTracking()
+            .ToListAsync();
+
+        // Load unscheduled jobs
+        unscheduledJobs = await db.Jobs
+            .Include(j => j.Customer)
+            .Where(j => !j.ScheduledDate.HasValue &&
+                        (j.Status == JobStatus.Draft || j.Status == JobStatus.Scheduled))
+            .OrderByDescending(j => j.Priority)
+            .ThenByDescending(j => j.CreatedAt)
+            .AsNoTracking()
+            .ToListAsync();
+
+        // Load recent notes (pinned first, then recent)
+        recentNotes = await db.QuickNotes
+            .Where(n => !n.IsArchived)
+            .OrderByDescending(n => n.IsPinned)
+            .ThenByDescending(n => n.CreatedAt)
+            .Take(5)
+            .AsNoTracking()
+            .ToListAsync();
     }
 
     private string GetStatusBadgeClass(JobStatus status)
@@ -284,6 +501,18 @@
             JobStatus.Completed => "bg-success",
             JobStatus.Cancelled => "bg-danger",
             _ => "bg-secondary"
+        };
+    }
+
+    private string GetPriorityColor(JobPriority priority)
+    {
+        return priority switch
+        {
+            JobPriority.Low => "secondary",
+            JobPriority.Normal => "primary",
+            JobPriority.High => "warning",
+            JobPriority.Emergency => "danger",
+            _ => "secondary"
         };
     }
 
