@@ -8,6 +8,7 @@ using OneManVan.Web.Components.Account;
 using OneManVan.Web.Data;
 using OneManVan.Web.Services;
 using OneManVan.Web.Services.Export;
+using OneManVan.Web.Services.Import;
 using OneManVan.Web.Services.Pdf;
 using OneManVan.Shared.Data;
 using OneManVan.Shared.Services;
@@ -198,6 +199,7 @@ builder.Services.AddScoped<IEmployeeTimeLogAutoService, EmployeeTimeLogAutoServi
 // Data protection for sensitive data encryption
 builder.Services.AddSingleton<IDataProtectionService, DataProtectionService>();
 
+
 // Register export services
 builder.Services.AddScoped<ICsvExportService, CsvExportService>();
 builder.Services.AddScoped<IExcelExportService, ExcelExportService>();
@@ -206,6 +208,12 @@ builder.Services.AddScoped<IEstimatePdfGenerator, EstimatePdfGenerator>();
 builder.Services.AddScoped<IServiceAgreementPdfGenerator, ServiceAgreementPdfGenerator>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+
+// Register import services
+builder.Services.AddScoped<ICsvImportService, CsvImportService>();
+
+// Add HttpClient for Blazor components
+builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://localhost:5024") });
 
 // Add controllers for API endpoints
 builder.Services.AddControllers();

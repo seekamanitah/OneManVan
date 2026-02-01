@@ -17,6 +17,7 @@
             <p class="text-muted mb-0">Commercial accounts and organizations</p>
         </div>
         <div class="d-flex gap-2">
+            <ImportButton EntityType="companies" EntityDisplayName="Companies" DuplicateField="Name" OnImportComplete="OnImportComplete" />
             <ExportButton EntityType="companies" />
             <button class="btn btn-primary" @onclick="CreateCompany">
                 <i class="bi bi-plus-circle me-2"></i>New Company
@@ -252,4 +253,9 @@
         CompanyType.PropertyManagement => "bg-warning text-dark",
         _ => "bg-secondary"
     };
+
+    private async Task OnImportComplete()
+    {
+        await LoadCompaniesAsync();
+    }
 }

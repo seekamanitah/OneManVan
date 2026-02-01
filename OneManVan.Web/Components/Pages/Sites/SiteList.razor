@@ -16,6 +16,7 @@
             <p class="text-muted mb-0">Service locations for customers</p>
         </div>
         <div class="d-flex gap-2">
+            <ImportButton EntityType="sites" EntityDisplayName="Sites" DuplicateField="Address" OnImportComplete="OnImportComplete" />
             <ExportButton EntityType="sites" />
             <button class="btn btn-primary" @onclick="CreateSite">
                 <i class="bi bi-plus-circle me-2"></i>New Site
@@ -157,4 +158,9 @@
     private void CreateSite() => Navigation.NavigateTo("/sites/new");
     private void ViewSite(int id) => Navigation.NavigateTo($"/sites/{id}");
     private void EditSite(int id) => Navigation.NavigateTo($"/sites/{id}/edit");
+
+    private async Task OnImportComplete()
+    {
+        await LoadSitesAsync();
+    }
 }

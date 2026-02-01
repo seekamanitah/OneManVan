@@ -1,0 +1,308 @@
+@using System.Net.Http.Headers
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+<div class="import-button-container">
+    <div class="dropdown">
+        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" disabled="@IsLoading">
+            @if (IsLoading)
+            {
+                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                <span>Importing...</span>
+            }
+            else
+            {
+                <i class="bi bi-upload me-1"></i>
+                <span>Import</span>
+            }
+        </button>
+        <ul class="dropdown-menu">
+            <li>
+                <button class="dropdown-item" @onclick="ShowImportDialog">
+                    <i class="bi bi-file-earmark-arrow-up me-2"></i>Import from File (CSV/Excel)
+                </button>
+            </li>
+            <li>
+                <a class="dropdown-item" href="@TemplateDownloadUrl" download>
+                    <i class="bi bi-download me-2"></i>Download CSV Template
+                </a>
+            </li>
+        </ul>
+    </div>
+</div>
+
+@if (showModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-upload me-2"></i>Import @EntityDisplayName
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    @if (importResult != null)
+                    {
+                        <!-- Import Results -->
+                        <div class="alert @(importResult.Success ? "alert-success" : "alert-danger")">
+                            <h6>@(importResult.Success ? "Import Successful" : "Import Failed")</h6>
+                            <p class="mb-0">@importResult.Message</p>
+                        </div>
+                        
+                        @if (importResult.Errors.Any())
+                        {
+                            <div class="mt-3">
+                                <h6>Errors:</h6>
+                                <div class="table-responsive" style="max-height: 200px; overflow-y: auto;">
+                                    <table class="table table-sm table-bordered">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Row</th>
+                                                <th>Field</th>
+                                                <th>Error</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var error in importResult.Errors.Take(20))
+                                            {
+                                                <tr>
+                                                    <td>@error.RowNumber</td>
+                                                    <td>@error.Field</td>
+                                                    <td>@error.Message</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                                @if (importResult.Errors.Count > 20)
+                                {
+                                    <small class="text-muted">Showing first 20 of @importResult.Errors.Count errors</small>
+                                }
+                            </div>
+                        }
+                        
+                        <div class="mt-3">
+                            <dl class="row mb-0">
+                                <dt class="col-sm-6">Total Records:</dt>
+                                <dd class="col-sm-6">@importResult.TotalRecords</dd>
+                                <dt class="col-sm-6">Imported:</dt>
+                                <dd class="col-sm-6 text-success">@importResult.ImportedCount</dd>
+                                <dt class="col-sm-6">Updated:</dt>
+                                <dd class="col-sm-6 text-info">@importResult.UpdatedCount</dd>
+                                <dt class="col-sm-6">Skipped:</dt>
+                                <dd class="col-sm-6 text-warning">@importResult.SkippedCount</dd>
+                                <dt class="col-sm-6">Errors:</dt>
+                                <dd class="col-sm-6 text-danger">@importResult.ErrorCount</dd>
+                            </dl>
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- File Upload -->
+                        <div class="mb-3">
+                            <label class="form-label">Select File (CSV or Excel)</label>
+                            <InputFile class="form-control" OnChange="HandleFileSelected" accept=".csv,.txt,.xlsx,.xls" />
+                            <div class="form-text">
+                                Supported formats: CSV, Excel (.xlsx, .xls). Maximum file size: 10MB.
+                                <a href="@TemplateDownloadUrl" download>Download CSV template</a>
+                            </div>
+                        </div>
+                        
+                        @if (selectedFile != null)
+                        {
+                            <div class="alert alert-info">
+                                <i class="bi @GetFileIcon(selectedFile.Name) me-2"></i>
+                                <strong>@selectedFile.Name</strong> (@FormatFileSize(selectedFile.Size))
+                            </div>
+                        }
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="updateExisting" @bind="updateExisting">
+                                <label class="form-check-label" for="updateExisting">
+                                    Update existing records (match by @DuplicateField)
+                                </label>
+                            </div>
+                        </div>
+                        
+                        @if (!string.IsNullOrEmpty(errorMessage))
+                        {
+                            <div class="alert alert-danger">
+                                <i class="bi bi-exclamation-triangle me-2"></i>@errorMessage
+                            </div>
+                        }
+                    }
+                </div>
+                <div class="modal-footer">
+                    @if (importResult != null)
+                    {
+                        <button type="button" class="btn btn-secondary" @onclick="CloseModal">Close</button>
+                        @if (importResult.Success)
+                        {
+                            <button type="button" class="btn btn-primary" @onclick="RefreshAndClose">
+                                <i class="bi bi-arrow-clockwise me-1"></i>Refresh List
+                            </button>
+                        }
+                    }
+                    else
+                    {
+                        <button type="button" class="btn btn-secondary" @onclick="CloseModal">Cancel</button>
+                        <button type="button" class="btn btn-primary" @onclick="StartImport" 
+                                disabled="@(selectedFile == null || IsLoading)">
+                            @if (IsLoading)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1"></span>
+                                <span>Importing...</span>
+                            }
+                            else
+                            {
+                                <i class="bi bi-upload me-1"></i>
+                                <span>Import</span>
+                            }
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public string EntityType { get; set; } = "customers";
+    [Parameter] public string EntityDisplayName { get; set; } = "Customers";
+    [Parameter] public string DuplicateField { get; set; } = "Email";
+    [Parameter] public EventCallback OnImportComplete { get; set; }
+    
+    private bool showModal = false;
+    private bool IsLoading = false;
+    private bool updateExisting = false;
+    private IBrowserFile? selectedFile;
+    private string? errorMessage;
+    private ImportResultDto? importResult;
+    
+    private string TemplateDownloadUrl => $"/api/import/template/{EntityType}";
+    
+    private void ShowImportDialog()
+    {
+        showModal = true;
+        selectedFile = null;
+        errorMessage = null;
+        importResult = null;
+        updateExisting = false;
+    }
+    
+    private void CloseModal()
+    {
+        showModal = false;
+        selectedFile = null;
+        errorMessage = null;
+        importResult = null;
+    }
+    
+    private async Task RefreshAndClose()
+    {
+        CloseModal();
+        await OnImportComplete.InvokeAsync();
+    }
+    
+    private void HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        selectedFile = e.File;
+        errorMessage = null;
+        
+        // Validate file size (10MB max)
+        if (selectedFile.Size > 10 * 1024 * 1024)
+        {
+            errorMessage = "File size exceeds 10MB limit.";
+            selectedFile = null;
+        }
+    }
+    
+    private async Task StartImport()
+    {
+        if (selectedFile == null) return;
+        
+        IsLoading = true;
+        errorMessage = null;
+        
+        try
+        {
+            using var content = new MultipartFormDataContent();
+            using var stream = selectedFile.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+            ms.Position = 0;
+            
+            var fileContent = new StreamContent(ms);
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue("text/csv");
+            content.Add(fileContent, "file", selectedFile.Name);
+            
+            var url = $"/api/import/{EntityType}?updateExisting={updateExisting}";
+            var response = await Http.PostAsync(url, content);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                importResult = await response.Content.ReadFromJsonAsync<ImportResultDto>();
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                errorMessage = $"Import failed: {error}";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error during import: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+    
+    private string FormatFileSize(long bytes)
+    {
+        if (bytes < 1024) return $"{bytes} B";
+        if (bytes < 1024 * 1024) return $"{bytes / 1024.0:F1} KB";
+        return $"{bytes / (1024.0 * 1024.0):F1} MB";
+    }
+    
+    private string GetFileIcon(string fileName)
+    {
+        var extension = Path.GetExtension(fileName).ToLowerInvariant();
+        return extension switch
+        {
+            ".xlsx" or ".xls" => "bi-file-earmark-excel",
+            ".csv" or ".txt" => "bi-file-earmark-text",
+            _ => "bi-file-earmark"
+        };
+    }
+    
+    // DTO for deserializing import results
+    private class ImportResultDto
+    {
+        public bool Success { get; set; }
+        public int TotalRecords { get; set; }
+        public int ImportedCount { get; set; }
+        public int UpdatedCount { get; set; }
+        public int SkippedCount { get; set; }
+        public int ErrorCount { get; set; }
+        public string Message { get; set; } = "";
+        public List<ImportErrorDto> Errors { get; set; } = new();
+    }
+    
+    private class ImportErrorDto
+    {
+        public int RowNumber { get; set; }
+        public string Field { get; set; } = "";
+        public string Message { get; set; } = "";
+    }
+}
+
+<style>
+    .import-button-container {
+        display: inline-block;
+    }
+</style>

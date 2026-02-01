@@ -17,6 +17,7 @@
             <p class="text-muted mb-0">Scheduled work and service calls</p>
         </div>
         <div class="d-flex gap-2">
+            <ImportButton EntityType="jobs" EntityDisplayName="Jobs" DuplicateField="Title" OnImportComplete="OnImportComplete" />
             <ExportButton EntityType="jobs" />
             <button class="btn btn-primary" @onclick="CreateJob">
                 <i class="bi bi-plus-circle me-2"></i>New Job
@@ -265,5 +266,10 @@
             JobPriority.Urgent => "bg-danger",
             _ => "bg-secondary"
         };
+    }
+
+    private async Task OnImportComplete()
+    {
+        await LoadJobsAsync();
     }
 }

@@ -17,6 +17,7 @@
             <p class="text-muted mb-0">Customer billing and payments</p>
         </div>
         <div class="d-flex gap-2">
+            <ImportButton EntityType="invoices" EntityDisplayName="Invoices" DuplicateField="InvoiceNumber" OnImportComplete="OnImportComplete" />
             <ExportButton EntityType="invoices" />
             <button class="btn btn-primary" @onclick="CreateInvoice">
                 <i class="bi bi-plus-circle me-2"></i>New Invoice
@@ -271,4 +272,9 @@ private async Task LoadInvoicesAsync()
         InvoiceStatus.Cancelled => "bg-dark",
         _ => "bg-secondary"
     };
+
+    private async Task OnImportComplete()
+    {
+        await LoadInvoicesAsync();
+    }
 }

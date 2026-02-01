@@ -17,6 +17,7 @@
             <p class="text-muted mb-0">Maintenance contracts and recurring services</p>
         </div>
         <div class="d-flex gap-2">
+            <ImportButton EntityType="agreements" EntityDisplayName="Service Agreements" DuplicateField="AgreementNumber" OnImportComplete="OnImportComplete" />
             <ExportButton EntityType="service-agreements" />
             <button class="btn btn-primary" @onclick="CreateAgreement">
                 <i class="bi bi-plus-circle me-2"></i>New Agreement
@@ -244,4 +245,9 @@
         AgreementStatus.Cancelled => "bg-danger",
         _ => "bg-secondary"
     };
+
+    private async Task OnImportComplete()
+    {
+        await LoadAgreementsAsync();
+    }
 }

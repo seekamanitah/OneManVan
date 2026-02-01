@@ -5,6 +5,7 @@
 @using OneManVan.Shared.Data
 @using Microsoft.AspNetCore.Components.Forms
 @using OneManVan.Web.Services
+@using System.Net.Http.Json
 
 @inject TradeConfigurationService TradeService
 @inject ISettingsStorage SettingsStorage
@@ -13,6 +14,7 @@
 @inject IDbContextFactory<OneManVanDbContext> DbFactory
 @inject CompanySettingsService CompanyService
 @inject IEmailService EmailService
+@inject IJSRuntime JS
 
 <PageTitle>Settings - OneManVan</PageTitle>
 
@@ -620,6 +622,132 @@
                 </div>
             </div>
 
+            <!-- Export & Import -->
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0"><i class="bi bi-arrow-left-right me-2"></i>Export & Import Data</h5>
+                    <small class="text-muted">Backup your data or import from CSV files</small>
+                </div>
+                <div class="card-body">
+                    <!-- Export Section -->
+                    <h6 class="text-muted mb-3"><i class="bi bi-download me-2"></i>Export Data</h6>
+                    <div class="row g-2 mb-4">
+                        @foreach (var entity in exportEntities)
+                        {
+                            <div class="col-md-4 col-lg-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" 
+                                           id="export_@entity.Key" 
+                                           checked="@entity.Value.Selected"
+                                           @onchange="@(e => entity.Value.Selected = (bool)(e.Value ?? false))" />
+                                    <label class="form-check-label" for="export_@entity.Key">
+                                        <i class="bi @entity.Value.Icon me-1"></i>@entity.Value.Name
+                                    </label>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    <div class="d-flex gap-2 mb-4">
+                        <button class="btn btn-outline-primary" @onclick="SelectAllExport">
+                            <i class="bi bi-check-all me-1"></i>Select All
+                        </button>
+                        <button class="btn btn-outline-secondary" @onclick="DeselectAllExport">
+                            <i class="bi bi-x-lg me-1"></i>Deselect All
+                        </button>
+                        <button class="btn btn-primary" @onclick="ExportSelectedData" disabled="@(!HasExportSelection || isExporting)">
+                            @if (isExporting)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1"></span>
+                            }
+                            else
+                            {
+                                <i class="bi bi-download me-1"></i>
+                            }
+                            Export Selected (CSV)
+                        </button>
+                    </div>
+                    
+                    <hr />
+                    
+                    <!-- Import Section -->
+                    <h6 class="text-muted mb-3"><i class="bi bi-upload me-2"></i>Import Data</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Select Data Type to Import</label>
+                            <select class="form-select" @bind="selectedImportEntity">
+                                <option value="">-- Select --</option>
+                                <option value="customers">Customers</option>
+                                <option value="products">Products</option>
+                                <option value="assets">Assets</option>
+                                <option value="inventory">Inventory</option>
+                                <option value="jobs">Jobs</option>
+                                <option value="invoices">Invoices</option>
+                                <option value="estimates">Estimates</option>
+                                <option value="companies">Companies</option>
+                                <option value="sites">Sites</option>
+                                <option value="agreements">Service Agreements</option>
+                                <option value="employees">Employees</option>
+                                <option value="warranties">Warranty Claims</option>
+                                <option value="material-lists">Material Lists</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">CSV or Excel File</label>
+                            <InputFile class="form-control" OnChange="HandleImportFileSelected" accept=".csv,.txt,.xlsx,.xls" disabled="@(string.IsNullOrEmpty(selectedImportEntity))" />
+                        </div>
+                        @if (!string.IsNullOrEmpty(selectedImportEntity))
+                        {
+                            <div class="col-12">
+                                <a href="/api/import/template/@selectedImportEntity" download class="btn btn-link p-0">
+                                    <i class="bi bi-download me-1"></i>Download @selectedImportEntity template
+                                </a>
+                            </div>
+                        }
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="updateExistingImport" @bind="updateExistingOnImport" />
+                                <label class="form-check-label" for="updateExistingImport">
+                                    Update existing records if duplicates found
+                                </label>
+                            </div>
+                        </div>
+                        @if (importFile != null)
+                        {
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    <i class="bi bi-file-earmark-text me-2"></i>
+                                    <strong>@importFile.Name</strong> (@FormatFileSize(importFile.Size)) ready to import
+                                </div>
+                            </div>
+                        }
+                        <div class="col-12">
+                            <button class="btn btn-primary" @onclick="ImportSelectedData" 
+                                    disabled="@(importFile == null || string.IsNullOrEmpty(selectedImportEntity) || isImporting)">
+                                @if (isImporting)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-1"></span>
+                                    <span>Importing...</span>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-upload me-1"></i>
+                                    <span>Import Data</span>
+                                }
+                            </button>
+                        </div>
+                        @if (!string.IsNullOrEmpty(importResultMessage))
+                        {
+                            <div class="col-12">
+                                <div class="alert @(importSuccess ? "alert-success" : "alert-danger")">
+                                    <i class="bi @(importSuccess ? "bi-check-circle" : "bi-exclamation-triangle") me-2"></i>
+                                    @importResultMessage
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
             <!-- Data Management -->
             <div class="card border-0 shadow-sm mb-3">
                 <div class="card-header bg-white border-0 py-3">
@@ -771,6 +899,41 @@ private bool showResetModal = false;
 private string resetConfirmText = "";
 private string dataManagementMessage = "";
 private bool dataManagementSuccess = false;
+
+// Export/Import
+private bool isExporting = false;
+private bool isImporting = false;
+private string selectedImportEntity = "";
+private IBrowserFile? importFile;
+private bool updateExistingOnImport = false;
+private string importResultMessage = "";
+private bool importSuccess = false;
+
+private Dictionary<string, ExportEntityInfo> exportEntities = new()
+{
+    { "customers", new ExportEntityInfo { Name = "Customers", Icon = "bi-people", Selected = true } },
+    { "products", new ExportEntityInfo { Name = "Products", Icon = "bi-box", Selected = true } },
+    { "assets", new ExportEntityInfo { Name = "Assets", Icon = "bi-tools", Selected = true } },
+    { "inventory", new ExportEntityInfo { Name = "Inventory", Icon = "bi-boxes", Selected = true } },
+    { "jobs", new ExportEntityInfo { Name = "Jobs", Icon = "bi-briefcase", Selected = true } },
+    { "invoices", new ExportEntityInfo { Name = "Invoices", Icon = "bi-receipt", Selected = true } },
+    { "estimates", new ExportEntityInfo { Name = "Estimates", Icon = "bi-file-text", Selected = true } },
+    { "companies", new ExportEntityInfo { Name = "Companies", Icon = "bi-building", Selected = false } },
+    { "sites", new ExportEntityInfo { Name = "Sites", Icon = "bi-geo-alt", Selected = false } },
+    { "agreements", new ExportEntityInfo { Name = "Service Agreements", Icon = "bi-file-earmark-check", Selected = false } },
+    { "warranties", new ExportEntityInfo { Name = "Warranty Claims", Icon = "bi-shield-check", Selected = false } },
+    { "employees", new ExportEntityInfo { Name = "Employees", Icon = "bi-person-badge", Selected = false } },
+    { "material-lists", new ExportEntityInfo { Name = "Material Lists", Icon = "bi-list-check", Selected = false } }
+};
+
+private bool HasExportSelection => exportEntities.Values.Any(e => e.Selected);
+
+private class ExportEntityInfo
+{
+    public string Name { get; set; } = "";
+    public string Icon { get; set; } = "";
+    public bool Selected { get; set; }
+}
 
 protected override async Task OnInitializedAsync()
 {
@@ -1084,8 +1247,136 @@ protected override async Task OnInitializedAsync()
         }
         finally
         {
-            isResetting = false;
+        isResetting = false;
         }
+    }
+
+    #endregion
+
+    #region Export/Import
+
+    private void SelectAllExport()
+    {
+        foreach (var entity in exportEntities.Values)
+            entity.Selected = true;
+    }
+
+    private void DeselectAllExport()
+    {
+        foreach (var entity in exportEntities.Values)
+            entity.Selected = false;
+    }
+
+    private async Task ExportSelectedData()
+    {
+        isExporting = true;
+        StateHasChanged();
+
+        try
+        {
+            var selected = exportEntities.Where(e => e.Value.Selected).Select(e => e.Key).ToList();
+            
+            foreach (var entityType in selected)
+            {
+                // Trigger download for each selected entity
+                var url = $"/api/export/{entityType}/csv";
+                await JS.InvokeVoidAsync("open", url, "_blank");
+                await Task.Delay(500); // Small delay between downloads
+            }
+            
+            ShowToast($"Exported {selected.Count} data types to CSV");
+        }
+        catch (Exception ex)
+        {
+            dataManagementMessage = $"Export error: {ex.Message}";
+            dataManagementSuccess = false;
+        }
+        finally
+        {
+            isExporting = false;
+        }
+    }
+
+    private void HandleImportFileSelected(InputFileChangeEventArgs e)
+    {
+        importFile = e.File;
+        importResultMessage = "";
+        
+        if (importFile.Size > 10 * 1024 * 1024)
+        {
+            importResultMessage = "File size exceeds 10MB limit.";
+            importSuccess = false;
+            importFile = null;
+        }
+    }
+
+    private async Task ImportSelectedData()
+    {
+        if (importFile == null || string.IsNullOrEmpty(selectedImportEntity))
+            return;
+
+        isImporting = true;
+        importResultMessage = "";
+        StateHasChanged();
+
+        try
+        {
+            using var content = new MultipartFormDataContent();
+            using var stream = importFile.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+            ms.Position = 0;
+
+            var fileContent = new StreamContent(ms);
+            fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("text/csv");
+            content.Add(fileContent, "file", importFile.Name);
+
+            var url = $"/api/import/{selectedImportEntity}?updateExisting={updateExistingOnImport}";
+            
+            using var httpClient = new HttpClient { BaseAddress = new Uri(Navigation.BaseUri) };
+            var response = await httpClient.PostAsync(url, content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<ImportResultDto>();
+                importResultMessage = result?.Message ?? "Import completed successfully.";
+                importSuccess = true;
+                importFile = null;
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                importResultMessage = $"Import failed: {error}";
+                importSuccess = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            importResultMessage = $"Import error: {ex.Message}";
+            importSuccess = false;
+        }
+        finally
+        {
+            isImporting = false;
+        }
+    }
+
+    private string FormatFileSize(long bytes)
+    {
+        if (bytes < 1024) return $"{bytes} B";
+        if (bytes < 1024 * 1024) return $"{bytes / 1024.0:F1} KB";
+        return $"{bytes / (1024.0 * 1024.0):F1} MB";
+    }
+
+    private class ImportResultDto
+    {
+        public bool Success { get; set; }
+        public int TotalRecords { get; set; }
+        public int ImportedCount { get; set; }
+        public int UpdatedCount { get; set; }
+        public int SkippedCount { get; set; }
+        public int ErrorCount { get; set; }
+        public string Message { get; set; } = "";
     }
 
     #endregion

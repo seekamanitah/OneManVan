@@ -17,6 +17,7 @@
             <p class="text-muted mb-0">Create and manage customer estimates</p>
         </div>
         <div class="d-flex gap-2">
+            <ImportButton EntityType="estimates" EntityDisplayName="Estimates" DuplicateField="EstimateNumber" OnImportComplete="OnImportComplete" />
             <ExportButton EntityType="estimates" />
             <button class="btn btn-primary" @onclick="CreateEstimate">
                 <i class="bi bi-plus-circle me-2"></i>New Estimate
@@ -306,5 +307,10 @@
             EstimateStatus.Expired => "bg-warning",
             _ => "bg-secondary"
         };
+    }
+
+    private async Task OnImportComplete()
+    {
+        await LoadEstimatesAsync();
     }
 }

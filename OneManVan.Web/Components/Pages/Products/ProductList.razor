@@ -17,6 +17,7 @@
             <p class="text-muted mb-0">Equipment catalog and templates</p>
         </div>
         <div class="d-flex gap-2">
+            <ImportButton EntityType="products" EntityDisplayName="Products" DuplicateField="ModelNumber" OnImportComplete="OnImportComplete" />
             <ExportButton EntityType="products" />
             <button class="btn btn-primary" @onclick="CreateProduct">
                 <i class="bi bi-plus-circle me-2"></i>Add Product
@@ -237,5 +238,10 @@
     private void EditProduct(int id)
     {
         Navigation.NavigateTo($"/products/{id}/edit");
+    }
+
+    private async Task OnImportComplete()
+    {
+        await LoadProductsAsync();
     }
 }

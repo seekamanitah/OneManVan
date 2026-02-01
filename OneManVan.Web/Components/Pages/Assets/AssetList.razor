@@ -17,6 +17,7 @@
             <p class="text-muted mb-0">Customer equipment and installations</p>
         </div>
         <div class="d-flex gap-2">
+            <ImportButton EntityType="assets" EntityDisplayName="Assets" DuplicateField="SerialNumber" OnImportComplete="OnImportComplete" />
             <ExportButton EntityType="assets" />
             <button class="btn btn-primary" @onclick="CreateAsset">
                 <i class="bi bi-plus-circle me-2"></i>Add Asset
@@ -236,5 +237,10 @@
             AssetStatus.Decommissioned => "bg-danger",
             _ => "bg-secondary"
         };
+    }
+
+    private async Task OnImportComplete()
+    {
+        await LoadAssetsAsync();
     }
 }
