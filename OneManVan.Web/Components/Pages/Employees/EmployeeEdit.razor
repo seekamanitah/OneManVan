@@ -364,7 +364,61 @@
         {
             var existing = await EmployeeService.GetByIdAsync(Id!.Value);
             if (existing != null)
-                model = existing;
+            {
+                // Create a new instance to avoid tracking issues
+                model = new Employee
+                {
+                    Id = existing.Id,
+                    FirstName = existing.FirstName,
+                    LastName = existing.LastName,
+                    Type = existing.Type,
+                    Status = existing.Status,
+                    StartDate = existing.StartDate,
+                    TerminationDate = existing.TerminationDate,
+                    Address = existing.Address,
+                    City = existing.City,
+                    State = existing.State,
+                    ZipCode = existing.ZipCode,
+                    Phone = existing.Phone,
+                    Email = existing.Email,
+                    EmergencyContactName = existing.EmergencyContactName,
+                    EmergencyContactPhone = existing.EmergencyContactPhone,
+                    EmergencyContactRelationship = existing.EmergencyContactRelationship,
+                    TaxId = existing.TaxId,
+                    IsEin = existing.IsEin,
+                    PayRateType = existing.PayRateType,
+                    PayRate = existing.PayRate,
+                    OvertimeMultiplier = existing.OvertimeMultiplier,
+                    OvertimeThresholdHours = existing.OvertimeThresholdHours,
+                    PaymentMethod = existing.PaymentMethod,
+                    PtoBalanceHours = existing.PtoBalanceHours,
+                    PtoAccrualPerYear = existing.PtoAccrualPerYear,
+                    LastPaidDate = existing.LastPaidDate,
+                    LastPaidAmount = existing.LastPaidAmount,
+                    LastPaidMethod = existing.LastPaidMethod,
+                    CompanyName = existing.CompanyName,
+                    ContactPerson = existing.ContactPerson,
+                    CompanyEin = existing.CompanyEin,
+                    ServiceProvided = existing.ServiceProvided,
+                    InvoiceRequired = existing.InvoiceRequired,
+                    InsuranceOnFile = existing.InsuranceOnFile,
+                    HasW4 = existing.HasW4,
+                    W4DocumentId = existing.W4DocumentId,
+                    HasI9 = existing.HasI9,
+                    I9DocumentId = existing.I9DocumentId,
+                    Has1099Setup = existing.Has1099Setup,
+                    W9DocumentId = existing.W9DocumentId,
+                    InsuranceCertDocumentId = existing.InsuranceCertDocumentId,
+                    BackgroundCheckDate = existing.BackgroundCheckDate,
+                    BackgroundCheckResult = existing.BackgroundCheckResult,
+                    DrugTestDate = existing.DrugTestDate,
+                    DrugTestResult = existing.DrugTestResult,
+                    Notes = existing.Notes,
+                    PhotoPath = existing.PhotoPath,
+                    CreatedAt = existing.CreatedAt,
+                    UpdatedAt = existing.UpdatedAt
+                };
+            }
         }
         isLoading = false;
     }

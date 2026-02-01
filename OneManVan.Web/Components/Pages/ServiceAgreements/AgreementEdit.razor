@@ -346,7 +346,55 @@
 
             if (agreement != null)
             {
-                model = agreement;
+                // Create a new instance to avoid tracking issues
+                model = new ServiceAgreement
+                {
+                    Id = agreement.Id,
+                    AgreementNumber = agreement.AgreementNumber,
+                    CustomerId = agreement.CustomerId,
+                    SiteId = agreement.SiteId,
+                    Name = agreement.Name,
+                    Description = agreement.Description,
+                    Type = agreement.Type,
+                    Status = agreement.Status,
+                    StartDate = agreement.StartDate,
+                    EndDate = agreement.EndDate,
+                    AutoRenew = agreement.AutoRenew,
+                    RenewalReminderDays = agreement.RenewalReminderDays,
+                    AnnualPrice = agreement.AnnualPrice,
+                    MonthlyPrice = agreement.MonthlyPrice,
+                    BillingFrequency = agreement.BillingFrequency,
+                    RepairDiscountPercent = agreement.RepairDiscountPercent,
+                    PriorityService = agreement.PriorityService,
+                    WaiveTripCharge = agreement.WaiveTripCharge,
+                    IncludedVisitsPerYear = agreement.IncludedVisitsPerYear,
+                    VisitsUsed = agreement.VisitsUsed,
+                    IncludesAcTuneUp = agreement.IncludesAcTuneUp,
+                    IncludesHeatingTuneUp = agreement.IncludesHeatingTuneUp,
+                    IncludesFilterReplacement = agreement.IncludesFilterReplacement,
+                    IncludesRefrigerantTopOff = agreement.IncludesRefrigerantTopOff,
+                    MaxRefrigerantLbsIncluded = agreement.MaxRefrigerantLbsIncluded,
+                    IncludesLimitedPartsCoverage = agreement.IncludesLimitedPartsCoverage,
+                    MaxPartsCoverageAmount = agreement.MaxPartsCoverageAmount,
+                    ServiceTier = agreement.ServiceTier,
+                    NoEmergencyDispatchFee = agreement.NoEmergencyDispatchFee,
+                    FreeMinorAdjustments = agreement.FreeMinorAdjustments,
+                    FiltersIncludedPerYear = agreement.FiltersIncludedPerYear,
+                    AdditionalCheckVisits = agreement.AdditionalCheckVisits,
+                    ResponseTimeHours = agreement.ResponseTimeHours,
+                    SpringAcTuneUpTasks = agreement.SpringAcTuneUpTasks,
+                    FallHeatingTuneUpTasks = agreement.FallHeatingTuneUpTasks,
+                    PreferredSpringMonth = agreement.PreferredSpringMonth,
+                    PreferredFallMonth = agreement.PreferredFallMonth,
+                    LastMaintenanceScheduled = agreement.LastMaintenanceScheduled,
+                    NextMaintenanceDue = agreement.NextMaintenanceDue,
+                    CoveredAssetIds = agreement.CoveredAssetIds,
+                    MaxEquipmentAgeYears = agreement.MaxEquipmentAgeYears,
+                    Terms = agreement.Terms,
+                    InternalNotes = agreement.InternalNotes,
+                    CreatedAt = agreement.CreatedAt,
+                    UpdatedAt = agreement.UpdatedAt
+                };
             }
         }
         catch (Exception ex)

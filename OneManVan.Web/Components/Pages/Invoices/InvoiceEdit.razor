@@ -566,7 +566,37 @@
 
             if (invoice != null)
             {
-                model = invoice;
+                // Create a new instance to avoid tracking issues
+                model = new Invoice
+                {
+                    Id = invoice.Id,
+                    InvoiceNumber = invoice.InvoiceNumber,
+                    JobId = invoice.JobId,
+                    EstimateId = invoice.EstimateId,
+                    CustomerId = invoice.CustomerId,
+                    Status = invoice.Status,
+                    InvoiceDate = invoice.InvoiceDate,
+                    DueDate = invoice.DueDate,
+                    LaborAmount = invoice.LaborAmount,
+                    PartsAmount = invoice.PartsAmount,
+                    OtherAmount = invoice.OtherAmount,
+                    DiscountAmount = invoice.DiscountAmount,
+                    SubTotal = invoice.SubTotal,
+                    TaxRate = invoice.TaxRate,
+                    TaxAmount = invoice.TaxAmount,
+                    TaxIncluded = invoice.TaxIncluded,
+                    Total = invoice.Total,
+                    AmountPaid = invoice.AmountPaid,
+                    Notes = invoice.Notes,
+                    Terms = invoice.Terms,
+                    SentAt = invoice.SentAt,
+                    PaidAt = invoice.PaidAt,
+                    CreatedAt = invoice.CreatedAt,
+                    IsDeleted = invoice.IsDeleted,
+                    DeletedAt = invoice.DeletedAt,
+                    DeletedBy = invoice.DeletedBy
+                };
+                
                 var allItems = invoice.LineItems?.ToList() ?? new();
                 
                 // Separate parts and labor

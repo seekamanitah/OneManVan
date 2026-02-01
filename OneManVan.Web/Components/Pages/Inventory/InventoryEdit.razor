@@ -236,7 +236,33 @@
 
             if (item != null)
             {
-                model = item;
+                // Create a new instance to avoid tracking issues
+                model = new InventoryItem
+                {
+                    Id = item.Id,
+                    InventoryNumber = item.InventoryNumber,
+                    Name = item.Name,
+                    Description = item.Description,
+                    Sku = item.Sku,
+                    PartNumber = item.PartNumber,
+                    Category = item.Category,
+                    QuantityOnHand = item.QuantityOnHand,
+                    Unit = item.Unit,
+                    Cost = item.Cost,
+                    Price = item.Price,
+                    ReorderPoint = item.ReorderPoint,
+                    BtuMinCompatibility = item.BtuMinCompatibility,
+                    BtuMaxCompatibility = item.BtuMaxCompatibility,
+                    FuelTypeCompatibility = item.FuelTypeCompatibility,
+                    UnitConfigCompatibility = item.UnitConfigCompatibility,
+                    FilterSize = item.FilterSize,
+                    RefrigerantType = item.RefrigerantType,
+                    Location = item.Location,
+                    Supplier = item.Supplier,
+                    IsActive = item.IsActive,
+                    CreatedAt = item.CreatedAt,
+                    LastRestockedAt = item.LastRestockedAt
+                };
                 originalQuantity = item.QuantityOnHand;
             }
         }

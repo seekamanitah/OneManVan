@@ -316,7 +316,28 @@
 
             if (estimate != null)
             {
-                model = estimate;
+                // Create a new instance to avoid tracking issues
+                model = new Estimate
+                {
+                    Id = estimate.Id,
+                    CustomerId = estimate.CustomerId,
+                    SiteId = estimate.SiteId,
+                    AssetId = estimate.AssetId,
+                    Title = estimate.Title,
+                    Description = estimate.Description,
+                    Status = estimate.Status,
+                    SubTotal = estimate.SubTotal,
+                    TaxRate = estimate.TaxRate,
+                    TaxAmount = estimate.TaxAmount,
+                    TaxIncluded = estimate.TaxIncluded,
+                    Total = estimate.Total,
+                    Notes = estimate.Notes,
+                    Terms = estimate.Terms,
+                    CreatedAt = estimate.CreatedAt,
+                    SentAt = estimate.SentAt,
+                    ExpiresAt = estimate.ExpiresAt,
+                    AcceptedAt = estimate.AcceptedAt
+                };
                 lineItems = estimate.Lines?.ToList() ?? new List<EstimateLine>();
             }
         }

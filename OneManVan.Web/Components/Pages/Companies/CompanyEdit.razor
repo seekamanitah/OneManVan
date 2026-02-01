@@ -327,7 +327,29 @@ private async Task LoadCompanyAsync()
 
         if (company != null)
         {
-            model = company;
+            // Create a new instance to avoid tracking issues
+            model = new Company
+            {
+                Id = company.Id,
+                Name = company.Name,
+                LegalName = company.LegalName,
+                TaxId = company.TaxId,
+                Website = company.Website,
+                Phone = company.Phone,
+                Email = company.Email,
+                ContactName = company.ContactName,
+                ContactCustomerId = company.ContactCustomerId,
+                BillingAddress = company.BillingAddress,
+                BillingCity = company.BillingCity,
+                BillingState = company.BillingState,
+                BillingZipCode = company.BillingZipCode,
+                CompanyType = company.CompanyType,
+                Industry = company.Industry,
+                Notes = company.Notes,
+                IsActive = company.IsActive,
+                CreatedAt = company.CreatedAt,
+                UpdatedAt = company.UpdatedAt
+            };
             selectedContact = company.ContactCustomer;
         }
     }

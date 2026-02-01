@@ -216,7 +216,55 @@
 
             if (site != null)
             {
-                model = site;
+                // Create a new instance to avoid tracking issues
+                model = new Site
+                {
+                    Id = site.Id,
+                    CustomerId = site.CustomerId,
+                    CompanyId = site.CompanyId,
+                    SiteName = site.SiteName,
+                    LocationDescription = site.LocationDescription,
+                    SiteNumber = site.SiteNumber,
+                    Address = site.Address,
+                    Address2 = site.Address2,
+                    City = site.City,
+                    State = site.State,
+                    ZipCode = site.ZipCode,
+                    Country = site.Country,
+                    Latitude = site.Latitude,
+                    Longitude = site.Longitude,
+                    GooglePlaceId = site.GooglePlaceId,
+                    CrossStreets = site.CrossStreets,
+                    PropertyType = site.PropertyType,
+                    YearBuilt = site.YearBuilt,
+                    SquareFootage = site.SquareFootage,
+                    Stories = site.Stories,
+                    GateCode = site.GateCode,
+                    LockboxCode = site.LockboxCode,
+                    AccessInstructions = site.AccessInstructions,
+                    ParkingInstructions = site.ParkingInstructions,
+                    HasDog = site.HasDog,
+                    HasGate = site.HasGate,
+                    RequiresAppointment = site.RequiresAppointment,
+                    PetNotes = site.PetNotes,
+                    SiteContactName = site.SiteContactName,
+                    SiteContactPhone = site.SiteContactPhone,
+                    SiteContactEmail = site.SiteContactEmail,
+                    ServiceZone = site.ServiceZone,
+                    TravelSurcharge = site.TravelSurcharge,
+                    EstimatedDriveMinutes = site.EstimatedDriveMinutes,
+                    ElectricalPanelLocation = site.ElectricalPanelLocation,
+                    GasShutoffLocation = site.GasShutoffLocation,
+                    WaterShutoffLocation = site.WaterShutoffLocation,
+                    HvacLocation = site.HvacLocation,
+                    ThermostatLocation = site.ThermostatLocation,
+                    FilterLocation = site.FilterLocation,
+                    AccessNotes = site.AccessNotes,
+                    Notes = site.Notes,
+                    IsPrimary = site.IsPrimary,
+                    IsActive = site.IsActive,
+                    CreatedAt = site.CreatedAt
+                };
             }
         }
         catch (Exception ex)
