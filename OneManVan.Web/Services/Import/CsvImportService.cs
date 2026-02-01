@@ -102,6 +102,21 @@ public class CsvImportService : ICsvImportService
             
             await using var db = await _dbFactory.CreateDbContextAsync();
             
+            // Get the next customer number for auto-generation
+            var existingNumbers = await db.Customers
+                .Where(c => c.CustomerNumber != null && c.CustomerNumber.StartsWith("C-"))
+                .Select(c => c.CustomerNumber)
+                .ToListAsync();
+            
+            var nextNumber = 1;
+            if (existingNumbers.Any())
+            {
+                nextNumber = existingNumbers
+                    .Select(n => int.TryParse(n?.Substring(2), out int num) ? num : 0)
+                    .DefaultIfEmpty(0)
+                    .Max() + 1;
+            }
+            
             foreach (var (record, index) in records.Select((r, i) => (r, i + 2)))
             {
                 try
@@ -140,6 +155,14 @@ public class CsvImportService : ICsvImportService
                     else
                     {
                         var customer = MapToCustomer(record);
+                        
+                        // Auto-generate customer number if not provided
+                        if (string.IsNullOrEmpty(customer.CustomerNumber))
+                        {
+                            customer.CustomerNumber = $"C-{nextNumber:D4}";
+                            nextNumber++;
+                        }
+                        
                         db.Customers.Add(customer);
                         result.ImportedCount++;
                     }
