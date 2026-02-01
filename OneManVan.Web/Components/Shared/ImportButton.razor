@@ -221,6 +221,7 @@
         }
     }
     
+    
     private async Task StartImport()
     {
         if (selectedFile == null) return;
@@ -237,7 +238,18 @@
             ms.Position = 0;
             
             var fileContent = new StreamContent(ms);
-            fileContent.Headers.ContentType = new MediaTypeHeaderValue("text/csv");
+            
+            // Detect file type and set correct content type
+            var extension = Path.GetExtension(selectedFile.Name).ToLowerInvariant();
+            var contentType = extension switch
+            {
+                ".xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                ".xls" => "application/vnd.ms-excel",
+                ".csv" or ".txt" => "text/csv",
+                _ => "text/plain"
+            };
+            
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
             content.Add(fileContent, "file", selectedFile.Name);
             
             var url = $"/api/import/{EntityType}?updateExisting={updateExisting}";

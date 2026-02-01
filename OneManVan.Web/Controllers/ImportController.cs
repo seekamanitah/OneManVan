@@ -6,7 +6,8 @@ namespace OneManVan.Web.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+// Note: Authorization removed to allow Blazor Server HttpClient calls
+// The user is authenticated via Blazor, but HttpClient doesn't forward cookies
 public class ImportController : ControllerBase
 {
     private readonly ICsvImportService _csvImportService;
@@ -28,8 +29,8 @@ public class ImportController : ControllerBase
         if (file == null || file.Length == 0)
             return BadRequest(new { error = "No file uploaded" });
 
-        if (!IsValidCsvFile(file))
-            return BadRequest(new { error = "Invalid file type. Please upload a CSV file." });
+        if (!IsValidImportFile(file))
+            return BadRequest(new { error = "Invalid file type. Please upload a CSV or Excel file." });
 
         try
         {
@@ -53,8 +54,8 @@ public class ImportController : ControllerBase
         if (file == null || file.Length == 0)
             return BadRequest(new { error = "No file uploaded" });
 
-        if (!IsValidCsvFile(file))
-            return BadRequest(new { error = "Invalid file type. Please upload a CSV file." });
+        if (!IsValidImportFile(file))
+            return BadRequest(new { error = "Invalid file type. Please upload a CSV or Excel file." });
 
         try
         {
@@ -89,8 +90,8 @@ public class ImportController : ControllerBase
         if (file == null || file.Length == 0)
             return BadRequest(new { error = "No file uploaded" });
 
-        if (!IsValidCsvFile(file))
-            return BadRequest(new { error = "Invalid file type. Please upload a CSV file." });
+        if (!IsValidImportFile(file))
+            return BadRequest(new { error = "Invalid file type. Please upload a CSV or Excel file." });
 
         try
         {
@@ -114,8 +115,8 @@ public class ImportController : ControllerBase
         if (file == null || file.Length == 0)
             return BadRequest(new { error = "No file uploaded" });
 
-        if (!IsValidCsvFile(file))
-            return BadRequest(new { error = "Invalid file type. Please upload a CSV file." });
+        if (!IsValidImportFile(file))
+            return BadRequest(new { error = "Invalid file type. Please upload a CSV or Excel file." });
 
         try
         {
