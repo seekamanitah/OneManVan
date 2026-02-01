@@ -385,17 +385,18 @@ if (app.Configuration.GetValue<bool>("HttpsRedirection:Enabled"))
     app.UseHttpsRedirection();
 }
 
-// Security headers middleware
+// Security headers middleware (relaxed for Blazor Server compatibility)
 app.Use(async (context, next) =>
 {
-    // Content Security Policy - allow self, inline for Blazor, and common CDNs
+    // Content Security Policy - Relaxed for Blazor Server + Bootstrap
+    // Note: Blazor Server requires 'unsafe-eval' for hot reload and SignalR
     context.Response.Headers.Append("Content-Security-Policy", 
-        "default-src 'self'; " +
+        "default-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
         "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
-        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; " +
+        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; " +
         "img-src 'self' data: blob: https:; " +
-        "font-src 'self' https://cdn.jsdelivr.net; " +
-        "connect-src 'self' ws: wss:; " +
+        "font-src 'self' https://cdn.jsdelivr.net https://fonts.gstatic.com; " +
+        "connect-src 'self' ws: wss: https:; " +
         "frame-ancestors 'self';");
     
     // Additional security headers
