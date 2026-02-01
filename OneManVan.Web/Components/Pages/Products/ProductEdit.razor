@@ -281,7 +281,57 @@
 
             if (product != null)
             {
-                model = product;
+                // Create a new instance to avoid tracking issues
+                model = new Product
+                {
+                    Id = product.Id,
+                    ProductNumber = product.ProductNumber,
+                    Manufacturer = product.Manufacturer,
+                    ModelNumber = product.ModelNumber,
+                    SerialNumber = product.SerialNumber,
+                    ProductName = product.ProductName,
+                    Description = product.Description,
+                    Features = product.Features,
+                    Category = product.Category,
+                    EquipmentType = product.EquipmentType,
+                    FuelType = product.FuelType,
+                    RefrigerantType = product.RefrigerantType,
+                    RefrigerantChargeOz = product.RefrigerantChargeOz,
+                    TonnageX10 = product.TonnageX10,
+                    CoolingBtu = product.CoolingBtu,
+                    HeatingBtu = product.HeatingBtu,
+                    SeerRating = product.SeerRating,
+                    Seer2Rating = product.Seer2Rating,
+                    EerRating = product.EerRating,
+                    AfueRating = product.AfueRating,
+                    HspfRating = product.HspfRating,
+                    Hspf2Rating = product.Hspf2Rating,
+                    Voltage = product.Voltage,
+                    PhaseType = product.PhaseType,
+                    Amperage = product.Amperage,
+                    MinCircuitAmpacity = product.MinCircuitAmpacity,
+                    MaxOvercurrentProtection = product.MaxOvercurrentProtection,
+                    FilterSize = product.FilterSize,
+                    FilterType = product.FilterType,
+                    WeightLbs = product.WeightLbs,
+                    HeightIn = product.HeightIn,
+                    WidthIn = product.WidthIn,
+                    DepthIn = product.DepthIn,
+                    IndoorUnitModel = product.IndoorUnitModel,
+                    OutdoorUnitModel = product.OutdoorUnitModel,
+                    Msrp = product.Msrp,
+                    WholesaleCost = product.WholesaleCost,
+                    SuggestedSellPrice = product.SuggestedSellPrice,
+                    LaborHoursEstimate = product.LaborHoursEstimate,
+                    InstallationNotes = product.InstallationNotes,
+                    PartsWarrantyYears = product.PartsWarrantyYears,
+                    CompressorWarrantyYears = product.CompressorWarrantyYears,
+                    HeatExchangerWarrantyYears = product.HeatExchangerWarrantyYears,
+                    LaborWarrantyYears = product.LaborWarrantyYears,
+                    RegistrationRequired = product.RegistrationRequired,
+                    IsActive = product.IsActive,
+                    IsDiscontinued = product.IsDiscontinued
+                };
             }
         }
         catch (Exception ex)

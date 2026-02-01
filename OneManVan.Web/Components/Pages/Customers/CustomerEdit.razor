@@ -261,7 +261,24 @@
             var customer = await db.Customers.FindAsync(Id!.Value);
             if (customer != null)
             {
-                model = customer;
+                // Create a new instance to avoid tracking issues
+                model = new Customer
+                {
+                    Id = customer.Id,
+                    CustomerNumber = customer.CustomerNumber,
+                    FirstName = customer.FirstName,
+                    LastName = customer.LastName,
+                    Name = customer.Name,
+                    Email = customer.Email,
+                    Phone = customer.Phone,
+                    Mobile = customer.Mobile,
+                    HomeAddress = customer.HomeAddress,
+                    CustomerType = customer.CustomerType,
+                    Status = customer.Status,
+                    PaymentTerms = customer.PaymentTerms,
+                    PreferredContact = customer.PreferredContact,
+                    Notes = customer.Notes
+                };
             }
         }
         catch (Exception ex)
