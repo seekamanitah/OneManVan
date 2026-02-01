@@ -4,9 +4,11 @@
 @using OneManVan.Shared.Data
 @using OneManVan.Shared.Models
 @using OneManVan.Shared.Models.Enums
-@* [Authorize] temporarily disabled for development *@
+@using OneManVan.Shared.Services
+
 @inject IDbContextFactory<OneManVanDbContext> DbFactory
 @inject NavigationManager Navigation
+@inject DashboardKpiService KpiService
 
 <PageTitle>Dashboard - OneManVan</PageTitle>
 
@@ -39,7 +41,7 @@
         <div class="row g-3 mb-4">
             <!-- Active Jobs Card -->
             <div class="col-md-3">
-                <div class="card border-0 shadow-sm h-100">
+                <div class="card border-0 shadow-sm h-100 dashboard-card" @onclick="@(() => Navigation.NavigateTo("/jobs"))">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start mb-3">
                             <div>
@@ -60,7 +62,7 @@
 
             <!-- Pending Invoices Card -->
             <div class="col-md-3">
-                <div class="card border-0 shadow-sm h-100">
+                <div class="card border-0 shadow-sm h-100 dashboard-card" @onclick="@(() => Navigation.NavigateTo("/invoices"))">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start mb-3">
                             <div>
@@ -80,7 +82,7 @@
 
             <!-- Total Customers Card -->
             <div class="col-md-3">
-                <div class="card border-0 shadow-sm h-100">
+                <div class="card border-0 shadow-sm h-100 dashboard-card" @onclick="@(() => Navigation.NavigateTo("/customers"))">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start mb-3">
                             <div>
@@ -100,7 +102,7 @@
 
             <!-- Revenue Card -->
             <div class="col-md-3">
-                <div class="card border-0 shadow-sm h-100">
+                <div class="card border-0 shadow-sm h-100 dashboard-card" @onclick="@(() => Navigation.NavigateTo("/invoices"))">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start mb-3">
                             <div>
@@ -111,13 +113,132 @@
                                 <i class="bi bi-currency-dollar text-info fs-4"></i>
                             </div>
                         </div>
-                        <small class="text-muted">
-                            Revenue from invoices
-                        </small>
+                        @if (kpis != null)
+                        {
+                            <small class="text-@GetChangeColor(kpis.Revenue.MonthOverMonthChange)">
+                                <i class="bi bi-@GetChangeIcon(kpis.Revenue.MonthOverMonthChange)"></i>
+                                @FormatChange(kpis.Revenue.MonthOverMonthChange) vs last month
+                            </small>
+                        }
+                        else
+                        {
+                            <small class="text-muted">
+                                Revenue from invoices
+                            </small>
+                        }
                     </div>
                 </div>
             </div>
         </div>
+
+        @if (kpis != null)
+        {
+            <!-- Enhanced KPI Row -->
+            <div class="row g-3 mb-4">
+                <!-- Receivables Aging Card -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="card border-0 shadow-sm h-100 dashboard-card" @onclick="@(() => Navigation.NavigateTo("/invoices"))">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h6 class="mb-0"><i class="bi bi-clock-history text-warning me-2"></i>Receivables Aging</h6>
+                        </div>
+                        <div class="card-body pt-0">
+                            <h4 class="text-warning mb-3">@kpis.Receivables.TotalOutstanding.ToString("C0")</h4>
+                            <div class="progress mb-2" style="height: 8px;">
+                                @{
+                                    var total = kpis.Receivables.TotalOutstanding > 0 ? kpis.Receivables.TotalOutstanding : 1;
+                                    var currentPct = (kpis.Receivables.Current / total) * 100;
+                                    var d30Pct = (kpis.Receivables.Days1To30 / total) * 100;
+                                    var d60Pct = (kpis.Receivables.Days31To60 / total) * 100;
+                                    var d90Pct = (kpis.Receivables.Days61To90 / total) * 100;
+                                    var d90PlusPct = (kpis.Receivables.Days90Plus / total) * 100;
+                                }
+                                <div class="progress-bar bg-success" style="width: @currentPct%"></div>
+                                <div class="progress-bar bg-info" style="width: @d30Pct%"></div>
+                                <div class="progress-bar bg-warning" style="width: @d60Pct%"></div>
+                                <div class="progress-bar bg-orange" style="width: @d90Pct%"></div>
+                                <div class="progress-bar bg-danger" style="width: @d90PlusPct%"></div>
+                            </div>
+                            <div class="d-flex justify-content-between small text-muted">
+                                <span>Current: @kpis.Receivables.Current.ToString("C0")</span>
+                                <span>90+: @kpis.Receivables.Days90Plus.ToString("C0")</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Estimates Pipeline -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="card border-0 shadow-sm h-100 dashboard-card" @onclick="@(() => Navigation.NavigateTo("/estimates"))">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h6 class="mb-0"><i class="bi bi-funnel text-primary me-2"></i>Estimates Pipeline</h6>
+                        </div>
+                        <div class="card-body pt-0">
+                            <h4 class="text-primary mb-3">@kpis.Estimates.PendingValue.ToString("C0")</h4>
+                            <div class="row text-center">
+                                <div class="col">
+                                    <div class="text-muted small">Sent</div>
+                                    <strong>@kpis.Estimates.SentCount</strong>
+                                </div>
+                                <div class="col">
+                                    <div class="text-muted small">Won</div>
+                                    <strong class="text-success">@kpis.Estimates.AcceptedCount</strong>
+                                </div>
+                                <div class="col">
+                                    <div class="text-muted small">Rate</div>
+                                    <strong>@kpis.Estimates.ConversionRate.ToString("F0")%</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Service Agreements -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="card border-0 shadow-sm h-100 dashboard-card" @onclick="@(() => Navigation.NavigateTo("/serviceagreements"))">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h6 class="mb-0"><i class="bi bi-file-earmark-check text-success me-2"></i>Service Agreements</h6>
+                        </div>
+                        <div class="card-body pt-0">
+                            <h4 class="text-success mb-3">@kpis.ServiceAgreements.ActiveCount Active</h4>
+                            <div class="d-flex justify-content-between mb-1">
+                                <small class="text-muted">MRR</small>
+                                <small><strong>@kpis.ServiceAgreements.MonthlyRecurringRevenue.ToString("C0")</strong></small>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <small class="text-muted">Expiring (30d)</small>
+                                <small class="@(kpis.ServiceAgreements.ExpiringIn30Days > 0 ? "text-warning" : "")">
+                                    <strong>@kpis.ServiceAgreements.ExpiringIn30Days</strong>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Inventory Alerts -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="card border-0 shadow-sm h-100 dashboard-card" @onclick="@(() => Navigation.NavigateTo("/inventory"))">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h6 class="mb-0"><i class="bi bi-box-seam text-info me-2"></i>Inventory</h6>
+                        </div>
+                        <div class="card-body pt-0">
+                            <h4 class="text-info mb-3">@kpis.Inventory.TotalItems Items</h4>
+                            <div class="d-flex justify-content-between mb-1">
+                                <small class="text-muted">Low Stock</small>
+                                <small class="@(kpis.Inventory.LowStockCount > 0 ? "text-warning" : "")">
+                                    <strong>@kpis.Inventory.LowStockCount</strong>
+                                </small>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <small class="text-muted">Out of Stock</small>
+                                <small class="@(kpis.Inventory.OutOfStockCount > 0 ? "text-danger" : "")">
+                                    <strong>@kpis.Inventory.OutOfStockCount</strong>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
 
         <!-- New Cards Row -->
         <div class="row g-3 mb-4">
@@ -254,7 +375,7 @@
                             <div class="list-group list-group-flush">
                                 @foreach (var note in recentNotes.Take(5))
                                 {
-                                    <a href="/notes" class="list-group-item list-group-item-action" style="@(string.IsNullOrEmpty(note.Color) ? "" : $"border-left: 4px solid {note.Color};")">
+                                    <a href="/notes/@note.Id" class="list-group-item list-group-item-action" style="@(string.IsNullOrEmpty(note.Color) ? "" : $"border-left: 4px solid {note.Color};")">
                                         <div class="d-flex justify-content-between align-items-start">
                                             <div class="flex-grow-1">
                                                 @if (!string.IsNullOrEmpty(note.Title))
@@ -404,6 +525,7 @@
 private bool isLoading = true;
 private string errorMessage = "";
 private DashboardMetrics metrics = new();
+private DashboardKpis? kpis;
 private List<Job> recentJobs = new();
 private List<Job> scheduledJobs = new();
 private List<Job> unscheduledJobs = new();
@@ -428,30 +550,23 @@ protected override async Task OnInitializedAsync()
 
     private async Task LoadDashboardDataAsync()
     {
+        // Load enhanced KPIs
+        kpis = await KpiService.GetAllKpisAsync();
+        
         await using var db = await DbFactory.CreateDbContextAsync();
 
-        // Load metrics
+        // Load metrics from KPIs
         var startOfMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
         var startOfWeek = DateTime.Now.AddDays(-(int)DateTime.Now.DayOfWeek);
         var today = DateTime.Today;
 
-        metrics.TotalCustomers = await db.Customers.CountAsync();
-        metrics.ActiveCustomers = await db.Customers.CountAsync(c => c.Status == CustomerStatus.Active);
-        
-        metrics.ActiveJobs = await db.Jobs.CountAsync(j => 
-            j.Status == JobStatus.Scheduled || j.Status == JobStatus.InProgress);
-        metrics.JobsThisWeek = await db.Jobs.CountAsync(j => 
-            j.CreatedAt >= startOfWeek);
-        
-        metrics.PendingInvoices = await db.Invoices.CountAsync(i => 
-            i.Status == InvoiceStatus.Draft || i.Status == InvoiceStatus.Sent);
-        metrics.TotalInvoiceAmount = await db.Invoices
-            .Where(i => i.Status == InvoiceStatus.Draft || i.Status == InvoiceStatus.Sent)
-            .SumAsync(i => i.Total);
-        
-        metrics.RevenueThisMonth = await db.Invoices
-            .Where(i => i.InvoiceDate >= startOfMonth && i.Status == InvoiceStatus.Paid)
-            .SumAsync(i => i.Total);
+        metrics.TotalCustomers = kpis.Customers.TotalCustomers;
+        metrics.ActiveCustomers = kpis.Customers.ActiveCustomers;
+        metrics.ActiveJobs = kpis.Jobs.ScheduledCount + kpis.Jobs.InProgressCount;
+        metrics.JobsThisWeek = kpis.Jobs.WeekJobCount;
+        metrics.PendingInvoices = kpis.Receivables.OverdueCount;
+        metrics.TotalInvoiceAmount = kpis.Receivables.TotalOutstanding;
+        metrics.RevenueThisMonth = kpis.Revenue.MonthRevenue;
 
         // Load recent jobs
         recentJobs = await db.Jobs
@@ -515,6 +630,15 @@ protected override async Task OnInitializedAsync()
             _ => "secondary"
         };
     }
+    
+    private string FormatChange(decimal change)
+    {
+        var sign = change >= 0 ? "+" : "";
+        return $"{sign}{change:F1}%";
+    }
+    
+    private string GetChangeColor(decimal change) => change >= 0 ? "success" : "danger";
+    private string GetChangeIcon(decimal change) => change >= 0 ? "arrow-up" : "arrow-down";
 
     private class DashboardMetrics
     {

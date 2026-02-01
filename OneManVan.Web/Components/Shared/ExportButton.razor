@@ -1,17 +1,21 @@
 @inject IJSRuntime JS
 
 <div class="dropdown">
-    <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" id="@DropdownId" data-bs-toggle="dropdown" aria-expanded="false">
+    <button class="btn btn-sm btn-outline-primary dropdown-toggle" 
+            type="button" 
+            id="@DropdownId" 
+            data-bs-toggle="dropdown" 
+            aria-expanded="false">
         <i class="bi bi-download"></i> Export
     </button>
     <ul class="dropdown-menu" aria-labelledby="@DropdownId">
         <li>
-            <a class="dropdown-item" href="@CsvUrl" download>
+            <a class="dropdown-item" href="@CsvUrl">
                 <i class="bi bi-filetype-csv"></i> CSV
             </a>
         </li>
         <li>
-            <a class="dropdown-item" href="@ExcelUrl" download>
+            <a class="dropdown-item" href="@ExcelUrl">
                 <i class="bi bi-filetype-xlsx"></i> Excel
             </a>
         </li>
@@ -26,3 +30,5 @@
     private string CsvUrl => $"/api/export/{EntityType.ToLower()}/csv";
     private string ExcelUrl => $"/api/export/{EntityType.ToLower()}/excel";
 }
+
+

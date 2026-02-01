@@ -1,0 +1,315 @@
+@page "/employees"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@using OneManVan.Shared.Models.Enums
+@using OneManVan.Shared.Services
+@inject EmployeeService EmployeeService
+@inject NavigationManager Navigation
+
+<PageTitle>Employees & Contractors - OneManVan</PageTitle>
+
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-1">Employees & Contractors</h1>
+            <small class="text-muted">Manage workers, subcontractors, hours, and payments</small>
+        </div>
+        <div class="d-flex gap-2">
+            <ExportButton EntityType="employees" />
+            <a href="/employees/new" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-2"></i>Add Employee
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    @if (stats != null)
+    {
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <div class="h2 text-primary mb-0">@stats.ActiveEmployees</div>
+                        <small class="text-muted">Active Workers</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <div class="h2 text-success mb-0">@stats.YtdTotalHours.ToString("N0")</div>
+                        <small class="text-muted">YTD Hours</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <div class="h2 text-info mb-0">$@stats.YtdTotalPay.ToString("N0")</div>
+                        <small class="text-muted">YTD Paid</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <div class="h2 text-warning mb-0">@stats.SubcontractorCount</div>
+                        <small class="text-muted">Subcontractors</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Filters -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body py-3">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0">
+                            <i class="bi bi-search text-muted"></i>
+                        </span>
+                        <input type="text" class="form-control border-start-0" 
+                               placeholder="Search by name, company, phone..."
+                               @bind="searchQuery" @bind:event="oninput" @onkeyup="ApplyFilters" />
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" @bind="statusFilter" @bind:after="ApplyFilters">
+                        <option value="">All Statuses</option>
+                        @foreach (var s in Enum.GetValues<EmployeeStatus>())
+                        {
+                            <option value="@s">@GetStatusDisplay(s)</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" @bind="typeFilter" @bind:after="ApplyFilters">
+                        <option value="">All Types</option>
+                        @foreach (var t in Enum.GetValues<EmployeeType>())
+                        {
+                            <option value="@t">@GetTypeDisplay(t)</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2 text-end">
+                    <span class="text-muted">@filteredEmployees.Count results</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Employee List -->
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary"></div>
+        </div>
+    }
+    else if (!filteredEmployees.Any())
+    {
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-people display-1 text-muted"></i>
+                <h5 class="mt-3">No employees found</h5>
+                <p class="text-muted">Add your first employee or contractor to get started.</p>
+                <a href="/employees/new" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-2"></i>Add Employee
+                </a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Pay Rate</th>
+                                <th>YTD Hours</th>
+                                <th>Last Paid</th>
+                                <th style="width: 120px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var emp in filteredEmployees)
+                            {
+                                <tr class="cursor-pointer" @onclick="() => ViewEmployee(emp.Id)">
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-circle bg-primary bg-opacity-10 text-primary me-3" style="width: 40px; height: 40px;">
+                                                @if (emp.IsSubcontractor)
+                                                {
+                                                    <i class="bi bi-building"></i>
+                                                }
+                                                else
+                                                {
+                                                    <span>@emp.FirstName[0]@emp.LastName[0]</span>
+                                                }
+                                            </div>
+                                            <div>
+                                                <div class="fw-medium">@emp.DisplayName</div>
+                                                @if (!string.IsNullOrEmpty(emp.Phone))
+                                                {
+                                                    <small class="text-muted">@emp.Phone</small>
+                                                }
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge @GetTypeBadge(emp.Type)">@emp.TypeDisplay</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge @GetStatusBadge(emp.Status)">@emp.StatusDisplay</span>
+                                    </td>
+                                    <td>@emp.PayRateDisplay</td>
+                                    <td>@GetYtdHours(emp.Id).ToString("N1") hrs</td>
+                                    <td>
+                                        @if (emp.LastPaidDate.HasValue)
+                                        {
+                                            <div>@emp.LastPaidDate.Value.ToString("MMM dd")</div>
+                                            <small class="text-muted">$@emp.LastPaidAmount?.ToString("N2")</small>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td @onclick:stopPropagation="true">
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="/employees/@emp.Id" class="btn btn-outline-primary" title="View">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="/employees/@emp.Id/edit" class="btn btn-outline-secondary" title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <a href="/employees/@emp.Id/log-time" class="btn btn-outline-success" title="Log Time">
+                                                <i class="bi bi-clock"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .cursor-pointer { cursor: pointer; }
+    .cursor-pointer:hover { background-color: rgba(0,0,0,0.02); }
+    .avatar-circle {
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 14px;
+    }
+</style>
+
+@code {
+    private List<Employee> allEmployees = new();
+    private List<Employee> filteredEmployees = new();
+    private Dictionary<int, decimal> ytdHoursCache = new();
+    private EmployeeStats? stats;
+    private bool isLoading = true;
+    private string searchQuery = "";
+    private EmployeeStatus? statusFilter;
+    private EmployeeType? typeFilter;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        isLoading = true;
+        allEmployees = await EmployeeService.GetAllAsync();
+        stats = await EmployeeService.GetStatsAsync();
+
+        // Cache YTD hours for each employee
+        foreach (var emp in allEmployees)
+        {
+            ytdHoursCache[emp.Id] = await EmployeeService.GetYtdHoursAsync(emp.Id);
+        }
+
+        ApplyFilters();
+        isLoading = false;
+    }
+
+    private void ApplyFilters()
+    {
+        var query = allEmployees.AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(searchQuery))
+        {
+            var q = searchQuery.ToLower();
+            query = query.Where(e =>
+                e.FullName.ToLower().Contains(q) ||
+                (e.CompanyName?.ToLower().Contains(q) ?? false) ||
+                (e.Phone?.Contains(q) ?? false) ||
+                (e.Email?.ToLower().Contains(q) ?? false));
+        }
+
+        if (statusFilter.HasValue)
+            query = query.Where(e => e.Status == statusFilter.Value);
+
+        if (typeFilter.HasValue)
+            query = query.Where(e => e.Type == typeFilter.Value);
+
+        filteredEmployees = query.ToList();
+    }
+
+    private void ViewEmployee(int id) => Navigation.NavigateTo($"/employees/{id}");
+
+    private decimal GetYtdHours(int id) => ytdHoursCache.TryGetValue(id, out var hours) ? hours : 0;
+
+    private string GetStatusDisplay(EmployeeStatus s) => s switch
+    {
+        EmployeeStatus.Active => "Active",
+        EmployeeStatus.Inactive => "Inactive",
+        EmployeeStatus.Terminated => "Terminated",
+        EmployeeStatus.OnLeave => "On Leave",
+        _ => s.ToString()
+    };
+
+    private string GetTypeDisplay(EmployeeType t) => t switch
+    {
+        EmployeeType.FullTime => "Full-Time",
+        EmployeeType.PartTime => "Part-Time",
+        EmployeeType.Contractor1099 => "1099 Contractor",
+        EmployeeType.SubcontractorCompany => "Subcontractor",
+        _ => t.ToString()
+    };
+
+    private string GetStatusBadge(EmployeeStatus s) => s switch
+    {
+        EmployeeStatus.Active => "bg-success",
+        EmployeeStatus.Inactive => "bg-secondary",
+        EmployeeStatus.Terminated => "bg-danger",
+        EmployeeStatus.OnLeave => "bg-warning text-dark",
+        _ => "bg-secondary"
+    };
+
+    private string GetTypeBadge(EmployeeType t) => t switch
+    {
+        EmployeeType.FullTime => "bg-primary",
+        EmployeeType.PartTime => "bg-info",
+        EmployeeType.Contractor1099 => "bg-warning text-dark",
+        EmployeeType.SubcontractorCompany => "bg-dark",
+        _ => "bg-secondary"
+    };
+}

@@ -1218,6 +1218,20 @@ docker compose up -d
 
 ---
 
+# Stop everything
+docker compose down -v
+
+# Remove old volumes
+docker volume rm tradeflow-sqldata tradeflow-data tradeflow-log tradeflow-backup 2>/dev/null || true
+
+# Start fresh
+docker compose up -d
+
+# Watch logs
+docker logs tradeflow-sqlserver --follow
+
+
+
 ## 📁 Files Included in Deployment
 
 ```

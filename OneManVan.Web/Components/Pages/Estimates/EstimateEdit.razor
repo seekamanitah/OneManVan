@@ -4,10 +4,13 @@
 @using OneManVan.Shared.Data
 @using OneManVan.Shared.Models
 @using OneManVan.Shared.Models.Enums
-@* [Authorize] temporarily disabled for development *@
+@using OneManVan.Shared.Services
+
 @inject IDbContextFactory<OneManVanDbContext> DbFactory
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject ISettingsStorage SettingsStorage
+@inject INotificationService NotificationService
 
 <PageTitle>@(IsNew ? "New Estimate" : "Edit Estimate") - OneManVan</PageTitle>
 
@@ -142,22 +145,39 @@
                                             </tr>
                                             <tr>
                                                 <td colspan="2" class="text-end">
-                                                    <div class="form-check form-check-inline">
-                                                        <InputCheckbox class="form-check-input" @bind-Value="model.TaxIncluded" @onclick="CalculateTotals" />
-                                                        <label class="form-check-label small">Tax Included in Price</label>
+                                                    <div class="d-flex align-items-center justify-content-end gap-2">
+                                                        <div class="form-check form-check-inline mb-0">
+                                                            <InputCheckbox class="form-check-input" @bind-Value="model.TaxIncluded" @onclick="CalculateTotals" />
+                                                            <label class="form-check-label small">Tax Included</label>
+                                                        </div>
+                                                        @if (!model.TaxIncluded)
+                                                        {
+                                                            <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="ResetToGlobalTaxRate" title="Reset to global default">
+                                                                <i class="bi bi-arrow-counterclockwise"></i>
+                                                            </button>
+                                                        }
                                                     </div>
                                                 </td>
                                                 <td>
                                                     @if (!model.TaxIncluded)
                                                     {
-                                                        <input type="number" class="form-control form-control-sm text-end" @bind="model.TaxAmount" @bind:event="oninput" @onchange="CalculateTotals" min="0" step="0.01" />
+                                                        <input type="number" class="form-control form-control-sm text-end" @bind="model.TaxRate" @bind:event="oninput" @onchange="CalculateTotals" min="0" step="0.01" placeholder="Tax %" />
                                                     }
                                                     else
                                                     {
                                                         <span class="text-muted small">Included</span>
                                                     }
                                                 </td>
-                                                <td class="text-end">@(model.TaxIncluded ? "Included" : model.TaxAmount.ToString("C"))</td>
+                                                <td class="text-end">
+                                                    @if (!model.TaxIncluded)
+                                                    {
+                                                        @((model.SubTotal * (model.TaxRate / 100)).ToString("C"))
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted">Included</span>
+                                                    }
+                                                </td>
                                                 <td></td>
                                             </tr>
                                             <tr class="fw-bold">
@@ -236,10 +256,15 @@
     private Estimate model = new();
     private List<Customer> customers = new();
     private List<EstimateLine> lineItems = new();
+    private decimal defaultTaxRate = 7.0m; // Store global default for reference
 
     protected override async Task OnInitializedAsync()
     {
         await LoadCustomersAsync();
+        
+        // Get default tax rate from settings
+        defaultTaxRate = SettingsStorage.GetDecimal("DefaultTaxRate", 7.0m);
+        var defaultValidDays = 30;
 
         if (IsNew)
         {
@@ -247,8 +272,10 @@
             {
                 Title = $"EST-{DateTime.Now:yyyyMMddHHmmss}", // Temporary, will be regenerated on save
                 CreatedAt = DateTime.Now,
-                ExpiresAt = DateTime.Now.AddDays(30),
-                Status = EstimateStatus.Draft
+                ExpiresAt = DateTime.Now.AddDays(defaultValidDays),
+                Status = EstimateStatus.Draft,
+                TaxRate = defaultTaxRate,
+                TaxIncluded = SettingsStorage.GetBool("TaxIncludedByDefault", false) // Use setting
             };
             lineItems = new List<EstimateLine>();
             isLoading = false;
@@ -331,9 +358,17 @@
         }
         else
         {
+            // Calculate tax amount from tax rate
+            model.TaxAmount = model.SubTotal * (model.TaxRate / 100);
             model.Total = model.SubTotal + model.TaxAmount;
         }
         StateHasChanged();
+    }
+
+    private void ResetToGlobalTaxRate()
+    {
+        model.TaxRate = defaultTaxRate;
+        CalculateTotals();
     }
 
     private async Task HandleSubmit()
@@ -397,6 +432,12 @@
             }
 
             await db.SaveChangesAsync();
+
+            // Send notification email for new estimates
+            if (IsNew && model.Status != EstimateStatus.Draft)
+            {
+                _ = NotificationService.SendEstimateCreatedAsync(model);
+            }
 
             Navigation.NavigateTo(IsNew ? "/estimates" : $"/estimates/{model.Id}");
         }

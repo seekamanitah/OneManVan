@@ -2,24 +2,51 @@ using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using OneManVan.Shared.Models;
+using Microsoft.EntityFrameworkCore;
+using OneManVan.Shared.Data;
+using OneManVan.Shared.Services;
 
 namespace OneManVan.Web.Services.Pdf;
 
 public interface IInvoicePdfGenerator
 {
     byte[] GenerateInvoicePdf(Invoice invoice);
+    byte[] GenerateInvoicePdf(Invoice invoice, CompanySettings? companySettings);
 }
 
 public class InvoicePdfGenerator : IInvoicePdfGenerator
 {
-    public InvoicePdfGenerator()
+    private readonly IDbContextFactory<OneManVanDbContext> _contextFactory;
+    private readonly ISettingsStorage _settingsStorage;
+    private CompanySettings? _companySettings;
+
+    public InvoicePdfGenerator(
+        IDbContextFactory<OneManVanDbContext> contextFactory,
+        ISettingsStorage settingsStorage)
     {
+        _contextFactory = contextFactory;
+        _settingsStorage = settingsStorage;
         QuestPDF.Settings.License = LicenseType.Community;
     }
 
     public byte[] GenerateInvoicePdf(Invoice invoice)
     {
-        var document = Document.Create(container =>
+        // Load company settings
+        using var context = _contextFactory.CreateDbContext();
+        _companySettings = context.CompanySettings.FirstOrDefault();
+        
+        return GenerateInvoicePdfInternal(invoice);
+    }
+
+    public byte[] GenerateInvoicePdf(Invoice invoice, CompanySettings? companySettings)
+    {
+        _companySettings = companySettings;
+        return GenerateInvoicePdfInternal(invoice);
+    }
+
+    private byte[] GenerateInvoicePdfInternal(Invoice invoice)
+    {
+        var document = QuestPDF.Fluent.Document.Create(container =>
         {
             container.Page(page =>
             {
@@ -30,13 +57,7 @@ public class InvoicePdfGenerator : IInvoicePdfGenerator
 
                 page.Header().Element(ComposeHeader);
                 page.Content().Element(c => ComposeContent(c, invoice));
-                page.Footer().AlignCenter().Text(t =>
-                {
-                    t.Span("Page ");
-                    t.CurrentPageNumber();
-                    t.Span(" of ");
-                    t.TotalPages();
-                });
+                page.Footer().Element(ComposeFooter);
             });
         });
 
@@ -54,19 +75,78 @@ public class InvoicePdfGenerator : IInvoicePdfGenerator
                     .Bold()
                     .FontColor(Colors.Blue.Medium);
 
-                column.Item().PaddingTop(10).Text("OneManVan")
+                column.Item().PaddingTop(10).Text(_companySettings?.CompanyName ?? "OneManVan")
                     .FontSize(16)
                     .SemiBold();
 
-                column.Item().Text("Professional Service Management")
-                    .FontSize(10)
-                    .FontColor(Colors.Grey.Darken2);
+                if (!string.IsNullOrEmpty(_companySettings?.Tagline))
+                {
+                    column.Item().Text(_companySettings.Tagline)
+                        .FontSize(10)
+                        .FontColor(Colors.Grey.Darken2);
+                }
+                
+                if (!string.IsNullOrEmpty(_companySettings?.FullAddress))
+                {
+                    column.Item().PaddingTop(5).Text(_companySettings.FullAddress)
+                        .FontSize(9)
+                        .FontColor(Colors.Grey.Darken1);
+                }
+                
+                if (!string.IsNullOrEmpty(_companySettings?.Phone))
+                {
+                    column.Item().Text($"Phone: {_companySettings.Phone}")
+                        .FontSize(9)
+                        .FontColor(Colors.Grey.Darken1);
+                }
+                
+                if (!string.IsNullOrEmpty(_companySettings?.Email))
+                {
+                    column.Item().Text($"Email: {_companySettings.Email}")
+                        .FontSize(9)
+                        .FontColor(Colors.Grey.Darken1);
+                }
             });
 
+            // Logo on right side
             row.ConstantItem(150).AlignRight().Column(column =>
             {
-                column.Item().Text($"Date: {DateTime.Now:MM/dd/yyyy}")
+                if (!string.IsNullOrEmpty(_companySettings?.LogoBase64))
+                {
+                    try
+                    {
+                        var logoBytes = Convert.FromBase64String(_companySettings.LogoBase64);
+                        column.Item().Image(logoBytes).FitWidth();
+                    }
+                    catch
+                    {
+                        // Skip logo if invalid
+                    }
+                }
+                column.Item().PaddingTop(10).Text($"Date: {DateTime.Now:MM/dd/yyyy}")
                     .FontSize(10);
+            });
+        });
+    }
+
+    private void ComposeFooter(IContainer container)
+    {
+        container.Column(column =>
+        {
+            if (!string.IsNullOrEmpty(_companySettings?.DocumentFooter))
+            {
+                column.Item().AlignCenter().Text(_companySettings.DocumentFooter)
+                    .FontSize(9)
+                    .Italic()
+                    .FontColor(Colors.Grey.Darken1);
+            }
+            
+            column.Item().PaddingTop(5).AlignCenter().Text(t =>
+            {
+                t.Span("Page ");
+                t.CurrentPageNumber();
+                t.Span(" of ");
+                t.TotalPages();
             });
         });
     }
@@ -101,45 +181,117 @@ public class InvoicePdfGenerator : IInvoicePdfGenerator
                 });
             });
 
-            // Line Items Table
-            column.Item().Table(table =>
+            // Get privacy settings
+            var hideEmployeeRates = _settingsStorage.GetBool("HideEmployeeRatesOnInvoice", false);
+            var hideEmployeeBreakdown = _settingsStorage.GetBool("HideEmployeeBreakdownOnInvoice", false);
+
+            // Separate labor and non-labor items
+            var laborItems = invoice.LineItems?.Where(i => i.Source == "Labor").ToList() ?? new List<InvoiceLineItem>();
+            var nonLaborItems = invoice.LineItems?.Where(i => i.Source != "Labor").ToList() ?? new List<InvoiceLineItem>();
+
+            // Non-Labor Items Table (Parts & Materials)
+            if (nonLaborItems.Any())
             {
-                table.ColumnsDefinition(columns =>
+                column.Item().Text("Parts & Materials").Bold().FontSize(12);
+                column.Item().Table(table =>
                 {
-                    columns.RelativeColumn(4); // Description
-                    columns.RelativeColumn(1); // Qty
-                    columns.RelativeColumn(1.5f); // Unit Price
-                    columns.RelativeColumn(1.5f); // Total
-                });
+                    table.ColumnsDefinition(columns =>
+                    {
+                        columns.RelativeColumn(4); // Description
+                        columns.RelativeColumn(1); // Qty
+                        columns.RelativeColumn(1.5f); // Unit Price
+                        columns.RelativeColumn(1.5f); // Total
+                    });
 
-                // Header
-                table.Header(header =>
-                {
-                    header.Cell().Element(HeaderStyle).Text("Description");
-                    header.Cell().Element(HeaderStyle).AlignRight().Text("Qty");
-                    header.Cell().Element(HeaderStyle).AlignRight().Text("Unit Price");
-                    header.Cell().Element(HeaderStyle).AlignRight().Text("Total");
-                });
+                    // Header
+                    table.Header(header =>
+                    {
+                        header.Cell().Element(HeaderStyle).Text("Description");
+                        header.Cell().Element(HeaderStyle).AlignRight().Text("Qty");
+                        header.Cell().Element(HeaderStyle).AlignRight().Text("Unit Price");
+                        header.Cell().Element(HeaderStyle).AlignRight().Text("Total");
+                    });
 
-                // Line Items
-                foreach (var item in invoice.LineItems ?? new List<InvoiceLineItem>())
+                    // Line Items
+                    foreach (var item in nonLaborItems)
+                    {
+                        table.Cell().BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2)
+                            .PaddingVertical(8).Text(item.Description ?? "");
+                        
+                        table.Cell().BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2)
+                            .PaddingVertical(8).AlignRight().Text(item.Quantity.ToString("N2"));
+                        
+                        table.Cell().BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2)
+                            .PaddingVertical(8).AlignRight().Text($"${item.UnitPrice:N2}");
+                        
+                        table.Cell().BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2)
+                            .PaddingVertical(8).AlignRight().Text($"${item.Total:N2}").Bold();
+                    }
+                });
+            }
+
+            // Labor Items - Respect Privacy Settings
+            if (laborItems.Any())
+            {
+                column.Item().PaddingTop(10).Text("Labor & Time").Bold().FontSize(12);
+                
+                if (hideEmployeeBreakdown)
                 {
-                    table.Cell().BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2)
-                        .PaddingVertical(8).Text(item.Description ?? "");
-                    
-                    table.Cell().BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2)
-                        .PaddingVertical(8).AlignRight().Text(item.Quantity.ToString("N2"));
-                    
-                    table.Cell().BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2)
-                        .PaddingVertical(8).AlignRight().Text($"${item.UnitPrice:N2}");
-                    
-                    table.Cell().BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2)
-                        .PaddingVertical(8).AlignRight().Text($"${item.Total:N2}").Bold();
+                    // Show only total labor cost
+                    column.Item().Row(row =>
+                    {
+                        row.RelativeItem().Text("Labor Services");
+                        row.ConstantItem(100).AlignRight().Text($"${laborItems.Sum(i => i.Total):N2}").Bold();
+                    });
                 }
-            });
+                else
+                {
+                    // Show detailed labor breakdown
+                    column.Item().Table(table =>
+                    {
+                        table.ColumnsDefinition(columns =>
+                        {
+                            columns.RelativeColumn(4); // Description
+                            columns.RelativeColumn(1); // Hours
+                            if (!hideEmployeeRates)
+                                columns.RelativeColumn(1.5f); // Rate (only if not hidden)
+                            columns.RelativeColumn(1.5f); // Total
+                        });
+
+                        // Header
+                        table.Header(header =>
+                        {
+                            header.Cell().Element(HeaderStyle).Text("Description");
+                            header.Cell().Element(HeaderStyle).AlignRight().Text("Hours");
+                            if (!hideEmployeeRates)
+                                header.Cell().Element(HeaderStyle).AlignRight().Text("Rate/Hour");
+                            header.Cell().Element(HeaderStyle).AlignRight().Text("Total");
+                        });
+
+                        // Labor Line Items
+                        foreach (var item in laborItems)
+                        {
+                            table.Cell().BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2)
+                                .PaddingVertical(8).Text(item.Description ?? "");
+                            
+                            table.Cell().BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2)
+                                .PaddingVertical(8).AlignRight().Text(item.Quantity.ToString("N2"));
+                            
+                            if (!hideEmployeeRates)
+                            {
+                                table.Cell().BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2)
+                                    .PaddingVertical(8).AlignRight().Text($"${item.UnitPrice:N2}");
+                            }
+                            
+                            table.Cell().BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2)
+                                .PaddingVertical(8).AlignRight().Text($"${item.Total:N2}").Bold();
+                        }
+                    });
+                }
+            }
 
             // Totals Section
-            column.Item().AlignRight().Column(totals =>
+            column.Item().PaddingTop(10).AlignRight().Column(totals =>
             {
                 totals.Item().Row(row =>
                 {
@@ -147,11 +299,22 @@ public class InvoicePdfGenerator : IInvoicePdfGenerator
                     row.ConstantItem(100).AlignRight().Text($"${invoice.SubTotal:N2}");
                 });
 
-                totals.Item().Row(row =>
+                if (!invoice.TaxIncluded)
                 {
-                    row.ConstantItem(120).Text($"Tax ({invoice.TaxRate:N2}%):");
-                    row.ConstantItem(100).AlignRight().Text($"${invoice.TaxAmount:N2}");
-                });
+                    totals.Item().Row(row =>
+                    {
+                        row.ConstantItem(120).Text($"Tax ({invoice.TaxRate:N2}%):");
+                        row.ConstantItem(100).AlignRight().Text($"${invoice.TaxAmount:N2}");
+                    });
+                }
+                else
+                {
+                    totals.Item().Row(row =>
+                    {
+                        row.ConstantItem(120).Text("Tax:");
+                        row.ConstantItem(100).AlignRight().Text("Included");
+                    });
+                }
 
                 totals.Item().PaddingTop(5).Row(row =>
                 {
@@ -159,6 +322,21 @@ public class InvoicePdfGenerator : IInvoicePdfGenerator
                     row.ConstantItem(100).AlignRight().Text($"${invoice.Total:N2}")
                         .Bold().FontSize(14).FontColor(Colors.Blue.Medium);
                 });
+                
+                if (invoice.AmountPaid > 0)
+                {
+                    totals.Item().Row(row =>
+                    {
+                        row.ConstantItem(120).Text("Amount Paid:");
+                        row.ConstantItem(100).AlignRight().Text($"${invoice.AmountPaid:N2}");
+                    });
+                    
+                    totals.Item().Row(row =>
+                    {
+                        row.ConstantItem(120).Text("Balance Due:").Bold();
+                        row.ConstantItem(100).AlignRight().Text($"${(invoice.Total - invoice.AmountPaid):N2}").Bold();
+                    });
+                }
             });
 
             // Notes
@@ -168,6 +346,16 @@ public class InvoicePdfGenerator : IInvoicePdfGenerator
                 {
                     notes.Item().Text("Notes:").Bold();
                     notes.Item().Text(invoice.Notes);
+                });
+            }
+
+            // Terms
+            if (!string.IsNullOrEmpty(invoice.Terms))
+            {
+                column.Item().PaddingTop(10).Column(terms =>
+                {
+                    terms.Item().Text("Terms:").Bold();
+                    terms.Item().Text(invoice.Terms).FontSize(8);
                 });
             }
 

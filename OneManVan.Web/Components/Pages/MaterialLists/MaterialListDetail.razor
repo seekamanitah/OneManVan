@@ -1,0 +1,639 @@
+@page "/material-lists/{Id:int}"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@using OneManVan.Shared.Models.Enums
+@using OneManVan.Shared.Services
+@inject MaterialListService MaterialListService
+@inject IDbContextFactory<OneManVanDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Material List - OneManVan</PageTitle>
+
+@if (materialList == null)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+    </div>
+}
+else
+{
+    <div class="container-fluid py-4">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <h1 class="h2 mb-0">@materialList.Title</h1>
+                    <span class="badge @GetStatusBadgeClass(materialList.Status) fs-6">
+                        @materialList.StatusDisplay
+                    </span>
+                </div>
+                <small class="text-muted">
+                    @materialList.ListNumber | Created @materialList.CreatedAt.ToString("MMM d, yyyy")
+                </small>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="/material-lists" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-2"></i>Back
+                </a>
+                <a href="/material-lists/@Id/edit" class="btn btn-primary">
+                    <i class="bi bi-pencil me-2"></i>Edit
+                </a>
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-three-dots"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <button class="dropdown-item" @onclick="Duplicate">
+                                <i class="bi bi-copy me-2"></i>Duplicate
+                            </button>
+                        </li>
+                        <li>
+                            <button class="dropdown-item" @onclick="Print">
+                                <i class="bi bi-printer me-2"></i>Print
+                            </button>
+                        </li>
+                        <li><hr class="dropdown-divider" /></li>
+                        @if (materialList.Status == MaterialListStatus.Draft)
+                        {
+                            <li>
+                                <button class="dropdown-item text-success" @onclick="Finalize">
+                                    <i class="bi bi-check-circle me-2"></i>Finalize
+                                </button>
+                            </li>
+                        }
+                        else
+                        {
+                            <li>
+                                <button class="dropdown-item text-warning" @onclick="Reopen">
+                                    <i class="bi bi-unlock me-2"></i>Reopen for Editing
+                                </button>
+                            </li>
+                        }
+                        <li><hr class="dropdown-divider" /></li>
+                        <li>
+                            <button class="dropdown-item text-danger" @onclick="Delete">
+                                <i class="bi bi-trash me-2"></i>Delete
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Left Column: Details -->
+            <div class="col-lg-8">
+                <!-- Customer & Property Info -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0"><i class="bi bi-person me-2"></i>Customer & Property</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="text-muted small">Customer</label>
+                                <div class="fw-medium">
+                                    <a href="/customers/@materialList.CustomerId">@materialList.Customer?.DisplayName</a>
+                                </div>
+                            </div>
+                            @if (materialList.Site != null)
+                            {
+                                <div class="col-md-6">
+                                    <label class="text-muted small">Site</label>
+                                    <div>
+                                        <a href="/sites/@materialList.SiteId">@materialList.Site.SiteName</a>
+                                        <br />
+                                        <small class="text-muted">@materialList.Site.Address, @materialList.Site.City</small>
+                                    </div>
+                                </div>
+                            }
+                            <div class="col-md-4">
+                                <label class="text-muted small">Square Footage</label>
+                                <div class="fw-medium">@(materialList.SquareFootage?.ToString("N0") ?? "-") sq ft</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="text-muted small">Zones</label>
+                                <div class="fw-medium">@materialList.Zones</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="text-muted small">Stories</label>
+                                <div class="fw-medium">@materialList.Stories</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Material Items by System -->
+                @foreach (var system in materialList.Systems.OrderBy(s => s.SortOrder))
+                {
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h5 class="mb-0">@system.Name</h5>
+                                    <small class="opacity-75">
+                                        @system.SystemTypeDisplay | @system.DuctSystemDisplay
+                                        @if (system.Tonnage.HasValue)
+                                        {
+                                            <span> | @system.Tonnage Ton</span>
+                                        }
+                                    </small>
+                                </div>
+                                <span class="badge bg-light text-dark fs-6">$@system.TotalCost.ToString("N2")</span>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            @foreach (var category in Enum.GetValues<MaterialCategory>())
+                            {
+                                var items = GetItemsForSystemAndCategory(system.Id, category);
+                                if (items.Any())
+                                {
+                                    <div class="border-bottom">
+                                        <div class="px-3 py-2 bg-light d-flex justify-content-between">
+                                            <strong>@GetCategoryDisplayName(category)</strong>
+                                            <span class="text-muted">$@items.Sum(i => i.TotalCost).ToString("N2")</span>
+                                        </div>
+                                        <table class="table table-sm mb-0">
+                                            <tbody>
+                                                @foreach (var item in items.OrderBy(i => i.SortOrder))
+                                                {
+                                                    @if (item.Quantity > 0)
+                                                    {
+                                                        <tr>
+                                                            <td class="ps-3">
+                                                                @item.DisplayName
+                                                                @if (!string.IsNullOrEmpty(item.Description))
+                                                                {
+                                                                    <br />
+                                                                    <small class="text-muted">@item.Description</small>
+                                                                }
+                                                            </td>
+                                                            <td class="text-end" style="width: 100px;">
+                                                                @item.QuantityDisplay
+                                                            </td>
+                                                            <td class="text-end" style="width: 100px;">
+                                                                @@ $@item.UnitCost.ToString("N2")
+                                                            </td>
+                                                            <td class="text-end fw-medium pe-3" style="width: 100px;">
+                                                                $@item.TotalCost.ToString("N2")
+                                                            </td>
+                                                        </tr>
+                                                    }
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- Notes -->
+                @if (!string.IsNullOrEmpty(materialList.Notes) || !string.IsNullOrEmpty(materialList.InternalNotes))
+                {
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0"><i class="bi bi-sticky me-2"></i>Notes</h5>
+                        </div>
+                        <div class="card-body">
+                            @if (!string.IsNullOrEmpty(materialList.Notes))
+                            {
+                                <div class="mb-3">
+                                    <label class="text-muted small">Notes</label>
+                                    <p class="mb-0">@materialList.Notes</p>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(materialList.InternalNotes))
+                            {
+                                <div class="border-top pt-3">
+                                    <label class="text-muted small">Internal Notes</label>
+                                    <p class="mb-0 text-muted fst-italic">@materialList.InternalNotes</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+
+
+            <!-- Right Column: Summary -->
+            <div class="col-lg-4">
+                <!-- Priority Badge -->
+                @if (materialList.Priority != JobPriority.Normal)
+                {
+                    <div class="alert @(materialList.Priority >= JobPriority.Urgent ? "alert-danger" : materialList.Priority == JobPriority.High ? "alert-warning" : "alert-info") py-2 mb-3">
+                        <i class="bi @(materialList.Priority >= JobPriority.Urgent ? "bi-exclamation-triangle" : "bi-flag") me-2"></i>
+                        <strong>@materialList.PriorityDisplay Priority</strong>
+                    </div>
+                }
+
+                <!-- Financial Summary -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white py-2">
+                        <h6 class="mb-0"><i class="bi bi-calculator me-2"></i>Financial Summary</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-1 small">
+                            <span>Materials:</span>
+                            <span>$@materialList.TotalMaterialCost.ToString("N2")</span>
+                        </div>
+                        @if (materialList.MarkupPercent > 0)
+                        {
+                            <div class="d-flex justify-content-between mb-1 small">
+                                <span>Markup (@materialList.MarkupPercent.ToString("N0")%):</span>
+                                <span>$@((materialList.TotalWithMarkup - materialList.TotalMaterialCost).ToString("N2"))</span>
+                            </div>
+                        }
+                        <div class="d-flex justify-content-between mb-1 small">
+                            <span>Labor:</span>
+                            <span>$@materialList.LaborTotal.ToString("N2")</span>
+                        </div>
+                        @if (materialList.AccessoriesTotal > 0)
+                        {
+                            <div class="d-flex justify-content-between mb-1 small">
+                                <span>Accessories:</span>
+                                <span>$@materialList.AccessoriesTotal.ToString("N2")</span>
+                            </div>
+                        }
+                        @if (materialList.DisposalFee + materialList.RefrigerantReclaimFee > 0)
+                        {
+                            <div class="d-flex justify-content-between mb-1 small">
+                                <span>Disposal:</span>
+                                <span>$@((materialList.DisposalFee + materialList.RefrigerantReclaimFee).ToString("N2"))</span>
+                            </div>
+                        }
+                        @if (materialList.PermitCost + materialList.InspectionFees > 0)
+                        {
+                            <div class="d-flex justify-content-between mb-1 small">
+                                <span>Permits/Inspections:</span>
+                                <span>$@((materialList.PermitCost + materialList.InspectionFees).ToString("N2"))</span>
+                            </div>
+                        }
+                        @if (materialList.ContingencyPercent > 0)
+                        {
+                            <div class="d-flex justify-content-between mb-1 small">
+                                <span>Contingency (@materialList.ContingencyPercent.ToString("N0")%):</span>
+                                <span>$@materialList.ContingencyAmount.ToString("N2")</span>
+                            </div>
+                        }
+                        @if (materialList.TaxPercent > 0)
+                        {
+                            <div class="d-flex justify-content-between mb-1 small">
+                                <span>Tax (@materialList.TaxPercent.ToString("N1")%):</span>
+                                <span>$@materialList.TaxAmount.ToString("N2")</span>
+                            </div>
+                        }
+                        
+                        <hr class="my-2" />
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <strong class="fs-6">Total Bid Price:</strong>
+                            <strong class="text-success fs-4">$@materialList.TotalBidPrice.ToString("N2")</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <div class="h4 text-primary mb-0">@materialList.TotalItemCount</div>
+                                <small class="text-muted">Items</small>
+                            </div>
+                            <div class="col-4">
+                                <div class="h4 text-info mb-0">@materialList.Systems.Count</div>
+                                <small class="text-muted">Systems</small>
+                            </div>
+                            <div class="col-4">
+                                <div class="h4 text-success mb-0">@materialList.Items.Count(i => i.Quantity > 0)</div>
+                                <small class="text-muted">With Qty</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Document Conversion -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0"><i class="bi bi-file-earmark-arrow-up me-2"></i>Convert to Document</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="includeBreakdown" @bind="includeLineItemBreakdown" />
+                            <label class="form-check-label" for="includeBreakdown">
+                                Include pricing breakdown
+                            </label>
+                            <small class="text-muted d-block">Show line items vs total only</small>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-primary" @onclick="ConvertToEstimate">
+                                <i class="bi bi-file-earmark-text me-2"></i>Create Estimate
+                            </button>
+                            <button class="btn btn-outline-success" @onclick="ConvertToInvoice">
+                                <i class="bi bi-receipt me-2"></i>Create Invoice
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0"><i class="bi bi-lightning me-2"></i>Actions</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-secondary" @onclick="Print">
+                                <i class="bi bi-printer me-2"></i>Print / PDF
+                            </button>
+                            <button class="btn btn-outline-secondary" @onclick="Duplicate">
+                                <i class="bi bi-copy me-2"></i>Duplicate List
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+[Parameter]
+public int Id { get; set; }
+
+private MaterialList? materialList;
+private bool includeLineItemBreakdown = true;
+
+protected override async Task OnInitializedAsync()
+{
+    await LoadDataAsync();
+}
+
+private async Task LoadDataAsync()
+{
+    materialList = await MaterialListService.GetByIdAsync(Id);
+}
+
+private List<MaterialListItem> GetItemsForSystemAndCategory(int systemId, MaterialCategory category)
+{
+    return materialList?.Items
+            .Where(i => i.MaterialListSystemId == systemId && i.Category == category)
+            .ToList() ?? new();
+    }
+
+    private string GetCategoryDisplayName(MaterialCategory category) => category switch
+    {
+        MaterialCategory.Ductwork => "Ductwork",
+        MaterialCategory.Equipment => "Equipment",
+        MaterialCategory.Electrical => "Electrical",
+        MaterialCategory.Refrigerant => "Refrigerant/Copper",
+        MaterialCategory.Drain => "Drain/Plumbing",
+        MaterialCategory.Miscellaneous => "Misc Materials",
+        MaterialCategory.Other => "Other",
+        _ => category.ToString()
+    };
+
+    private string GetStatusBadgeClass(MaterialListStatus status) => status switch
+    {
+        MaterialListStatus.Draft => "bg-warning text-dark",
+        MaterialListStatus.Finalized => "bg-success",
+        _ => "bg-secondary"
+    };
+
+    private async Task Finalize()
+    {
+        await MaterialListService.FinalizeAsync(Id);
+        await LoadDataAsync();
+    }
+
+    private async Task Reopen()
+    {
+        await MaterialListService.ReopenAsync(Id);
+        await LoadDataAsync();
+    }
+
+    private async Task Duplicate()
+    {
+        if (materialList == null) return;
+        var newList = await MaterialListService.DuplicateAsync(Id, $"Copy of {materialList.Title}");
+        Navigation.NavigateTo($"/material-lists/{newList.Id}/edit");
+    }
+
+    private void Print()
+    {
+        // Trigger browser print
+        // In a real implementation, could generate PDF
+    }
+
+    private async Task Delete()
+    {
+        await MaterialListService.DeleteAsync(Id);
+        Navigation.NavigateTo("/material-lists");
+    }
+
+    private async Task ConvertToEstimate()
+    {
+        if (materialList == null) return;
+
+        await using var context = await DbFactory.CreateDbContextAsync();
+
+        // Create new estimate from material list
+        var estimate = new Estimate
+        {
+            CustomerId = materialList.CustomerId,
+            SiteId = materialList.SiteId,
+            Title = materialList.Title,
+            Description = $"Generated from Material List {materialList.ListNumber}",
+            Status = EstimateStatus.Draft,
+            Notes = materialList.Notes,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        // Add line items if breakdown is included
+        if (includeLineItemBreakdown)
+        {
+            var sortOrder = 0;
+            
+            // Add material items with quantity > 0
+            foreach (var item in materialList.Items.Where(i => i.Quantity > 0).OrderBy(i => i.Category).ThenBy(i => i.SortOrder))
+            {
+                var lineTotal = item.Quantity * item.UnitCost * (1 + materialList.MarkupPercent / 100);
+                estimate.Lines.Add(new EstimateLine
+                {
+                    Type = LineItemType.Part,
+                    Description = item.DisplayName,
+                    Quantity = item.Quantity,
+                    UnitPrice = item.UnitCost * (1 + materialList.MarkupPercent / 100),
+                    Total = lineTotal,
+                    SortOrder = sortOrder++
+                });
+            }
+
+            // Add labor as single line
+            if (materialList.LaborTotal > 0)
+            {
+                estimate.Lines.Add(new EstimateLine
+                {
+                    Type = LineItemType.Labor,
+                    Description = "Labor",
+                    Quantity = 1,
+                    UnitPrice = materialList.LaborTotal,
+                    Total = materialList.LaborTotal,
+                    SortOrder = sortOrder++
+                });
+            }
+
+            // Add disposal/permits if any
+            var otherFees = materialList.DisposalFee + materialList.RefrigerantReclaimFee + 
+                           materialList.PermitCost + materialList.InspectionFees;
+            if (otherFees > 0)
+            {
+                estimate.Lines.Add(new EstimateLine
+                {
+                    Type = LineItemType.Fee,
+                    Description = "Disposal, Permits & Inspections",
+                    Quantity = 1,
+                    UnitPrice = otherFees,
+                    Total = otherFees,
+                    SortOrder = sortOrder++
+                });
+            }
+
+            // Calculate subtotal from line items
+            estimate.SubTotal = estimate.Lines.Sum(l => l.Total);
+        }
+        else
+        {
+            // Single line item with total
+            var preTaxTotal = materialList.TotalBidPrice / (1 + materialList.TaxPercent / 100);
+            estimate.Lines.Add(new EstimateLine
+            {
+                Type = LineItemType.Service,
+                Description = materialList.Title,
+                Quantity = 1,
+                UnitPrice = preTaxTotal,
+                Total = preTaxTotal,
+                SortOrder = 0
+            });
+            estimate.SubTotal = preTaxTotal;
+        }
+
+        // Apply tax
+        estimate.TaxRate = materialList.TaxPercent;
+        estimate.TaxAmount = estimate.SubTotal * (materialList.TaxPercent / 100);
+        estimate.Total = estimate.SubTotal + estimate.TaxAmount;
+
+        context.Estimates.Add(estimate);
+        await context.SaveChangesAsync();
+
+        // Link material list to estimate
+        materialList.EstimateId = estimate.Id;
+        await MaterialListService.UpdateAsync(materialList);
+
+        // Navigate to the new estimate
+        Navigation.NavigateTo($"/estimates/{estimate.Id}");
+    }
+
+    private async Task ConvertToInvoice()
+    {
+        if (materialList == null) return;
+
+        await using var context = await DbFactory.CreateDbContextAsync();
+
+
+        // Generate invoice number
+        var count = await context.Invoices.CountAsync() + 1;
+        var invoiceNumber = $"INV-{DateTime.Now:yyyy}-{count:D4}";
+
+        // Calculate amounts
+        decimal partsAmount = 0;
+        decimal laborAmount = materialList.LaborTotal;
+        decimal otherAmount = materialList.DisposalFee + materialList.RefrigerantReclaimFee + 
+                             materialList.PermitCost + materialList.InspectionFees;
+
+        // Create new invoice from material list
+        var invoice = new Invoice
+        {
+            InvoiceNumber = invoiceNumber,
+            CustomerId = materialList.CustomerId,
+            InvoiceDate = DateTime.Today,
+            DueDate = DateTime.Today.AddDays(30),
+            Status = InvoiceStatus.Draft,
+            Notes = materialList.Notes,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        // Add line items if breakdown is included
+        if (includeLineItemBreakdown)
+        {
+            // Add material items with quantity > 0
+            foreach (var item in materialList.Items.Where(i => i.Quantity > 0).OrderBy(i => i.Category).ThenBy(i => i.SortOrder))
+            {
+                invoice.LineItems.Add(new InvoiceLineItem
+                {
+                    Source = "Custom",
+                    Description = item.DisplayName,
+                    Quantity = item.Quantity,
+                    UnitPrice = item.UnitCost * (1 + materialList.MarkupPercent / 100)
+                });
+                partsAmount += item.Quantity * item.UnitCost * (1 + materialList.MarkupPercent / 100);
+            }
+
+            // Add labor
+            if (materialList.LaborTotal > 0)
+            {
+                invoice.LineItems.Add(new InvoiceLineItem
+                {
+                    Source = "Labor",
+                    Description = "Labor",
+                    Quantity = 1,
+                    UnitPrice = materialList.LaborTotal
+                });
+            }
+
+            // Add other fees
+            if (otherAmount > 0)
+            {
+                invoice.LineItems.Add(new InvoiceLineItem
+                {
+                    Source = "Custom",
+                    Description = "Disposal, Permits & Inspections",
+                    Quantity = 1,
+                    UnitPrice = otherAmount
+                });
+            }
+        }
+        else
+        {
+            // Single line item
+            var preTaxTotal = materialList.TotalBidPrice / (1 + materialList.TaxPercent / 100);
+            invoice.LineItems.Add(new InvoiceLineItem
+            {
+                Source = "Custom",
+                Description = materialList.Title,
+                Quantity = 1,
+                UnitPrice = preTaxTotal
+            });
+            partsAmount = preTaxTotal;
+        }
+
+        // Set invoice amounts
+        invoice.PartsAmount = partsAmount;
+        invoice.LaborAmount = laborAmount;
+        invoice.OtherAmount = otherAmount;
+        invoice.SubTotal = partsAmount + laborAmount + otherAmount;
+        invoice.TaxRate = materialList.TaxPercent;
+        invoice.TaxAmount = invoice.SubTotal * (materialList.TaxPercent / 100);
+        invoice.Total = invoice.SubTotal + invoice.TaxAmount;
+
+        context.Invoices.Add(invoice);
+        await context.SaveChangesAsync();
+
+        // Navigate to the new invoice
+        Navigation.NavigateTo($"/invoices/{invoice.Id}");
+    }
+}

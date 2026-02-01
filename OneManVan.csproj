@@ -85,7 +85,10 @@
   <ItemGroup>
     <None Include=".github\copilot-instructions.md" />
     <None Include="DbMigrator\DbMigrator.csproj" />
+    <None Include="OneManVan.BlazorShared\OneManVan.BlazorShared.csproj" />
+    <None Include="OneManVan.MauiBlazor\OneManVan.MauiBlazor.csproj" />
     <None Include="OneManVan.Web.Tests\OneManVan.Web.Tests.csproj" />
+    <None Include="Tools\CheckTables\CheckTables.csproj" />
   </ItemGroup>
 
 </Project>

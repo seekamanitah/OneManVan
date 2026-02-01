@@ -26,5 +26,8 @@ public enum PaymentMethod
     BankTransfer = 4,
     Digital = 5,
     Financing = 6,
-    Other = 7
+    Other = 7,
+    DirectDeposit = 8,
+    ACH = 9,
+    Invoice = 10
 }

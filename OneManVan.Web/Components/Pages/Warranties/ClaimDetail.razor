@@ -4,7 +4,7 @@
 @using OneManVan.Shared.Data
 @using OneManVan.Shared.Models
 @using OneManVan.Shared.Models.Enums
-@* [Authorize] temporarily disabled for development *@
+
 @inject IDbContextFactory<OneManVanDbContext> DbFactory
 @inject NavigationManager Navigation
 
@@ -377,7 +377,7 @@
             await using var db = await DbFactory.CreateDbContextAsync();
             claim = await db.WarrantyClaims
                 .Include(c => c.Asset)
-                .ThenInclude(a => a.Customer)
+                .ThenInclude(a => a!.Customer)
                 .FirstOrDefaultAsync(c => c.Id == Id);
         }
         finally
@@ -391,10 +391,10 @@
         isEditMode = true;
     }
 
-    private void CancelEdit()
+    private async void CancelEdit()
     {
         isEditMode = false;
-        LoadClaimAsync();
+        await LoadClaimAsync();
     }
 
     private async Task HandleUpdate()

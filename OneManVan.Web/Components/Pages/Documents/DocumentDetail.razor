@@ -1,0 +1,319 @@
+@page "/documents/{Id:int}"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@using OneManVan.Shared.Models.Enums
+@using OneManVan.Shared.Services
+@inject DocumentService DocumentService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<PageTitle>@(document?.Name ?? "Document") - OneManVan</PageTitle>
+
+<div class="container-fluid py-4">
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary"></div>
+        </div>
+    }
+    else if (document == null)
+    {
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>Document not found
+        </div>
+    }
+    else
+    {
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-start mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/documents">Documents</a></li>
+                        <li class="breadcrumb-item active">@document.Name</li>
+                    </ol>
+                </nav>
+                <div class="d-flex align-items-center">
+                    <div class="avatar-circle bg-primary bg-opacity-10 text-primary me-3" style="width: 60px; height: 60px; font-size: 24px;">
+                        <i class="bi @document.FileTypeIcon"></i>
+                    </div>
+                    <div>
+                        <h1 class="h2 mb-1">
+                            @if (document.IsFavorite)
+                            {
+                                <i class="bi bi-star-fill text-warning me-2"></i>
+                            }
+                            @document.Name
+                        </h1>
+                        <span class="badge bg-primary bg-opacity-10 text-primary me-2">@document.CategoryDisplay</span>
+                        @if (document.IsCustomDocument)
+                        {
+                            <span class="badge bg-success">Custom Document</span>
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-warning" @onclick="ToggleFavorite" title="@(document.IsFavorite ? "Remove from favorites" : "Add to favorites")">
+                    <i class="bi @(document.IsFavorite ? "bi-star-fill" : "bi-star") me-2"></i>
+                    @(document.IsFavorite ? "Favorited" : "Favorite")
+                </button>
+                <button class="btn btn-outline-secondary" @onclick="GoBack">
+                    <i class="bi bi-arrow-left me-2"></i>Back
+                </button>
+                <a href="/documents/@Id/edit" class="btn btn-primary">
+                    <i class="bi bi-pencil me-2"></i>Edit
+                </a>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Main Content -->
+            <div class="col-lg-8">
+                <!-- Preview/Download Card -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-file-earmark me-2"></i>Document</h5>
+                        <div class="d-flex gap-2">
+                            @if (document.IsPrintable)
+                            {
+                                <button class="btn btn-outline-secondary btn-sm" @onclick="PrintDocument">
+                                    <i class="bi bi-printer me-2"></i>Print
+                                </button>
+                            }
+                            <button class="btn btn-success btn-sm" @onclick="DownloadDocument">
+                                <i class="bi bi-download me-2"></i>Download
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        @if (IsPdfDocument())
+                        {
+                            <div class="ratio ratio-16x9" style="min-height: 500px;">
+                                <iframe src="@GetDocumentUrl()" class="rounded border"></iframe>
+                            </div>
+                        }
+                        else if (IsImageDocument())
+                        {
+                            <div class="text-center">
+                                <img src="@GetDocumentUrl()" alt="@document.Name" class="img-fluid rounded border" style="max-height: 600px;" />
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-5 bg-light rounded">
+                                <i class="bi @document.FileTypeIcon display-1 text-muted"></i>
+                                <h5 class="mt-3">@document.FileName</h5>
+                                <p class="text-muted">@document.FileSizeDisplay - @document.ContentType</p>
+                                <button class="btn btn-primary btn-lg" @onclick="DownloadDocument">
+                                    <i class="bi bi-download me-2"></i>Download to View
+                                </button>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Description -->
+                @if (!string.IsNullOrEmpty(document.Description))
+                {
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0"><i class="bi bi-text-paragraph me-2"></i>Description</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-0">@document.Description</p>
+                        </div>
+                    </div>
+                }
+
+                <!-- Tags -->
+                @if (document.TagList.Any())
+                {
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0"><i class="bi bi-tags me-2"></i>Tags</h5>
+                        </div>
+                        <div class="card-body">
+                            @foreach (var tag in document.TagList)
+                            {
+                                <span class="badge bg-primary bg-opacity-10 text-primary me-2 mb-2 fs-6">@tag</span>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- File Info -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>File Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <label class="text-muted small d-block">File Name</label>
+                                <span class="small">@document.FileName</span>
+                            </div>
+                            <div class="col-6">
+                                <label class="text-muted small d-block">File Size</label>
+                                <span>@document.FileSizeDisplay</span>
+                            </div>
+                            <div class="col-6">
+                                <label class="text-muted small d-block">File Type</label>
+                                <span>@document.FileExtension?.ToUpper().TrimStart('.')</span>
+                            </div>
+                            <div class="col-6">
+                                <label class="text-muted small d-block">Views</label>
+                                <span>@document.ViewCount</span>
+                            </div>
+                            <div class="col-6">
+                                <label class="text-muted small d-block">Uploaded</label>
+                                <span>@document.CreatedAt.ToString("MMM dd, yyyy")</span>
+                            </div>
+                            @if (document.LastAccessedAt.HasValue)
+                            {
+                                <div class="col-6">
+                                    <label class="text-muted small d-block">Last Accessed</label>
+                                    <span>@document.LastAccessedAt.Value.ToString("MMM dd, yyyy")</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Equipment Association -->
+                @if (!string.IsNullOrEmpty(document.Manufacturer) || !string.IsNullOrEmpty(document.ModelNumber) || !string.IsNullOrEmpty(document.EquipmentType))
+                {
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0"><i class="bi bi-gear me-2"></i>Equipment</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                @if (!string.IsNullOrEmpty(document.Manufacturer))
+                                {
+                                    <div class="col-12">
+                                        <label class="text-muted small d-block">Manufacturer</label>
+                                        <span class="fw-medium">@document.Manufacturer</span>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(document.ModelNumber))
+                                {
+                                    <div class="col-12">
+                                        <label class="text-muted small d-block">Model Number</label>
+                                        <span class="fw-medium font-monospace">@document.ModelNumber</span>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(document.EquipmentType))
+                                {
+                                    <div class="col-12">
+                                        <label class="text-muted small d-block">Equipment Type</label>
+                                        <span>@document.EquipmentType</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Quick Actions -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0"><i class="bi bi-lightning me-2"></i>Quick Actions</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-success" @onclick="DownloadDocument">
+                                <i class="bi bi-download me-2"></i>Download
+                            </button>
+                            @if (document.IsPrintable)
+                            {
+                                <button class="btn btn-outline-secondary" @onclick="PrintDocument">
+                                    <i class="bi bi-printer me-2"></i>Print
+                                </button>
+                            }
+                            <button class="btn btn-outline-danger" @onclick="DeleteDocument">
+                                <i class="bi bi-trash me-2"></i>Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Document? document;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDocumentAsync();
+    }
+
+    private async Task LoadDocumentAsync()
+    {
+        try
+        {
+            isLoading = true;
+            document = await DocumentService.GetByIdAsync(Id, incrementViewCount: true);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void GoBack() => Navigation.NavigateTo("/documents");
+
+    private async Task ToggleFavorite()
+    {
+        if (document != null)
+        {
+            document.IsFavorite = await DocumentService.ToggleFavoriteAsync(Id);
+        }
+    }
+
+    private bool IsPdfDocument() => document?.FileExtension?.ToLower() == ".pdf";
+
+    private bool IsImageDocument() => document?.FileExtension?.ToLower() is ".png" or ".jpg" or ".jpeg" or ".gif" or ".webp";
+
+    private string GetDocumentUrl()
+    {
+        return $"/api/documents/{Id}/content";
+    }
+
+    private async Task DownloadDocument()
+    {
+        await JSRuntime.InvokeVoidAsync("open", $"/api/documents/{Id}/download", "_blank");
+    }
+
+    private async Task PrintDocument()
+    {
+        if (IsPdfDocument() || IsImageDocument())
+        {
+            // Open in new window for printing
+            await JSRuntime.InvokeVoidAsync("open", $"/api/documents/{Id}/content", "_blank");
+        }
+        else
+        {
+            await DownloadDocument();
+        }
+    }
+
+    private async Task DeleteDocument()
+    {
+        if (!await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this document?"))
+            return;
+
+        await DocumentService.DeleteAsync(Id);
+        Navigation.NavigateTo("/documents");
+    }
+}

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" rx="80" fill="#1976D2"/>
+  
+  <!-- Van/Truck icon representation -->
+  <g fill="white">
+    <!-- Van body -->
+    <rect x="80" y="200" width="280" height="160" rx="20"/>
+    
+    <!-- Van cab -->
+    <path d="M360 200 L360 280 L432 280 L432 260 L400 200 Z" fill="white"/>
+    
+    <!-- Windows -->
+    <rect x="100" y="220" width="60" height="50" rx="8" fill="#1976D2"/>
+    <rect x="180" y="220" width="60" height="50" rx="8" fill="#1976D2"/>
+    <rect x="260" y="220" width="60" height="50" rx="8" fill="#1976D2"/>
+    <rect x="370" y="220" width="50" height="40" rx="8" fill="#1976D2"/>
+    
+    <!-- Wheels -->
+    <circle cx="160" cy="360" r="50" fill="white"/>
+    <circle cx="160" cy="360" r="30" fill="#1976D2"/>
+    <circle cx="360" cy="360" r="50" fill="white"/>
+    <circle cx="360" cy="360" r="30" fill="#1976D2"/>
+    
+    <!-- Tool icon on van -->
+    <g transform="translate(140, 290)">
+      <rect x="0" y="0" width="80" height="20" rx="4" fill="#1976D2"/>
+      <rect x="30" y="-30" width="20" height="60" rx="4" fill="#1976D2"/>
+    </g>
+  </g>
+  
+  <!-- Text OMV -->
+  <text x="256" y="480" font-family="Arial, sans-serif" font-size="60" font-weight="bold" fill="white" text-anchor="middle">OMV</text>
+</svg>

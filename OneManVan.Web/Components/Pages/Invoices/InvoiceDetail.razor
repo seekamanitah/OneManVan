@@ -3,9 +3,10 @@
 @using OneManVan.Shared.Data
 @using OneManVan.Shared.Models
 @using OneManVan.Shared.Models.Enums
-@* [Authorize] temporarily disabled for development *@
+
 @inject IDbContextFactory<OneManVanDbContext> DbFactory
 @inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
 
 <PageTitle>@(invoice?.InvoiceNumber ?? "Invoice") - OneManVan</PageTitle>
 
@@ -48,6 +49,23 @@
                 </div>
             </div>
             <div class="d-flex gap-2">
+                <a href="/api/export/invoice/@Id/pdf" target="_blank" class="btn btn-outline-success">
+                    <i class="bi bi-file-pdf me-2"></i>Download PDF
+                </a>
+                <button class="btn btn-outline-info" @onclick="PrintInvoice">
+                    <i class="bi bi-printer me-2"></i>Print
+                </button>
+                <button class="btn btn-outline-primary" @onclick="EmailInvoice" disabled="@isSendingEmail">
+                    @if (isSendingEmail)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2"></span>
+                    }
+                    else
+                    {
+                        <i class="bi bi-envelope me-2"></i>
+                    }
+                    Email
+                </button>
                 <button class="btn btn-outline-secondary" @onclick="GoBack">
                     <i class="bi bi-arrow-left me-2"></i>Back
                 </button>
@@ -178,15 +196,17 @@
 </style>
 
 @code {
-    [Parameter]
-    public int Id { get; set; }
+[Parameter]
+public int Id { get; set; }
 
-    private bool isLoading = true;
-    private Invoice? invoice;
+private bool isLoading = true;
+private bool isSendingEmail = false;
+private string? emailMessage;
+private Invoice? invoice;
 
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadInvoiceAsync();
+protected override async Task OnInitializedAsync()
+{
+    await LoadInvoiceAsync();
     }
 
     private async Task LoadInvoiceAsync()
@@ -211,6 +231,54 @@
     private void GoBack() => Navigation.NavigateTo("/invoices");
     private void EditInvoice() => Navigation.NavigateTo($"/invoices/{Id}/edit");
     private void RecordPayment() => Navigation.NavigateTo($"/invoices/{Id}/payment");
+    
+    private async Task PrintInvoice()
+    {
+        // Open PDF in new tab, then trigger print dialog
+        await JSRuntime.InvokeVoidAsync("open", $"/api/export/invoice/{Id}/pdf", "_blank");
+    }
+
+
+    private async Task EmailInvoice()
+    {
+        if (invoice?.Customer?.Email == null)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Customer does not have an email address. Please add one first.");
+            return;
+        }
+
+        isSendingEmail = true;
+        emailMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            using var http = new HttpClient();
+            http.BaseAddress = new Uri(Navigation.BaseUri);
+            var response = await http.PostAsync($"/api/export/invoice/{Id}/email", null);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                emailMessage = $"Invoice emailed to {invoice.Customer.Email}";
+            }
+            else
+            {
+                emailMessage = "Failed to send email. Please check email configuration in settings.";
+            }
+        }
+        catch (Exception ex)
+        {
+            emailMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            isSendingEmail = false;
+            if (emailMessage != null)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", emailMessage);
+            }
+        }
+    }
 
     private string GetStatusBadge() => invoice?.Status switch
     {

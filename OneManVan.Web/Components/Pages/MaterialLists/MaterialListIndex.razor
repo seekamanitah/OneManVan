@@ -1,0 +1,252 @@
+@page "/material-lists"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@using OneManVan.Shared.Models.Enums
+@using OneManVan.Shared.Services
+@inject MaterialListService MaterialListService
+@inject NavigationManager Navigation
+
+<PageTitle>Material Lists - OneManVan</PageTitle>
+
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-1">Material Lists</h1>
+            <small class="text-muted">HVAC job bidding and material tracking</small>
+        </div>
+        <div class="d-flex gap-2">
+            <ExportButton EntityType="material-lists" />
+            <a href="/material-lists/new" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-2"></i>New Material List
+            </a>
+        </div>
+    </div>
+
+    <!-- Status Filter Tabs -->
+    <ul class="nav nav-tabs mb-4">
+        <li class="nav-item">
+            <a class="nav-link @(statusFilter == null ? "active" : "")" href="javascript:void(0)" @onclick="() => SetStatusFilter(null)">
+                All <span class="badge bg-secondary ms-1">@materialLists.Count</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link @(statusFilter == MaterialListStatus.Draft ? "active" : "")" href="javascript:void(0)" @onclick="() => SetStatusFilter(MaterialListStatus.Draft)">
+                Draft <span class="badge bg-warning text-dark ms-1">@materialLists.Count(ml => ml.Status == MaterialListStatus.Draft)</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link @(statusFilter == MaterialListStatus.Finalized ? "active" : "")" href="javascript:void(0)" @onclick="() => SetStatusFilter(MaterialListStatus.Finalized)">
+                Finalized <span class="badge bg-success ms-1">@materialLists.Count(ml => ml.Status == MaterialListStatus.Finalized)</span>
+            </a>
+        </li>
+    </ul>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else if (!filteredLists.Any())
+    {
+        <div class="text-center py-5">
+            <i class="bi bi-clipboard-data display-1 text-muted mb-3 d-block"></i>
+            <h4 class="text-muted">No Material Lists Found</h4>
+            <p class="text-muted">Create your first material list to start bidding jobs.</p>
+            <a href="/material-lists/new" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-2"></i>Create Material List
+            </a>
+        </div>
+    }
+    else
+    {
+        <!-- Material Lists Table -->
+        <div class="card border-0 shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>List #</th>
+                            <th>Title</th>
+                            <th>Customer</th>
+                            <th>Site</th>
+                            <th>Status</th>
+                            <th class="text-end">Total</th>
+                            <th>Created</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var list in filteredLists)
+                        {
+                            <tr style="cursor: pointer;" @onclick="() => NavigateToDetail(list.Id)">
+                                <td>
+                                    <span class="fw-medium">@list.ListNumber</span>
+                                </td>
+                                <td>
+                                    <span class="text-primary">@list.Title</span>
+                                </td>
+                                <td>@list.Customer?.DisplayName</td>
+                                <td>
+                                    @if (list.Site != null)
+                                    {
+                                        <small>@list.Site.SiteName</small>
+                                    }
+                                    else
+                                    {
+                                        <small class="text-muted">-</small>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge @GetStatusBadgeClass(list.Status)">
+                                        @list.StatusDisplay
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    <span class="fw-medium">$@list.TotalMaterialCost.ToString("N2")</span>
+                                    @if (list.MarkupPercent > 0)
+                                    {
+                                        <br />
+                                        <small class="text-muted">w/markup: $@list.TotalWithMarkup.ToString("N2")</small>
+                                    }
+                                </td>
+                                <td>
+                                    <small>@list.CreatedAt.ToString("MMM d, yyyy")</small>
+                                </td>
+                                <td class="text-center" @onclick:stopPropagation="true">
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                            <i class="bi bi-three-dots"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <li>
+                                                <a class="dropdown-item" href="/material-lists/@list.Id">
+                                                    <i class="bi bi-eye me-2"></i>View
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" href="/material-lists/@list.Id/edit">
+                                                    <i class="bi bi-pencil me-2"></i>Edit
+                                                </a>
+                                            </li>
+                                            <li><hr class="dropdown-divider" /></li>
+                                            <li>
+                                                <button class="dropdown-item" @onclick="() => DuplicateList(list)">
+                                                    <i class="bi bi-copy me-2"></i>Duplicate
+                                                </button>
+                                            </li>
+                                            @if (list.Status == MaterialListStatus.Draft)
+                                            {
+                                                <li>
+                                                    <button class="dropdown-item text-success" @onclick="() => FinalizeList(list.Id)">
+                                                        <i class="bi bi-check-circle me-2"></i>Finalize
+                                                    </button>
+                                                </li>
+                                            }
+                                            <li><hr class="dropdown-divider" /></li>
+                                            <li>
+                                                <button class="dropdown-item text-danger" @onclick="() => DeleteList(list.Id)">
+                                                    <i class="bi bi-trash me-2"></i>Delete
+                                                </button>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="row g-3 mt-3">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm text-center py-3">
+                    <div class="h4 mb-0 text-primary">@materialLists.Count</div>
+                    <small class="text-muted">Total Lists</small>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm text-center py-3">
+                    <div class="h4 mb-0 text-success">$@materialLists.Sum(ml => ml.TotalMaterialCost).ToString("N0")</div>
+                    <small class="text-muted">Total Materials Value</small>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm text-center py-3">
+                    <div class="h4 mb-0 text-info">$@materialLists.Sum(ml => ml.TotalWithMarkup).ToString("N0")</div>
+                    <small class="text-muted">Total with Markup</small>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<MaterialList> materialLists = new();
+    private MaterialListStatus? statusFilter = null;
+    private bool isLoading = true;
+
+    private IEnumerable<MaterialList> filteredLists => statusFilter.HasValue
+        ? materialLists.Where(ml => ml.Status == statusFilter.Value)
+        : materialLists;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        isLoading = true;
+        try
+        {
+            materialLists = await MaterialListService.GetAllAsync();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void SetStatusFilter(MaterialListStatus? status)
+    {
+        statusFilter = status;
+    }
+
+    private void NavigateToDetail(int id)
+    {
+        Navigation.NavigateTo($"/material-lists/{id}");
+    }
+
+    private async Task FinalizeList(int id)
+    {
+        await MaterialListService.FinalizeAsync(id);
+        await LoadDataAsync();
+    }
+
+    private async Task DuplicateList(MaterialList list)
+    {
+        var newTitle = $"Copy of {list.Title}";
+        var newList = await MaterialListService.DuplicateAsync(list.Id, newTitle);
+        Navigation.NavigateTo($"/material-lists/{newList.Id}/edit");
+    }
+
+    private async Task DeleteList(int id)
+    {
+        await MaterialListService.DeleteAsync(id);
+        await LoadDataAsync();
+    }
+
+    private string GetStatusBadgeClass(MaterialListStatus status) => status switch
+    {
+        MaterialListStatus.Draft => "bg-warning text-dark",
+        MaterialListStatus.Finalized => "bg-success",
+        _ => "bg-secondary"
+    };
+}

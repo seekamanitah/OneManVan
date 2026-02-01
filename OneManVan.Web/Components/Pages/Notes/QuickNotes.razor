@@ -1,8 +1,9 @@
 @page "/notes"
+@page "/notes/{noteId:int}"
 @using Microsoft.EntityFrameworkCore
 @using OneManVan.Shared.Data
 @using OneManVan.Shared.Models
-@* [Authorize] temporarily disabled for development *@
+
 @inject IDbContextFactory<OneManVanDbContext> DbFactory
 @inject NavigationManager Navigation
 
@@ -144,7 +145,8 @@
                     {
                         <div class="col">
                             <div class="card h-100 border-0 shadow-sm note-card @(note.IsArchived ? "opacity-75" : "")"
-                                 style="@(string.IsNullOrEmpty(note.Color) ? "" : $"background-color: {note.Color};")">
+                                 style="@(string.IsNullOrEmpty(note.Color) ? "" : $"background-color: {note.Color}; cursor: pointer;")"
+                                 @onclick="() => EditNote(note)">
                                 <div class="card-body">
                                     <!-- Header -->
                                     <div class="d-flex justify-content-between align-items-start mb-2">
@@ -158,7 +160,7 @@
                                                 <span class="badge bg-secondary">@note.Category</span>
                                             }
                                         </div>
-                                        <div class="dropdown">
+                                        <div class="dropdown" @onclick:stopPropagation="true">
                                             <button class="btn btn-sm btn-link text-muted p-0" data-bs-toggle="dropdown">
                                                 <i class="bi bi-three-dots-vertical"></i>
                                             </button>
@@ -271,6 +273,9 @@
 </style>
 
 @code {
+[Parameter]
+public int? NoteId { get; set; }
+
 private List<QuickNote> notes = new();
 private QuickNote newNote = new();
 private QuickNote? editingNote;
@@ -294,6 +299,18 @@ private bool isError = false;
     protected override async Task OnInitializedAsync()
     {
         await LoadNotes();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (NoteId.HasValue && notes.Any())
+        {
+            var note = notes.FirstOrDefault(n => n.Id == NoteId.Value);
+            if (note != null)
+            {
+                EditNote(note);
+            }
+        }
     }
 
     private async Task LoadNotes()
@@ -379,6 +396,11 @@ private bool isError = false;
     private void CancelEdit()
     {
         editingNote = null;
+        // Navigate back to notes list (clears the ID parameter)
+        if (NoteId.HasValue)
+        {
+            Navigation.NavigateTo("/notes");
+        }
     }
 
     private async Task SaveEditedNote()
@@ -401,6 +423,12 @@ private bool isError = false;
             
             editingNote = null;
             await LoadNotes();
+            
+            // Navigate back to notes list (clears the ID parameter)
+            if (NoteId.HasValue)
+            {
+                Navigation.NavigateTo("/notes");
+            }
         }
         catch (Exception ex)
         {

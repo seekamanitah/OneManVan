@@ -341,7 +341,7 @@ public abstract class BackupServiceBase : IBackupService
         recordCount += await ProcessInvoices(backupData, customerIdMap, jobIdMap, estimateIdMap, invoiceIdMap);
         recordCount += await ProcessInventory(backupData);
 
-        return BackupResult.Succeeded(null, recordCount, 
+        return BackupResult.Succeeded(filePath: null!, recordCount, 
             $"Restore complete. Processed {recordCount} records.");
     }
 
@@ -384,7 +384,7 @@ public abstract class BackupServiceBase : IBackupService
         
         await _context.SaveChangesAsync();
 
-        return BackupResult.Succeeded(null, backupData.TotalRecordCount, 
+        return BackupResult.Succeeded(filePath: null!, backupData.TotalRecordCount, 
             $"Replace complete. Restored {backupData.TotalRecordCount} records.");
     }
 

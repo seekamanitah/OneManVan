@@ -3,7 +3,7 @@
 @using OneManVan.Shared.Data
 @using OneManVan.Shared.Models
 @using OneManVan.Shared.Models.Enums
-@* [Authorize] temporarily disabled for development *@
+
 @inject IDbContextFactory<OneManVanDbContext> DbFactory
 @inject NavigationManager Navigation
 
@@ -40,6 +40,7 @@
                     <div>
                         <h1 class="h2 mb-1">@agreement.Name</h1>
                         <span class="badge @GetStatusBadge()">@agreement.Status</span>
+                        <span class="badge @GetTierBadge() ms-1">@agreement.ServiceTierDisplay</span>
                         @if (agreement.AutoRenew)
                         {
                             <span class="badge bg-info ms-1">Auto-Renew</span>
@@ -48,6 +49,9 @@
                 </div>
             </div>
             <div class="d-flex gap-2">
+                <a href="/api/export/agreement/@Id/pdf" target="_blank" class="btn btn-outline-success">
+                    <i class="bi bi-printer me-2"></i>Print
+                </a>
                 <button class="btn btn-outline-secondary" @onclick="GoBack">
                     <i class="bi bi-arrow-left me-2"></i>Back
                 </button>
@@ -60,6 +64,62 @@
         <div class="row g-3">
             <!-- Main Info -->
             <div class="col-md-8">
+                <!-- Service Tier Card -->
+                <div class="card border-0 shadow-sm mb-3 @GetTierCardClass()">
+                    <div class="card-header text-white py-3 @GetTierHeaderClass()">
+                        <h5 class="mb-0"><i class="bi bi-star-fill me-2"></i>@agreement.ServiceTierDisplay Service Level</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4 text-center border-end">
+                                <div class="h3 text-primary mb-0">@agreement.IncludedVisitsPerYear</div>
+                                <small class="text-muted">Tune-ups/Year</small>
+                            </div>
+                            <div class="col-md-4 text-center border-end">
+                                <div class="h3 text-success mb-0">@agreement.RepairDiscountPercent%</div>
+                                <small class="text-muted">Repair Discount</small>
+                            </div>
+                            <div class="col-md-4 text-center">
+                                <div class="h3 text-info mb-0">@agreement.ResponseTimeHours hr</div>
+                                <small class="text-muted">Response Time</small>
+                            </div>
+                        </div>
+                        <hr />
+                        <div class="row g-2 small">
+                            <div class="col-md-6">
+                                <i class="bi @(agreement.PriorityService ? "bi-check-circle-fill text-success" : "bi-x-circle text-muted") me-2"></i>
+                                Priority Scheduling
+                            </div>
+                            <div class="col-md-6">
+                                <i class="bi @(agreement.WaiveTripCharge ? "bi-check-circle-fill text-success" : "bi-x-circle text-muted") me-2"></i>
+                                Waive Trip Charge
+                            </div>
+                            <div class="col-md-6">
+                                <i class="bi @(agreement.NoEmergencyDispatchFee ? "bi-check-circle-fill text-success" : "bi-x-circle text-muted") me-2"></i>
+                                No Emergency Dispatch Fee
+                            </div>
+                            <div class="col-md-6">
+                                <i class="bi @(agreement.FreeMinorAdjustments ? "bi-check-circle-fill text-success" : "bi-x-circle text-muted") me-2"></i>
+                                Free Minor Adjustments
+                            </div>
+                            @if (agreement.FiltersIncludedPerYear > 0)
+                            {
+                                <div class="col-md-6">
+                                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                    @agreement.FiltersIncludedPerYear Filters/Year Included
+                                </div>
+                            }
+                            @if (agreement.AdditionalCheckVisits > 0)
+                            {
+                                <div class="col-md-6">
+                                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                    @agreement.AdditionalCheckVisits Additional Check Visit(s)
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
                 <div class="card border-0 shadow-sm mb-3">
                     <div class="card-header bg-white border-0 py-3">
                         <h5 class="mb-0">Agreement Details</h5>
@@ -94,6 +154,44 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Tune-up Tasks -->
+                @if (agreement.SpringAcTaskList.Any() || agreement.FallHeatingTaskList.Any())
+                {
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0"><i class="bi bi-tools me-2"></i>Included Services</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-4">
+                                @if (agreement.IncludesAcTuneUp && agreement.SpringAcTaskList.Any())
+                                {
+                                    <div class="col-md-6">
+                                        <h6 class="text-primary"><i class="bi bi-sun me-2"></i>Spring AC Tune-Up</h6>
+                                        <ul class="list-unstyled small mb-0">
+                                            @foreach (var task in agreement.SpringAcTaskList)
+                                            {
+                                                <li><i class="bi bi-check text-success me-1"></i>@task</li>
+                                            }
+                                        </ul>
+                                    </div>
+                                }
+                                @if (agreement.IncludesHeatingTuneUp && agreement.FallHeatingTaskList.Any())
+                                {
+                                    <div class="col-md-6">
+                                        <h6 class="text-warning"><i class="bi bi-thermometer-half me-2"></i>Fall Heating Tune-Up</h6>
+                                        <ul class="list-unstyled small mb-0">
+                                            @foreach (var task in agreement.FallHeatingTaskList)
+                                            {
+                                                <li><i class="bi bi-check text-success me-1"></i>@task</li>
+                                            }
+                                        </ul>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
 
                 <!-- Pricing -->
                 <div class="card border-0 shadow-sm mb-3">
@@ -190,6 +288,7 @@
     [Parameter]
     public int Id { get; set; }
 
+
     private bool isLoading = true;
     private ServiceAgreement? agreement;
 
@@ -233,6 +332,29 @@
         AgreementStatus.Active => "bg-success",
         AgreementStatus.Expired => "bg-warning text-dark",
         AgreementStatus.Cancelled => "bg-danger",
+        _ => "bg-secondary"
+    };
+
+    private string GetTierBadge() => agreement?.ServiceTier switch
+    {
+        ServiceTier.Basic => "bg-secondary",
+        ServiceTier.Standard => "bg-primary",
+        ServiceTier.Premium => "bg-warning text-dark",
+        _ => "bg-secondary"
+    };
+
+    private string GetTierCardClass() => agreement?.ServiceTier switch
+    {
+        ServiceTier.Premium => "border-warning",
+        ServiceTier.Standard => "border-primary",
+        _ => ""
+    };
+
+    private string GetTierHeaderClass() => agreement?.ServiceTier switch
+    {
+        ServiceTier.Basic => "bg-secondary",
+        ServiceTier.Standard => "bg-primary",
+        ServiceTier.Premium => "bg-warning text-dark",
         _ => "bg-secondary"
     };
 }

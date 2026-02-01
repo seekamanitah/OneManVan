@@ -18,6 +18,7 @@ public interface ICsvExportService
     Task<byte[]> ExportCompaniesToCsvAsync();
     Task<byte[]> ExportSitesToCsvAsync();
     Task<byte[]> ExportServiceAgreementsToCsvAsync();
+    Task<byte[]> ExportWarrantyClaimsToCsvAsync();
 }
 
 public class CsvExportService : ICsvExportService
@@ -233,6 +234,30 @@ public class CsvExportService : ICsvExportService
             .ToListAsync();
 
         return ToCsv(agreements);
+    }
+
+    public async Task<byte[]> ExportWarrantyClaimsToCsvAsync()
+    {
+        var claims = await _context.WarrantyClaims
+            .Include(wc => wc.Asset)
+            .OrderByDescending(wc => wc.ClaimDate)
+            .Select(wc => new
+            {
+                wc.Id,
+                wc.ClaimNumber,
+                AssetName = wc.Asset != null ? wc.Asset.AssetName : "",
+                wc.ClaimDate,
+                wc.IssueDescription,
+                Status = wc.Status.ToString(),
+                wc.IsCoveredByWarranty,
+                wc.RepairCost,
+                wc.CustomerCharge,
+                wc.Resolution,
+                wc.ResolvedDate
+            })
+            .ToListAsync();
+
+        return ToCsv(claims);
     }
 
     private byte[] ToCsv<T>(IEnumerable<T> records)

@@ -4,10 +4,13 @@
 @using OneManVan.Shared.Data
 @using OneManVan.Shared.Models
 @using OneManVan.Shared.Models.Enums
-@* [Authorize] temporarily disabled for development *@
+@using OneManVan.Shared.Services
+
 @inject IDbContextFactory<OneManVanDbContext> DbFactory
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject ISettingsStorage SettingsStorage
+@inject INotificationService NotificationService
 
 <PageTitle>@(IsNew ? "New Job" : $"Edit Job") - OneManVan</PageTitle>
 
@@ -296,13 +299,17 @@
     {
         await LoadLookupsAsync();
         
+        // Get default tax rate from settings
+        var defaultTaxRate = SettingsStorage.GetDecimal("DefaultTaxRate", 7.0m);
+        
         if (IsNew)
         {
             model = new Job
             {
                 Status = JobStatus.Draft,
                 Priority = JobPriority.Normal,
-                JobType = JobType.ServiceCall
+                JobType = JobType.ServiceCall,
+                TaxRate = defaultTaxRate
             };
             isLoading = false;
         }
@@ -398,6 +405,12 @@
             }
 
             await db.SaveChangesAsync();
+
+            // Send notification for scheduled jobs
+            if (IsNew && model.Status == JobStatus.Scheduled && model.ScheduledDate.HasValue)
+            {
+                _ = NotificationService.SendJobScheduledAsync(model);
+            }
 
             Navigation.NavigateTo(IsNew ? "/jobs" : $"/jobs/{model.Id}");
         }

@@ -1,0 +1,365 @@
+/* OneManVan PWA Mobile Optimizations */
+/* Enhances the WebUI experience for mobile devices */
+
+/* =========================================
+   PWA Install Banner
+   ========================================= */
+.pwa-install-banner {
+    position: fixed;
+    bottom: -100px;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, #1976D2 0%, #1565C0 100%);
+    color: white;
+    padding: 16px 20px;
+    z-index: 9999;
+    transition: bottom 0.3s ease-out;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.pwa-install-banner.show {
+    bottom: 0;
+}
+
+.pwa-install-banner-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 600px;
+    margin: 0 auto;
+    gap: 16px;
+}
+
+.pwa-install-banner-text {
+    flex: 1;
+}
+
+.pwa-install-banner-text h4 {
+    margin: 0 0 4px 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.pwa-install-banner-text p {
+    margin: 0;
+    font-size: 13px;
+    opacity: 0.9;
+}
+
+.pwa-install-banner-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.pwa-install-btn {
+    background: white;
+    color: #1976D2;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.pwa-install-btn:active {
+    transform: scale(0.95);
+}
+
+.pwa-dismiss-btn {
+    background: transparent;
+    color: white;
+    border: none;
+    padding: 10px;
+    font-size: 20px;
+    cursor: pointer;
+    opacity: 0.8;
+}
+
+.pwa-dismiss-btn:hover {
+    opacity: 1;
+}
+
+/* =========================================
+   PWA Update Notification
+   ========================================= */
+.pwa-notification {
+    position: fixed;
+    top: -80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    z-index: 9999;
+    transition: top 0.3s ease-out;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.pwa-notification.show {
+    top: 20px;
+}
+
+.pwa-notification-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* =========================================
+   Mobile Touch Optimizations
+   ========================================= */
+@media (max-width: 768px) {
+    /* Larger touch targets */
+    .btn {
+        min-height: 44px;
+        padding: 10px 16px;
+    }
+    
+    .form-control, 
+    .form-select {
+        min-height: 44px;
+        font-size: 16px; /* Prevents iOS zoom */
+    }
+    
+    /* Better spacing for mobile */
+    .container-fluid {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+    
+    /* Card improvements */
+    .card {
+        border-radius: 12px;
+        margin-bottom: 12px;
+    }
+    
+    .card-body {
+        padding: 16px;
+    }
+    
+    /* Table horizontal scroll */
+    .table-responsive {
+        border-radius: 12px;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Better list items */
+    .list-group-item {
+        padding: 16px;
+    }
+    
+    /* Navigation improvements */
+    .nav-link {
+        padding: 12px 16px;
+    }
+    
+    /* Modal improvements */
+    .modal-dialog {
+        margin: 8px;
+    }
+    
+    .modal-content {
+        border-radius: 16px;
+    }
+    
+    /* Bottom safe area for iOS */
+    .page-content {
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+}
+
+/* =========================================
+   Touch Feedback
+   ========================================= */
+@media (hover: none) {
+    .btn:active,
+    .card:active,
+    .list-group-item:active,
+    .nav-link:active {
+        opacity: 0.7;
+        transition: opacity 0.1s;
+    }
+    
+    /* Disable hover effects on touch */
+    .btn:hover {
+        opacity: 1;
+    }
+}
+
+/* =========================================
+   Offline Indicator
+   ========================================= */
+body.offline::before {
+    content: 'You are offline';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: #f44336;
+    color: white;
+    text-align: center;
+    padding: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 10000;
+}
+
+body.offline .main-content {
+    margin-top: 36px;
+}
+
+/* =========================================
+   Standalone Mode Adjustments
+   ========================================= */
+@media (display-mode: standalone) {
+    /* Adjust for status bar when installed */
+    .navbar,
+    .top-row {
+        padding-top: env(safe-area-inset-top);
+    }
+    
+    /* Hide browser-specific elements */
+    .install-prompt {
+        display: none !important;
+    }
+}
+
+/* =========================================
+   Pull to Refresh Indicator
+   ========================================= */
+.pull-to-refresh {
+    position: fixed;
+    top: -50px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    border-radius: 25px;
+    padding: 10px 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 9998;
+    transition: top 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pull-to-refresh.visible {
+    top: 60px;
+}
+
+.pull-to-refresh .spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #e0e0e0;
+    border-top-color: #1976D2;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* =========================================
+   Mobile Navigation Improvements
+   ========================================= */
+@media (max-width: 768px) {
+    /* Hamburger menu improvements */
+    .navbar-toggler {
+        padding: 8px 12px;
+    }
+    
+    /* Sidebar mobile optimization */
+    .sidebar {
+        width: 280px;
+    }
+    
+    /* Dashboard card stacking */
+    .dashboard-card {
+        margin-bottom: 16px;
+    }
+    
+    /* Action buttons at bottom */
+    .action-buttons {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: white;
+        padding: 12px 16px;
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        padding-bottom: calc(12px + env(safe-area-inset-bottom));
+    }
+    
+    /* FAB (Floating Action Button) */
+    .fab {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: #FF9800;
+        color: white;
+        border: none;
+        font-size: 24px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .fab:active {
+        transform: scale(0.95);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+}
+
+/* =========================================
+   iOS Specific Fixes
+   ========================================= */
+@supports (-webkit-touch-callout: none) {
+    /* Prevent text selection on iOS */
+    .no-select {
+        -webkit-user-select: none;
+        user-select: none;
+    }
+    
+    /* Fix iOS input zoom */
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="number"],
+    input[type="tel"],
+    select,
+    textarea {
+        font-size: 16px !important;
+    }
+    
+    /* Smooth scrolling containers */
+    .scroll-container {
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* =========================================
+   Print Styles (for invoices, etc.)
+   ========================================= */
+@media print {
+    .pwa-install-banner,
+    .pwa-notification,
+    .fab,
+    .navbar,
+    .sidebar,
+    .action-buttons {
+        display: none !important;
+    }
+}

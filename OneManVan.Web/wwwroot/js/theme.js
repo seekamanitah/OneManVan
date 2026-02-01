@@ -49,6 +49,32 @@ window.themeManager = {
 // Initialize theme immediately when script loads (before Blazor starts)
 window.themeManager.init();
 
+// Debounce utility for search inputs
+window.debounceHelper = {
+    timers: {},
+    
+    // Call a .NET method after a delay (debounced)
+    // dotNetRef: DotNetObjectReference, methodName: string, delay: number
+    debounce: function (timerId, dotNetRef, methodName, delay, value) {
+        if (this.timers[timerId]) {
+            clearTimeout(this.timers[timerId]);
+        }
+        
+        this.timers[timerId] = setTimeout(() => {
+            dotNetRef.invokeMethodAsync(methodName, value);
+            delete this.timers[timerId];
+        }, delay);
+    },
+    
+    // Clear a pending debounce timer
+    clear: function (timerId) {
+        if (this.timers[timerId]) {
+            clearTimeout(this.timers[timerId]);
+            delete this.timers[timerId];
+        }
+    }
+};
+
 // Listen for system theme changes
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
     // Only auto-switch if user hasn't set a preference

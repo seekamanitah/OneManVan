@@ -1,0 +1,53 @@
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: tradeflow-db
+    hostname: tradeflow-sql
+    ports:
+      - "${DB_PORT:-1433}:1433"
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=${SA_PASSWORD}
+      - MSSQL_PID=${MSSQL_PID:-Express}
+      - MSSQL_TCP_PORT=1433
+    volumes:
+      - tradeflow-sqldata:/var/opt/mssql/data
+      - ./docker/init:/docker-entrypoint-initdb.d
+    networks:
+      - tradeflow-network
+    restart: unless-stopped
+    healthcheck:
+      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "${SA_PASSWORD}" -C -Q "SELECT 1" || exit 1
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+  webui:
+    image: ${WEBUI_IMAGE:-tradeflow-webui:latest}
+    container_name: tradeflow-webui
+    hostname: tradeflow-web
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Production}
+      - ASPNETCORE_URLS=http://+:8080
+      - AdminUser__Email=${ADMIN_EMAIL}
+      - AdminUser__Password=${ADMIN_PASSWORD}
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=${APP_DB_NAME:-TradeFlowFSM};User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True;
+      - ConnectionStrings__IdentityConnection=Server=sqlserver;Database=${IDENTITY_DB_NAME:-TradeFlowIdentity};User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True;
+    ports:
+      - "${WEBUI_PORT:-7159}:8080"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    networks:
+      - tradeflow-network
+    restart: unless-stopped
+
+volumes:
+  tradeflow-sqldata:
+    name: tradeflow-sqldata
+
+networks:
+  tradeflow-network:
+    name: tradeflow-net
+    driver: bridge

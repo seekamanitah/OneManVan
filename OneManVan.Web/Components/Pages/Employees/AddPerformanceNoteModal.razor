@@ -1,0 +1,225 @@
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@using OneManVan.Shared.Models.Enums
+@using OneManVan.Shared.Services
+@inject EmployeeService EmployeeService
+@inject IDbContextFactory<OneManVanDbContext> DbFactory
+
+@if (IsVisible)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-star me-2"></i>Add Performance Note
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="Close"></button>
+                </div>
+                <EditForm Model="@note" OnValidSubmit="HandleSubmit">
+                    <DataAnnotationsValidator />
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Category *</label>
+                                <InputSelect class="form-select" @bind-Value="note.Category">
+                                    @foreach (var cat in Enum.GetValues<PerformanceCategory>())
+                                    {
+                                        <option value="@cat">@GetCategoryDisplay(cat)</option>
+                                    }
+                                </InputSelect>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Date</label>
+                                <InputDate class="form-control" @bind-Value="note.Date" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Rating (Optional)</label>
+                                <div class="d-flex gap-1">
+                                    @for (int i = 1; i <= 5; i++)
+                                    {
+                                        var rating = i;
+                                        <button type="button" 
+                                                class="btn @(note.Rating == rating ? "btn-warning" : "btn-outline-warning") btn-sm"
+                                                @onclick="() => SetRating(rating)">
+                                            <i class="bi bi-star-fill"></i>
+                                        </button>
+                                    }
+                                    @if (note.Rating.HasValue)
+                                    {
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="ClearRating">
+                                            <i class="bi bi-x"></i>
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Related Job (Optional)</label>
+                                <InputSelect class="form-select" @bind-Value="note.JobId">
+                                    <option value="">-- No Job --</option>
+                                    @foreach (var job in recentJobs)
+                                    {
+                                        <option value="@job.Id">@job.Title</option>
+                                    }
+                                </InputSelect>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Note *</label>
+                                <InputTextArea class="form-control" rows="4" @bind-Value="note.Note" 
+                                               placeholder="Enter performance feedback, observations, or issues..." />
+                                <ValidationMessage For="@(() => note.Note)" />
+                            </div>
+                        </div>
+
+                        <!-- Quick Templates -->
+                        <div class="mt-3">
+                            <label class="form-label text-muted small">Quick Templates</label>
+                            <div class="d-flex flex-wrap gap-2">
+                                <button type="button" class="btn btn-outline-success btn-sm" @onclick='() => ApplyTemplate("Excellent work on this job. Customer was very satisfied.")'>
+                                    Excellent Work
+                                </button>
+                                <button type="button" class="btn btn-outline-info btn-sm" @onclick='() => ApplyTemplate("Showed up on time and completed work efficiently.")'>
+                                    On Time
+                                </button>
+                                <button type="button" class="btn btn-outline-warning btn-sm" @onclick='() => ApplyTemplate("Needs improvement in communication with customer.")'>
+                                    Needs Improvement
+                                </button>
+                                <button type="button" class="btn btn-outline-danger btn-sm" @onclick='() => ApplyTemplate("Issue occurred: ")'>
+                                    Issue
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="Close" disabled="@isSaving">Cancel</button>
+                        <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                            @if (isSaving)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2"></span>
+                            }
+                            <i class="bi bi-check-circle me-2"></i>Save Note
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int EmployeeId { get; set; }
+
+    [Parameter]
+    public bool IsVisible { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<EmployeePerformanceNote> OnNoteSaved { get; set; }
+
+    private EmployeePerformanceNote note = new() { Date = DateTime.Today };
+    private List<Job> recentJobs = new();
+    private bool isSaving = false;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && EmployeeId > 0)
+        {
+            await LoadRecentJobs();
+            note = new EmployeePerformanceNote
+            {
+                EmployeeId = EmployeeId,
+                Date = DateTime.Today,
+                Category = PerformanceCategory.General
+            };
+        }
+    }
+
+    private async Task LoadRecentJobs()
+    {
+        await using var context = await DbFactory.CreateDbContextAsync();
+        recentJobs = await context.Jobs
+            .Where(j => j.Status != JobStatus.Cancelled)
+            .OrderByDescending(j => j.ScheduledDate)
+            .Take(20)
+            .ToListAsync();
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (string.IsNullOrWhiteSpace(note.Note))
+            return;
+
+        try
+        {
+            isSaving = true;
+            note.EmployeeId = EmployeeId;
+            await EmployeeService.AddPerformanceNoteAsync(note);
+            await OnNoteSaved.InvokeAsync(note);
+            await Close();
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task Close()
+    {
+        IsVisible = false;
+        await IsVisibleChanged.InvokeAsync(false);
+    }
+
+    private void SetRating(int rating)
+    {
+        note.Rating = rating;
+    }
+
+    private void ClearRating()
+    {
+        note.Rating = null;
+    }
+
+    private void ApplyTemplate(string template)
+    {
+        note.Note = template;
+        
+        // Auto-set category based on template
+        if (template.Contains("Excellent") || template.Contains("satisfied"))
+        {
+            note.Category = PerformanceCategory.Positive;
+            note.Rating = 5;
+        }
+        else if (template.Contains("On time"))
+        {
+            note.Category = PerformanceCategory.Reliability;
+            note.Rating = 4;
+        }
+        else if (template.Contains("Needs improvement"))
+        {
+            note.Category = PerformanceCategory.General;
+            note.Rating = 2;
+        }
+        else if (template.Contains("Issue"))
+        {
+            note.Category = PerformanceCategory.Issue;
+            note.Rating = 1;
+        }
+    }
+
+    private string GetCategoryDisplay(PerformanceCategory cat) => cat switch
+    {
+        PerformanceCategory.Quality => "Quality",
+        PerformanceCategory.Reliability => "Reliability",
+        PerformanceCategory.Speed => "Speed",
+        PerformanceCategory.Attitude => "Attitude",
+        PerformanceCategory.JobPerformance => "Job Performance",
+        PerformanceCategory.Issue => "Issue",
+        PerformanceCategory.Positive => "Positive Feedback",
+        PerformanceCategory.General => "General",
+        _ => cat.ToString()
+    };
+}

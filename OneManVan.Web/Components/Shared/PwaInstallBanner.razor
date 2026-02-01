@@ -1,0 +1,20 @@
+@* PWA Install Banner Component *@
+@* Shows a banner prompting users to install the app *@
+
+<div id="pwa-install-banner" class="pwa-install-banner">
+    <div class="pwa-install-banner-content">
+        <div class="pwa-install-banner-text">
+            <h4>Install OneManVan</h4>
+            <p>Add to your home screen for quick access</p>
+        </div>
+        <div class="pwa-install-banner-actions">
+            <button class="pwa-install-btn" onclick="installPWA()">Install</button>
+            <button class="pwa-dismiss-btn" onclick="dismissInstallBanner()">&times;</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    // This component is rendered in MainLayout and controlled via JavaScript
+    // The pwa.js script handles showing/hiding based on install prompt availability
+}

@@ -78,6 +78,32 @@ public enum AgreementStatus
 }
 
 /// <summary>
+/// Service tier level for HVAC maintenance agreements.
+/// </summary>
+public enum ServiceTier
+{
+    /// <summary>
+    /// Basic: 1 tune-up, 10% discount, priority scheduling.
+    /// </summary>
+    Basic = 0,
+
+    /// <summary>
+    /// Standard: 2 tune-ups, 15% discount, 24hr priority, no dispatch fee.
+    /// </summary>
+    Standard = 1,
+
+    /// <summary>
+    /// Premium: 2 tune-ups + 1 check visit, 20% discount, free minor adjustments.
+    /// </summary>
+    Premium = 2,
+
+    /// <summary>
+    /// Custom tier with manually configured benefits.
+    /// </summary>
+    Custom = 99
+}
+
+/// <summary>
 /// How often the customer is billed for the agreement.
 /// </summary>
 public enum BillingFrequency

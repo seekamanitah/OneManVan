@@ -16,6 +16,7 @@ public interface IExcelExportService
     Task<byte[]> ExportCompaniesToExcelAsync();
     Task<byte[]> ExportSitesToExcelAsync();
     Task<byte[]> ExportServiceAgreementsToExcelAsync();
+    Task<byte[]> ExportWarrantyClaimsToExcelAsync();
 }
 
 public class ExcelExportService : IExcelExportService
@@ -383,6 +384,48 @@ public class ExcelExportService : IExcelExportService
             worksheet.Cell(row, 5).Value = agreements[i].EndDate;
             worksheet.Cell(row, 6).Value = agreements[i].Description;
             worksheet.Cell(row, 7).Value = agreements[i].IsActive;
+        }
+
+        StyleWorksheet(worksheet);
+        return WorkbookToBytes(workbook);
+    }
+
+    public async Task<byte[]> ExportWarrantyClaimsToExcelAsync()
+    {
+        var claims = await _context.WarrantyClaims
+            .Include(wc => wc.Asset)
+            .OrderByDescending(wc => wc.ClaimDate)
+            .ToListAsync();
+
+        using var workbook = new XLWorkbook();
+        var worksheet = workbook.Worksheets.Add("Warranty Claims");
+
+        // Headers
+        worksheet.Cell(1, 1).Value = "ID";
+        worksheet.Cell(1, 2).Value = "Claim Number";
+        worksheet.Cell(1, 3).Value = "Asset";
+        worksheet.Cell(1, 4).Value = "Claim Date";
+        worksheet.Cell(1, 5).Value = "Issue";
+        worksheet.Cell(1, 6).Value = "Status";
+        worksheet.Cell(1, 7).Value = "Covered";
+        worksheet.Cell(1, 8).Value = "Repair Cost";
+        worksheet.Cell(1, 9).Value = "Customer Charge";
+        worksheet.Cell(1, 10).Value = "Resolution";
+
+        // Data
+        for (int i = 0; i < claims.Count; i++)
+        {
+            var row = i + 2;
+            worksheet.Cell(row, 1).Value = claims[i].Id;
+            worksheet.Cell(row, 2).Value = claims[i].ClaimNumber;
+            worksheet.Cell(row, 3).Value = claims[i].Asset?.AssetName;
+            worksheet.Cell(row, 4).Value = claims[i].ClaimDate;
+            worksheet.Cell(row, 5).Value = claims[i].IssueDescription;
+            worksheet.Cell(row, 6).Value = claims[i].Status.ToString();
+            worksheet.Cell(row, 7).Value = claims[i].IsCoveredByWarranty;
+            worksheet.Cell(row, 8).Value = claims[i].RepairCost;
+            worksheet.Cell(row, 9).Value = claims[i].CustomerCharge;
+            worksheet.Cell(row, 10).Value = claims[i].Resolution;
         }
 
         StyleWorksheet(worksheet);

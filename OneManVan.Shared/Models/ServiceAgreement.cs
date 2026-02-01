@@ -123,6 +123,7 @@ public class ServiceAgreement
     /// </summary>
     public int MaxRefrigerantLbsIncluded { get; set; } = 0;
 
+
     /// <summary>
     /// Whether parts are covered (limited coverage).
     /// </summary>
@@ -133,6 +134,51 @@ public class ServiceAgreement
     /// </summary>
     [Column(TypeName = "decimal(10,2)")]
     public decimal MaxPartsCoverageAmount { get; set; } = 0;
+
+    // === Service Tier (HVAC Specific) ===
+
+    /// <summary>
+    /// Service tier level (Basic, Standard, Premium).
+    /// </summary>
+    public ServiceTier ServiceTier { get; set; } = ServiceTier.Standard;
+
+    /// <summary>
+    /// No emergency dispatch fee (Standard+Premium).
+    /// </summary>
+    public bool NoEmergencyDispatchFee { get; set; } = false;
+
+    /// <summary>
+    /// Free minor adjustments during tune-ups (Premium only).
+    /// Includes belts, small capacitor test/replace.
+    /// </summary>
+    public bool FreeMinorAdjustments { get; set; } = false;
+
+    /// <summary>
+    /// Number of filters included per year (Premium: 2).
+    /// </summary>
+    public int FiltersIncludedPerYear { get; set; } = 0;
+
+    /// <summary>
+    /// Additional priority check visits per year (Premium: 1).
+    /// </summary>
+    public int AdditionalCheckVisits { get; set; } = 0;
+
+    /// <summary>
+    /// Priority response time in hours (Standard: 24, Premium: 12).
+    /// </summary>
+    public int ResponseTimeHours { get; set; } = 48;
+
+    /// <summary>
+    /// Spring AC tune-up tasks (JSON list).
+    /// </summary>
+    [MaxLength(2000)]
+    public string? SpringAcTuneUpTasks { get; set; }
+
+    /// <summary>
+    /// Fall heating tune-up tasks (JSON list).
+    /// </summary>
+    [MaxLength(2000)]
+    public string? FallHeatingTuneUpTasks { get; set; }
 
     // === Scheduling ===
 
@@ -290,5 +336,146 @@ public class ServiceAgreement
         }
         
         return null;
+    }
+
+    [NotMapped]
+    public string ServiceTierDisplay => ServiceTier switch
+    {
+        ServiceTier.Basic => "Basic",
+        ServiceTier.Standard => "Standard",
+        ServiceTier.Premium => "Premium",
+        ServiceTier.Custom => "Custom",
+        _ => ServiceTier.ToString()
+    };
+
+    /// <summary>
+    /// Configures agreement settings based on selected service tier.
+    /// </summary>
+    public void ApplyTierDefaults()
+    {
+        switch (ServiceTier)
+        {
+            case ServiceTier.Basic:
+                IncludedVisitsPerYear = 1;
+                RepairDiscountPercent = 10;
+                PriorityService = true;
+                WaiveTripCharge = false;
+                NoEmergencyDispatchFee = false;
+                FreeMinorAdjustments = false;
+                FiltersIncludedPerYear = 0;
+                AdditionalCheckVisits = 0;
+                ResponseTimeHours = 48;
+                IncludesAcTuneUp = true;
+                IncludesHeatingTuneUp = false; // Customer chooses one
+                break;
+
+            case ServiceTier.Standard:
+                IncludedVisitsPerYear = 2;
+                RepairDiscountPercent = 15;
+                PriorityService = true;
+                WaiveTripCharge = true;
+                NoEmergencyDispatchFee = true;
+                FreeMinorAdjustments = false;
+                FiltersIncludedPerYear = 0;
+                AdditionalCheckVisits = 0;
+                ResponseTimeHours = 24;
+                IncludesAcTuneUp = true;
+                IncludesHeatingTuneUp = true;
+                break;
+
+            case ServiceTier.Premium:
+                IncludedVisitsPerYear = 2;
+                RepairDiscountPercent = 20;
+                PriorityService = true;
+                WaiveTripCharge = true;
+                NoEmergencyDispatchFee = true;
+                FreeMinorAdjustments = true;
+                FiltersIncludedPerYear = 2;
+                AdditionalCheckVisits = 1;
+                ResponseTimeHours = 12;
+                IncludesAcTuneUp = true;
+                IncludesHeatingTuneUp = true;
+                break;
+
+            case ServiceTier.Custom:
+                // Don't modify - user configures manually
+                break;
+        }
+
+        // Set default tune-up task lists
+        SetDefaultTuneUpTasks();
+    }
+
+    /// <summary>
+    /// Sets default Spring AC and Fall Heating tune-up task lists.
+    /// </summary>
+    public void SetDefaultTuneUpTasks()
+    {
+        if (string.IsNullOrEmpty(SpringAcTuneUpTasks))
+        {
+            SpringAcTuneUpTasks = System.Text.Json.JsonSerializer.Serialize(new[]
+            {
+                "Clean evaporator & condenser coils",
+                "Check refrigerant charge & pressures",
+                "Inspect/clean filters",
+                "Test electrical components & capacitors",
+                "Calibrate thermostat",
+                "Check blower & airflow",
+                "Clear condensate drain"
+            });
+        }
+
+        if (string.IsNullOrEmpty(FallHeatingTuneUpTasks))
+        {
+            FallHeatingTuneUpTasks = System.Text.Json.JsonSerializer.Serialize(new[]
+            {
+                "Inspect heat exchanger for cracks",
+                "Clean burners/ignition assembly",
+                "Check gas pressure & flue/vent",
+                "Inspect belts/pulleys",
+                "Measure temperature rise",
+                "Test safety controls"
+            });
+        }
+    }
+
+    /// <summary>
+    /// Gets the Spring AC tune-up tasks as a list.
+    /// </summary>
+    [NotMapped]
+    public List<string> SpringAcTaskList
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(SpringAcTuneUpTasks)) return new();
+            try
+            {
+                return System.Text.Json.JsonSerializer.Deserialize<List<string>>(SpringAcTuneUpTasks) ?? new();
+            }
+            catch
+            {
+                return new();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets the Fall Heating tune-up tasks as a list.
+    /// </summary>
+    [NotMapped]
+    public List<string> FallHeatingTaskList
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(FallHeatingTuneUpTasks)) return new();
+            try
+            {
+                return System.Text.Json.JsonSerializer.Deserialize<List<string>>(FallHeatingTuneUpTasks) ?? new();
+            }
+            catch
+            {
+                return new();
+            }
+        }
     }
 }

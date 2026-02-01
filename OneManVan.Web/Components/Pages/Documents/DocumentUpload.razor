@@ -1,0 +1,396 @@
+@page "/documents/upload"
+@page "/documents/{Id:int}/edit"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@using OneManVan.Shared.Models.Enums
+@using OneManVan.Shared.Services
+@inject DocumentService DocumentService
+@inject IDbContextFactory<OneManVanDbContext> DbFactory
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<PageTitle>@(IsNew ? "Upload Document" : "Edit Document") - OneManVan</PageTitle>
+
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="mb-4">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/documents">Documents</a></li>
+                        <li class="breadcrumb-item active">@(IsNew ? "Upload" : "Edit")</li>
+                    </ol>
+                </nav>
+                <h1 class="h2">@(IsNew ? "Upload Document" : $"Edit: {model.Name}")</h1>
+            </div>
+
+            @if (isLoading)
+            {
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary"></div>
+                </div>
+            }
+            else
+            {
+                <EditForm Model="@model" OnValidSubmit="HandleSubmit">
+                    <DataAnnotationsValidator />
+
+                    <!-- File Upload (New only) -->
+                    @if (IsNew)
+                    {
+                        <div class="card border-0 shadow-sm mb-3">
+                            <div class="card-header bg-primary text-white py-3">
+                                <h5 class="mb-0"><i class="bi bi-cloud-upload me-2"></i>Select File</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <InputFile class="form-control" OnChange="HandleFileSelected" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.png,.jpg,.jpeg,.gif,.zip" />
+                                    <div class="form-text">Supported formats: PDF, Word, Excel, PowerPoint, Images, Text, ZIP (Max 50MB)</div>
+                                </div>
+                                
+                                @if (selectedFile != null)
+                                {
+                                    <div class="alert alert-success py-2">
+                                        <i class="bi bi-check-circle me-2"></i>
+                                        <strong>@selectedFile.Name</strong> (@FormatFileSize(selectedFile.Size))
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Document Info -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0">Document Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-8">
+                                    <label class="form-label">Document Name *</label>
+                                    <InputText class="form-control" @bind-Value="model.Name" />
+                                    <ValidationMessage For="@(() => model.Name)" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Category *</label>
+                                    <InputSelect class="form-select" @bind-Value="model.Category">
+                                        @foreach (var cat in Enum.GetValues<DocumentCategory>())
+                                        {
+                                            <option value="@cat">@GetCategoryDisplayName(cat)</option>
+                                        }
+                                    </InputSelect>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Description</label>
+                                    <InputTextArea class="form-control" rows="3" @bind-Value="model.Description" 
+                                                   placeholder="Brief description of what this document contains..." />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Equipment/Product Association -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0"><i class="bi bi-link-45deg me-2"></i>Equipment Association (Optional)</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Manufacturer</label>
+                                    <InputText class="form-control" @bind-Value="model.Manufacturer" 
+                                               list="manufacturers" placeholder="e.g., Carrier, Trane" />
+                                    <datalist id="manufacturers">
+                                        @foreach (var mfr in existingManufacturers)
+                                        {
+                                            <option value="@mfr" />
+                                        }
+                                    </datalist>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Model Number</label>
+                                    <InputText class="form-control" @bind-Value="model.ModelNumber" 
+                                               placeholder="e.g., 24ACC636A003" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Equipment Type</label>
+                                    <InputText class="form-control" @bind-Value="model.EquipmentType" 
+                                               list="equipmentTypes" placeholder="e.g., Air Conditioner, Furnace" />
+                                    <datalist id="equipmentTypes">
+                                        @foreach (var type in existingEquipmentTypes)
+                                        {
+                                            <option value="@type" />
+                                        }
+                                    </datalist>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tags & Keywords -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0"><i class="bi bi-tags me-2"></i>Tags & Keywords</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label">Tags</label>
+                                    <InputText class="form-control" @bind-Value="model.Tags" 
+                                               placeholder="Comma-separated tags, e.g., carrier, furnace, installation, 80%" />
+                                    <div class="form-text">Separate multiple tags with commas</div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Search Keywords</label>
+                                    <InputTextArea class="form-control" rows="2" @bind-Value="model.SearchKeywords" 
+                                                   placeholder="Additional keywords to help find this document..." />
+                                    <div class="form-text">Add any additional terms that should match when searching</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Options -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0"><i class="bi bi-gear me-2"></i>Options</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <InputCheckbox class="form-check-input" @bind-Value="model.IsCustomDocument" id="isCustom" />
+                                        <label class="form-check-label" for="isCustom">Custom Business Document</label>
+                                    </div>
+                                    <small class="text-muted d-block">Mark if this is a custom document created by your business</small>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <InputCheckbox class="form-check-input" @bind-Value="model.IsPrintable" id="isPrintable" />
+                                        <label class="form-check-label" for="isPrintable">Printable</label>
+                                    </div>
+                                    <small class="text-muted d-block">Enable print functionality for this document</small>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <InputCheckbox class="form-check-input" @bind-Value="model.IsFavorite" id="isFavorite" />
+                                        <label class="form-check-label" for="isFavorite">Add to Favorites</label>
+                                    </div>
+                                    <small class="text-muted d-block">Pin to favorites for quick access</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <button type="button" class="btn btn-outline-secondary" @onclick="Cancel" disabled="@isSaving">
+                                    Cancel
+                                </button>
+                                <div class="d-flex gap-2">
+                                    @if (!IsNew)
+                                    {
+                                        <button type="button" class="btn btn-outline-danger" @onclick="DeleteDocument" disabled="@isSaving">
+                                            <i class="bi bi-trash me-2"></i>Delete
+                                        </button>
+                                    }
+                                    <button type="submit" class="btn btn-primary" disabled="@(isSaving || (IsNew && selectedFile == null))">
+                                        @if (isSaving)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-2"></span>
+                                            @(IsNew ? "Uploading..." : "Saving...")
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-check-circle me-2"></i>
+                                            @(IsNew ? "Upload Document" : "Save Changes")
+                                        }
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger mt-3">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>@errorMessage
+                        </div>
+                    }
+                </EditForm>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int? Id { get; set; }
+
+    private bool IsNew => !Id.HasValue;
+    private bool isLoading = true;
+    private bool isSaving = false;
+    private string errorMessage = "";
+    private Document model = new() { IsPrintable = true };
+    private IBrowserFile? selectedFile;
+    private List<string> existingManufacturers = new();
+    private List<string> existingEquipmentTypes = new();
+
+    private const long MaxFileSize = 50 * 1024 * 1024; // 50MB
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Load autocomplete data
+            existingManufacturers = await DocumentService.GetManufacturersAsync();
+            existingEquipmentTypes = await DocumentService.GetEquipmentTypesAsync();
+
+            if (!IsNew)
+            {
+                var existing = await DocumentService.GetByIdAsync(Id!.Value);
+                if (existing == null)
+                {
+                    errorMessage = "Document not found";
+                }
+                else
+                {
+                    model = existing;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        selectedFile = e.File;
+        
+        if (selectedFile.Size > MaxFileSize)
+        {
+            errorMessage = $"File is too large. Maximum size is 50MB.";
+            selectedFile = null;
+            return;
+        }
+
+        errorMessage = "";
+
+        // Auto-fill name from filename if empty
+        if (string.IsNullOrEmpty(model.Name))
+        {
+            model.Name = Path.GetFileNameWithoutExtension(selectedFile.Name);
+        }
+
+        model.FileName = selectedFile.Name;
+        model.ContentType = selectedFile.ContentType;
+        model.FileSizeBytes = selectedFile.Size;
+        model.FileExtension = Path.GetExtension(selectedFile.Name);
+    }
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            isSaving = true;
+            errorMessage = "";
+
+            if (IsNew)
+            {
+                if (selectedFile == null)
+                {
+                    errorMessage = "Please select a file to upload.";
+                    return;
+                }
+
+                // Read file content
+                using var stream = selectedFile.OpenReadStream(MaxFileSize);
+                using var ms = new MemoryStream();
+                await stream.CopyToAsync(ms);
+                model.FileContent = ms.ToArray();
+            }
+
+            if (IsNew)
+            {
+                await DocumentService.CreateAsync(model);
+            }
+            else
+            {
+                await DocumentService.UpdateAsync(model);
+            }
+
+            Navigation.NavigateTo("/documents");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to save: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task DeleteDocument()
+    {
+        if (!await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this document?"))
+            return;
+
+        try
+        {
+            isSaving = true;
+            await DocumentService.DeleteAsync(Id!.Value);
+            Navigation.NavigateTo("/documents");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to delete: {ex.Message}";
+            isSaving = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        if (IsNew)
+            Navigation.NavigateTo("/documents");
+        else
+            Navigation.NavigateTo($"/documents/{Id}");
+    }
+
+    private string FormatFileSize(long bytes)
+    {
+        if (bytes < 1024) return $"{bytes} B";
+        if (bytes < 1024 * 1024) return $"{bytes / 1024.0:N1} KB";
+        return $"{bytes / (1024.0 * 1024.0):N1} MB";
+    }
+
+    private string GetCategoryDisplayName(DocumentCategory cat) => cat switch
+    {
+        DocumentCategory.ServiceManual => "Service Manual",
+        DocumentCategory.InstallationGuide => "Installation Guide",
+        DocumentCategory.TechnicalSpec => "Technical Specification",
+        DocumentCategory.WiringDiagram => "Wiring Diagram",
+        DocumentCategory.PartsManual => "Parts Manual",
+        DocumentCategory.WarrantyInfo => "Warranty Information",
+        DocumentCategory.SafetyData => "Safety Data Sheet",
+        DocumentCategory.MaintenanceGuide => "Maintenance Guide",
+        DocumentCategory.TroubleshootingGuide => "Troubleshooting Guide",
+        DocumentCategory.CustomerForm => "Customer Form",
+        DocumentCategory.BusinessTemplate => "Business Template",
+        DocumentCategory.Checklist => "Checklist",
+        DocumentCategory.Training => "Training Material",
+        DocumentCategory.Compliance => "Compliance Document",
+        DocumentCategory.Brochure => "Brochure",
+        _ => "General"
+    };
+}

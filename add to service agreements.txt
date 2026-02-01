@@ -1,0 +1,45 @@
+**HVAC Service Agreement – Services Included Document**
+
+**Provider:** [Your Business Name]  
+[Your Address] | [Phone] | [Email]  
+
+**Customer:** [Name] | [Address] | [Phone] | [Email]  
+
+**Agreement Date:** [Date]  
+
+**Selected Service Level (choose one):**
+
+? **Basic**  
+- 1 annual tune-up (AC or heating, customer choice)  
+- Priority scheduling  
+- 10% discount on repairs and parts  
+
+? **Standard**  
+- 2 annual tune-ups:  
+  • Spring AC: clean evaporator & condenser coils, check refrigerant charge & pressures, inspect/clean filters, test electrical components & capacitors, calibrate thermostat, check blower & airflow, clear condensate drain  
+  • Fall Heating: inspect heat exchanger for cracks, clean burners/ignition assembly, check gas pressure & flue/vent, inspect belts/pulleys, measure temperature rise, test safety controls  
+- Priority scheduling (within 24 hours)  
+- 15% discount on repairs and parts  
+- No emergency dispatch fee  
+
+? **Premium**  
+- 2 annual tune-ups (same as Standard)  
+- 1 additional priority check visit per year (as needed)  
+- 20% discount on repairs and parts  
+- No emergency dispatch fee  
+- Free minor adjustments (belts, up to 2 filters per year, small capacitor test/replace if failed during tune-up)  
+
+**General Services Across All Levels (when applicable):**  
+- Visual inspection of system  
+- Before/after photos  
+- Performance report (delta T, pressures, findings)  
+- Recommendations & next service reminder  
+- Digital customer signature & emailed PDF summary  
+
+**Exclusions (all levels):** Refrigerant recharge beyond minor top-off, major repairs/replacements, abuse, neglect, or failure to maintain filters.  
+
+**Signatures**  
+
+Provider: _______________________________ Date: __________  
+
+Customer: _______________________________ Date: __________

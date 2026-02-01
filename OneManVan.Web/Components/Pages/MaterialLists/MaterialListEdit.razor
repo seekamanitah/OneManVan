@@ -1,0 +1,616 @@
+@page "/material-lists/{Id:int}/edit"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@using OneManVan.Shared.Models.Enums
+@using OneManVan.Shared.Services
+@inject MaterialListService MaterialListService
+@inject IDbContextFactory<OneManVanDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Edit Material List - OneManVan</PageTitle>
+
+@if (materialList == null)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+    </div>
+}
+else
+{
+    <div class="container-fluid py-4">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h2 mb-1">@materialList.Title</h1>
+                <small class="text-muted">
+                    @materialList.ListNumber | @materialList.Customer?.DisplayName
+                    @if (materialList.Site != null)
+                    {
+                        <span> | @materialList.Site.SiteName</span>
+                    }
+                </small>
+            </div>
+            <div class="d-flex gap-2">
+                @if (materialList.IsFinalized)
+                {
+                    <span class="badge bg-warning text-dark fs-6 me-2">
+                        <i class="bi bi-exclamation-triangle me-1"></i>Editing Finalized List
+                    </span>
+                }
+                <a href="/material-lists/@Id" class="btn btn-outline-secondary">
+                    <i class="bi bi-eye me-2"></i>View
+                </a>
+                <button class="btn btn-success" @onclick="SaveChanges">
+                    <i class="bi bi-check-circle me-2"></i>Save
+                </button>
+            </div>
+        </div>
+
+        @if (materialList.IsFinalized)
+        {
+            <div class="alert alert-warning mb-4">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <strong>Warning:</strong> This material list has been finalized. Changes will be tracked in the audit trail.
+            </div>
+        }
+
+        <div class="row">
+            <!-- Left Column: Categories & Items -->
+            <div class="col-lg-8">
+                <!-- Systems/Zones -->
+                @foreach (var system in materialList.Systems.OrderBy(s => s.SortOrder))
+                {
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="mb-0">
+                                    <i class="bi bi-snow me-2"></i>@system.Name
+                                </h5>
+                                <small class="opacity-75">
+                                    @system.SystemTypeDisplay | @system.DuctSystemDisplay
+                                    @if (system.Tonnage.HasValue)
+                                    {
+                                        <span> | @system.Tonnage Ton</span>
+                                    }
+                                </small>
+                            </div>
+                            <span class="badge bg-light text-dark fs-6">
+                                $@system.TotalCost.ToString("N2")
+                            </span>
+                        </div>
+                        <div class="card-body p-0">
+                            <!-- Items grouped by category -->
+                            @foreach (var category in Enum.GetValues<MaterialCategory>())
+                            {
+                                var categoryItems = GetItemsForSystemAndCategory(system.Id, category);
+                                if (categoryItems.Any() || showAllCategories)
+                                {
+                                    <div class="border-bottom">
+                                        <div class="d-flex justify-content-between align-items-center px-3 py-2 bg-light"
+                                             style="cursor: pointer;" @onclick="() => ToggleCategory(system.Id, category)">
+                                            <div>
+                                                <i class="bi @(IsCategoryExpanded(system.Id, category) ? "bi-chevron-down" : "bi-chevron-right") me-2"></i>
+                                                <strong>@GetCategoryDisplayName(category)</strong>
+                                                <span class="badge bg-secondary ms-2">@categoryItems.Count</span>
+                                            </div>
+                                            <span class="text-muted">$@categoryItems.Sum(i => i.TotalCost).ToString("N2")</span>
+                                        </div>
+                                        
+                                        @if (IsCategoryExpanded(system.Id, category))
+                                        {
+                                            <div class="p-3">
+                                                @if (categoryItems.Any())
+                                                {
+                                                    <table class="table table-sm mb-0">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Item</th>
+                                                                <th style="width: 100px;">Qty</th>
+                                                                <th style="width: 100px;">Unit Cost</th>
+                                                                <th style="width: 100px;" class="text-end">Total</th>
+                                                                <th style="width: 50px;"></th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            @foreach (var item in categoryItems.OrderBy(i => i.SortOrder))
+                                                            {
+                                                                <tr>
+                                                                    <td>
+                                                                        @item.DisplayName
+                                                                        @if (item.IsCostOverridden)
+                                                                        {
+                                                                            <i class="bi bi-pencil-fill text-warning ms-1" title="Cost overridden"></i>
+                                                                        }
+                                                                    </td>
+                                                                    <td>
+                                                                        <input type="number" class="form-control form-control-sm" 
+                                                                               step="1" min="0"
+                                                                               value="@item.Quantity"
+                                                                               @onchange="e => UpdateQuantity(item, e)" />
+                                                                    </td>
+                                                                    <td>
+                                                                        <div class="input-group input-group-sm">
+                                                                            <span class="input-group-text">$</span>
+                                                                            <input type="number" class="form-control" 
+                                                                                   step="0.01" min="0"
+                                                                                   value="@item.UnitCost"
+                                                                                   @onchange="e => UpdateCost(item, e)" />
+                                                                        </div>
+                                                                    </td>
+                                                                    <td class="text-end fw-medium">
+                                                                        $@item.TotalCost.ToString("N2")
+                                                                    </td>
+                                                                    <td>
+                                                                        <button class="btn btn-sm btn-outline-danger" 
+                                                                                @onclick="() => RemoveItem(item)">
+                                                                            <i class="bi bi-trash"></i>
+                                                                        </button>
+                                                                    </td>
+                                                                </tr>
+                                                            }
+                                                        </tbody>
+                                                    </table>
+                                                }
+                                                
+                                                <!-- Add Custom Item -->
+                                                <div class="mt-2">
+                                                    <button class="btn btn-sm btn-outline-primary" 
+                                                            @onclick="() => ShowAddItemDialog(system.Id, category)">
+                                                        <i class="bi bi-plus me-1"></i>Add @GetCategoryDisplayName(category) Item
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- Add Another System -->
+                <div class="text-center mb-4">
+                    <button class="btn btn-outline-primary" @onclick="AddNewSystem">
+                        <i class="bi bi-plus-circle me-2"></i>Add Another System
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Column: Summary & Actions -->
+            <div class="col-lg-4">
+                <!-- Priority -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white border-0 py-2">
+                        <h6 class="mb-0"><i class="bi bi-flag me-2"></i>Priority</h6>
+                    </div>
+                    <div class="card-body py-2">
+                        <select class="form-select form-select-sm" @bind="materialList.Priority">
+                            <option value="@JobPriority.Low">Low</option>
+                            <option value="@JobPriority.Normal">Normal</option>
+                            <option value="@JobPriority.High">High</option>
+                            <option value="@JobPriority.Urgent">Urgent</option>
+                            <option value="@JobPriority.Emergency">Emergency</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Labor Calculation -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white border-0 py-2">
+                        <h6 class="mb-0"><i class="bi bi-clock me-2"></i>Labor Calculation</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <label class="form-label small mb-1">Est. Hours</label>
+                                <input type="number" class="form-control form-control-sm" step="0.5" min="0"
+                                       @bind="materialList.LaborHours" @bind:after="RecalculateTotals" />
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small mb-1">Hourly Rate</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" step="1" min="0"
+                                           @bind="materialList.LaborHourlyRate" @bind:after="RecalculateTotals" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small mb-1">OR Fixed Labor Price</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" step="1" min="0"
+                                       @bind="materialList.LaborFixedPrice" @bind:after="RecalculateTotals" 
+                                       placeholder="Overrides hourly" />
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="small">Labor Total:</span>
+                            <strong>$@materialList.LaborTotal.ToString("N2")</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Disposal & Permits -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white border-0 py-2">
+                        <h6 class="mb-0"><i class="bi bi-trash me-2"></i>Disposal & Permits</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <label class="form-label small mb-1">Haul-Away Fee</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" step="1" min="0"
+                                           @bind="materialList.DisposalFee" @bind:after="RecalculateTotals" />
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small mb-1">Refrigerant Fee</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" step="1" min="0"
+                                           @bind="materialList.RefrigerantReclaimFee" @bind:after="RecalculateTotals" />
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small mb-1">Permit Cost</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" step="1" min="0"
+                                           @bind="materialList.PermitCost" @bind:after="RecalculateTotals" />
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small mb-1">Inspection Fee</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" step="1" min="0"
+                                           @bind="materialList.InspectionFees" @bind:after="RecalculateTotals" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Financial Summary -->
+                <div class="card border-0 shadow-sm mb-4 sticky-top" style="top: 80px;">
+                    <div class="card-header bg-primary text-white py-2">
+                        <h6 class="mb-0"><i class="bi bi-calculator me-2"></i>Financial Summary</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-1 small">
+                            <span>Materials:</span>
+                            <span>$@materialList.TotalMaterialCost.ToString("N2")</span>
+                        </div>
+                        
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <label class="form-label small mb-1">Markup %</label>
+                                <div class="input-group input-group-sm">
+                                    <input type="number" class="form-control" step="1" min="0"
+                                           @bind="materialList.MarkupPercent" @bind:after="RecalculateTotals" />
+                                    <span class="input-group-text">%</span>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small mb-1">Contingency %</label>
+                                <div class="input-group input-group-sm">
+                                    <input type="number" class="form-control" step="1" min="0"
+                                           @bind="materialList.ContingencyPercent" @bind:after="RecalculateTotals" />
+                                    <span class="input-group-text">%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between mb-1 small">
+                            <span>Materials w/Markup:</span>
+                            <span>$@materialList.TotalWithMarkup.ToString("N2")</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1 small">
+                            <span>Labor:</span>
+                            <span>$@materialList.LaborTotal.ToString("N2")</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1 small">
+                            <span>Accessories:</span>
+                            <span>$@materialList.AccessoriesTotal.ToString("N2")</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1 small">
+                            <span>Disposal + Permits:</span>
+                            <span>$@((materialList.DisposalFee + materialList.RefrigerantReclaimFee + materialList.PermitCost + materialList.InspectionFees).ToString("N2"))</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1 small">
+                            <span>Contingency (@materialList.ContingencyPercent.ToString("N0")%):</span>
+                            <span>$@materialList.ContingencyAmount.ToString("N2")</span>
+                        </div>
+
+                        <hr class="my-2" />
+
+                        <div class="row g-2 mb-2">
+                            <div class="col-12">
+                                <label class="form-label small mb-1">Tax %</label>
+                                <div class="input-group input-group-sm">
+                                    <input type="number" class="form-control" step="0.25" min="0"
+                                           @bind="materialList.TaxPercent" @bind:after="RecalculateTotals" />
+                                    <span class="input-group-text">%</span>
+                                    <span class="input-group-text">$@materialList.TaxAmount.ToString("N2")</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-2" />
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <strong class="fs-6">Total Bid Price:</strong>
+                            <strong class="text-success fs-4">$@materialList.TotalBidPrice.ToString("N2")</strong>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white border-0">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-success" @onclick="SaveChanges">
+                                <i class="bi bi-check-circle me-2"></i>Save Changes
+                            </button>
+                            @if (materialList.Status == MaterialListStatus.Draft)
+                            {
+                                <button class="btn btn-primary" @onclick="FinalizeList">
+                                    <i class="bi bi-lock me-2"></i>Finalize List
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-6 border-end">
+                                <div class="h4 text-primary mb-0">@materialList.TotalItemCount</div>
+                                <small class="text-muted">Items</small>
+                            </div>
+                            <div class="col-6">
+                                <div class="h4 text-info mb-0">@materialList.Systems.Count</div>
+                                <small class="text-muted">Systems</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Item Modal -->
+    @if (showAddItemModal)
+    {
+        <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Add @GetCategoryDisplayName(newItemCategory) Item</h5>
+                        <button type="button" class="btn-close" @onclick="CloseAddItemDialog"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Item Name *</label>
+                            <input type="text" class="form-control" @bind="newItem.ItemName" />
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Size</label>
+                                <input type="text" class="form-control" @bind="newItem.Size" placeholder="e.g., 6 inch" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Unit</label>
+                                <select class="form-select" @bind="newItem.Unit">
+                                    <option value="each">Each</option>
+                                    <option value="box">Box</option>
+                                    <option value="ft">Feet</option>
+                                    <option value="roll">Roll</option>
+                                    <option value="sqft">Sq Ft</option>
+                                    <option value="pack">Pack</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Quantity</label>
+                                <input type="number" class="form-control" @bind="newItem.Quantity" min="0" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Unit Cost</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" @bind="newItem.UnitCost" step="0.01" min="0" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" @onclick="CloseAddItemDialog">Cancel</button>
+                        <button class="btn btn-primary" @onclick="AddItem" 
+                                disabled="@string.IsNullOrWhiteSpace(newItem.ItemName)">
+                            <i class="bi bi-plus me-2"></i>Add Item
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private MaterialList? materialList;
+    private bool showAllCategories = true;
+    private HashSet<string> expandedCategories = new();
+    
+    // Add Item Modal
+    private bool showAddItemModal = false;
+    private int? addItemSystemId;
+    private MaterialCategory newItemCategory;
+    private MaterialListItem newItem = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+        
+        // Expand all categories by default
+        if (materialList != null)
+        {
+            foreach (var system in materialList.Systems)
+            {
+                foreach (var category in Enum.GetValues<MaterialCategory>())
+                {
+                    expandedCategories.Add($"{system.Id}_{category}");
+                }
+            }
+        }
+    }
+
+    private async Task LoadDataAsync()
+    {
+        materialList = await MaterialListService.GetByIdAsync(Id);
+    }
+
+    private List<MaterialListItem> GetItemsForSystemAndCategory(int systemId, MaterialCategory category)
+    {
+        return materialList?.Items
+            .Where(i => i.MaterialListSystemId == systemId && i.Category == category)
+            .ToList() ?? new();
+    }
+
+    private void ToggleCategory(int systemId, MaterialCategory category)
+    {
+        var key = $"{systemId}_{category}";
+        if (expandedCategories.Contains(key))
+            expandedCategories.Remove(key);
+        else
+            expandedCategories.Add(key);
+    }
+
+    private bool IsCategoryExpanded(int systemId, MaterialCategory category)
+    {
+        return expandedCategories.Contains($"{systemId}_{category}");
+    }
+
+    private string GetCategoryDisplayName(MaterialCategory category) => category switch
+    {
+        MaterialCategory.Ductwork => "Ductwork",
+        MaterialCategory.Equipment => "Equipment",
+        MaterialCategory.Electrical => "Electrical",
+        MaterialCategory.Refrigerant => "Refrigerant/Copper",
+        MaterialCategory.Drain => "Drain/Plumbing",
+        MaterialCategory.Miscellaneous => "Misc Materials",
+        MaterialCategory.GrillsRegisters => "Grills/Registers",
+        MaterialCategory.Accessories => "Accessories",
+        MaterialCategory.Disposal => "Disposal/Removal",
+        MaterialCategory.Permits => "Permits/Inspections",
+        MaterialCategory.Other => "Other",
+        _ => category.ToString()
+    };
+
+    private async Task UpdateQuantity(MaterialListItem item, ChangeEventArgs e)
+    {
+        if (decimal.TryParse(e.Value?.ToString(), out var qty))
+        {
+            item.Quantity = qty;
+            await MaterialListService.UpdateItemAsync(item);
+            await LoadDataAsync();
+        }
+    }
+
+    private async Task UpdateCost(MaterialListItem item, ChangeEventArgs e)
+    {
+        if (decimal.TryParse(e.Value?.ToString(), out var cost))
+        {
+            await MaterialListService.OverrideItemCostAsync(item.Id, cost);
+            await LoadDataAsync();
+        }
+    }
+
+    private async Task RemoveItem(MaterialListItem item)
+    {
+        await MaterialListService.RemoveItemAsync(item.Id);
+        await LoadDataAsync();
+    }
+
+    private void ShowAddItemDialog(int systemId, MaterialCategory category)
+    {
+        addItemSystemId = systemId;
+        newItemCategory = category;
+        newItem = new MaterialListItem
+        {
+            MaterialListId = Id,
+            MaterialListSystemId = systemId,
+            Category = category,
+            Unit = "each",
+            Quantity = 1,
+            IsCustomItem = true
+        };
+        showAddItemModal = true;
+    }
+
+    private void CloseAddItemDialog()
+    {
+        showAddItemModal = false;
+    }
+
+    private async Task AddItem()
+    {
+        if (string.IsNullOrWhiteSpace(newItem.ItemName)) return;
+        
+        await MaterialListService.AddItemAsync(newItem);
+        CloseAddItemDialog();
+        await LoadDataAsync();
+    }
+
+    private async Task AddNewSystem()
+    {
+        if (materialList == null) return;
+        
+        var systemName = $"System {materialList.Systems.Count + 1}";
+        await MaterialListService.AddSystemAsync(Id, systemName);
+        await LoadDataAsync();
+    }
+
+    private async Task RecalculateTotals()
+    {
+        if (materialList == null) return;
+        
+        // Recalculate accessories total from items
+        materialList.AccessoriesTotal = materialList.Items
+            .Where(i => i.Category == MaterialCategory.Accessories)
+            .Sum(i => i.TotalCost);
+        
+        // Use the model's built-in calculation
+        materialList.RecalculateFinancials();
+        
+        // Save to database
+        await MaterialListService.UpdateAsync(materialList);
+        await LoadDataAsync();
+    }
+
+    private async Task SaveChanges()
+    {
+        if (materialList == null) return;
+        
+        // Recalculate before saving
+        materialList.AccessoriesTotal = materialList.Items
+            .Where(i => i.Category == MaterialCategory.Accessories)
+            .Sum(i => i.TotalCost);
+        materialList.RecalculateFinancials();
+        
+        await MaterialListService.UpdateAsync(materialList);
+        await MaterialListService.RecalculateTotalsAsync(Id);
+        await LoadDataAsync();
+    }
+
+
+    private async Task FinalizeList()
+    {
+        await MaterialListService.FinalizeAsync(Id);
+        Navigation.NavigateTo($"/material-lists/{Id}");
+    }
+}

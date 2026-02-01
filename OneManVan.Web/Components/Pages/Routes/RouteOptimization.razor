@@ -1,0 +1,376 @@
+@page "/route-optimization"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@using OneManVan.Shared.Models.Enums
+@using OneManVan.Shared.Services
+@inject RouteOptimizationService RouteService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Route Optimization - OneManVan</PageTitle>
+
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-1">Route Optimization</h1>
+            <small class="text-muted">Plan efficient routes for your scheduled jobs</small>
+        </div>
+        <div class="d-flex gap-2">
+            <input type="date" class="form-control" style="width: auto;" 
+                   value="@selectedDate.ToString("yyyy-MM-dd")" 
+                   @onchange="OnDateChanged" />
+            <button class="btn btn-primary" @onclick="OptimizeRoute" disabled="@(!stops.Any())">
+                <i class="bi bi-geo-alt me-2"></i>Optimize Route
+            </button>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2 text-muted">Loading jobs...</p>
+        </div>
+    }
+    else
+    {
+        <!-- Stats Cards -->
+        @if (result != null)
+        {
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body text-center">
+                            <h6 class="text-muted mb-1">Total Jobs</h6>
+                            <h2 class="text-primary mb-0">@stops.Count</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body text-center">
+                            <h6 class="text-muted mb-1">Total Distance</h6>
+                            <h2 class="text-info mb-0">@result.TotalDistanceMiles mi</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body text-center">
+                            <h6 class="text-muted mb-1">Driving Time</h6>
+                            <h2 class="text-warning mb-0">@result.FormattedDrivingTime</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body text-center">
+                            <h6 class="text-muted mb-1">
+                                @if (result.Savings > 0)
+                                {
+                                    <span class="text-success">Saved</span>
+                                }
+                                else
+                                {
+                                    <span>Total Time</span>
+                                }
+                            </h6>
+                            <h2 class="@(result.Savings > 0 ? "text-success" : "text-secondary") mb-0">
+                                @if (result.Savings > 0)
+                                {
+                                    @($"{result.Savings:F1} mi")
+                                }
+                                else
+                                {
+                                    @result.FormattedTotalTime
+                                }
+                            </h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <div class="row">
+            <!-- Route List -->
+            <div class="col-lg-6 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white border-0 py-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-list-ol me-2"></i>
+                                Route Order
+                            </h5>
+                            @if (!string.IsNullOrEmpty(googleMapsUrl))
+                            {
+                                <a href="@googleMapsUrl" target="_blank" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-map me-1"></i>Open in Google Maps
+                                </a>
+                            }
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (stops.Any())
+                        {
+                            <div class="list-group list-group-flush">
+                                @foreach (var stop in (result?.OptimizedStops ?? stops).OrderBy(s => s.RouteOrder))
+                                {
+                                    <div class="list-group-item">
+                                        <div class="d-flex align-items-start">
+                                            <div class="me-3">
+                                                <span class="badge rounded-pill @(stop.RouteOrder > 0 ? "bg-primary" : "bg-secondary") fs-6" 
+                                                      style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+                                                    @(stop.RouteOrder > 0 ? stop.RouteOrder : "?")
+                                                </span>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <div class="d-flex justify-content-between align-items-start">
+                                                    <div>
+                                                        <h6 class="mb-1">
+                                                            <a href="/jobs/@stop.JobId" class="text-decoration-none">
+                                                                @stop.Title
+                                                            </a>
+                                                        </h6>
+                                                        <small class="text-muted d-block">@stop.CustomerName</small>
+                                                        <small class="text-muted">
+                                                            <i class="bi bi-geo-alt me-1"></i>@stop.Address
+                                                        </small>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        @if (stop.ScheduledTime.HasValue)
+                                                        {
+                                                            <span class="badge bg-light text-dark">
+                                                                @stop.ScheduledTime.Value.ToString("h:mm tt")
+                                                            </span>
+                                                        }
+                                                        <span class="badge bg-@GetPriorityColor(stop.Priority) ms-1">
+                                                            @stop.Priority
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div class="mt-2">
+                                                    @if (stop.HasCoordinates)
+                                                    {
+                                                        <a href="@stop.GoogleMapsUrl" target="_blank" class="btn btn-sm btn-outline-secondary me-1">
+                                                            <i class="bi bi-compass"></i> Navigate
+                                                        </a>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-warning text-dark">
+                                                            <i class="bi bi-exclamation-triangle me-1"></i>No GPS
+                                                        </span>
+                                                    }
+                                                    <small class="text-muted ms-2">
+                                                        <i class="bi bi-clock me-1"></i>Est. @stop.EstimatedDuration.TotalMinutes min
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-5 text-muted">
+                                <i class="bi bi-calendar-x fs-1 mb-3 d-block"></i>
+                                <h5>No Jobs Scheduled</h5>
+                                <p>No jobs are scheduled for @selectedDate.ToString("MMMM d, yyyy")</p>
+                                <a href="/jobs/new" class="btn btn-primary mt-2">
+                                    <i class="bi bi-plus-circle me-2"></i>Schedule a Job
+                                </a>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Map Placeholder / Instructions -->
+            <div class="col-lg-6 mb-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0"><i class="bi bi-map me-2"></i>Route Map</h5>
+                    </div>
+                    <div class="card-body">
+                        @if (!string.IsNullOrEmpty(result?.Message))
+                        {
+                            <div class="alert alert-info mb-3">
+                                <i class="bi bi-info-circle me-2"></i>@result.Message
+                            </div>
+                        }
+                        
+                        @if (stops.Any(s => s.HasCoordinates))
+                        {
+                            <div class="text-center py-4">
+                                <!-- Map would go here with JS integration -->
+                                <div class="bg-light rounded p-5" style="min-height: 300px;">
+                                    <i class="bi bi-geo-alt-fill text-primary display-1 mb-3 d-block"></i>
+                                    <h5>Route Preview</h5>
+                                    <p class="text-muted">
+                                        @stops.Count(s => s.HasCoordinates) stops with GPS coordinates
+                                    </p>
+                                    
+                                    @if (!string.IsNullOrEmpty(googleMapsUrl))
+                                    {
+                                        <a href="@googleMapsUrl" target="_blank" class="btn btn-lg btn-primary">
+                                            <i class="bi bi-box-arrow-up-right me-2"></i>View Full Route in Google Maps
+                                        </a>
+                                    }
+                                </div>
+                                
+                                <div class="mt-4">
+                                    <h6 class="text-muted mb-3">Route Summary</h6>
+                                    <div class="row text-center">
+                                        <div class="col">
+                                            <div class="border rounded p-3">
+                                                <i class="bi bi-geo text-primary fs-4"></i>
+                                                <div class="mt-2">
+                                                    <strong>@stops.Count(s => s.HasCoordinates)</strong>
+                                                    <small class="d-block text-muted">Mapped Stops</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col">
+                                            <div class="border rounded p-3">
+                                                <i class="bi bi-signpost-2 text-info fs-4"></i>
+                                                <div class="mt-2">
+                                                    <strong>@(result?.TotalDistanceMiles ?? 0) mi</strong>
+                                                    <small class="d-block text-muted">Total Distance</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col">
+                                            <div class="border rounded p-3">
+                                                <i class="bi bi-clock text-warning fs-4"></i>
+                                                <div class="mt-2">
+                                                    <strong>@(result?.FormattedTotalTime ?? "0m")</strong>
+                                                    <small class="d-block text-muted">Total Time</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-5 text-muted">
+                                <i class="bi bi-geo fs-1 mb-3 d-block"></i>
+                                <h5>No GPS Coordinates</h5>
+                                <p>Add GPS coordinates to your customer sites for route optimization.</p>
+                                <a href="/sites" class="btn btn-outline-primary">
+                                    <i class="bi bi-pencil me-2"></i>Edit Sites
+                                </a>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upcoming Days -->
+        @if (upcomingJobs.Any())
+        {
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0"><i class="bi bi-calendar-week me-2"></i>Upcoming Days</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        @foreach (var day in upcomingJobs.OrderBy(k => k.Key))
+                        {
+                            <div class="col-md-4 col-lg-2">
+                                <div class="card h-100 @(day.Key.Date == selectedDate.Date ? "border-primary" : "")"
+                                     style="cursor: pointer;" @onclick="() => SelectDate(day.Key)">
+                                    <div class="card-body text-center py-3">
+                                        <div class="text-muted small">@day.Key.ToString("ddd")</div>
+                                        <div class="h4 mb-0">@day.Key.Day</div>
+                                        <div class="text-muted small">@day.Key.ToString("MMM")</div>
+                                        <span class="badge bg-primary mt-2">@day.Value.Count jobs</span>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+
+@code {
+private DateTime selectedDate = DateTime.Today;
+private bool isLoading = true;
+private List<RouteStop> stops = new();
+private RouteOptimizationResult? result;
+private string googleMapsUrl = string.Empty;
+private Dictionary<DateTime, List<RouteStop>> upcomingJobs = new();
+
+protected override async Task OnInitializedAsync()
+{
+    await LoadJobsAsync();
+    await LoadUpcomingJobsAsync();
+}
+
+private async Task OnDateChanged(ChangeEventArgs e)
+{
+    if (DateTime.TryParse(e.Value?.ToString(), out var date))
+    {
+        selectedDate = date;
+        await LoadJobsAsync();
+    }
+}
+
+private async Task LoadJobsAsync()
+{
+    isLoading = true;
+    result = null;
+    googleMapsUrl = string.Empty;
+        
+    try
+    {
+        stops = await RouteService.GetJobsForDateAsync(selectedDate);
+    }
+    finally
+    {
+        isLoading = false;
+    }
+}
+
+private async Task LoadUpcomingJobsAsync()
+{
+    upcomingJobs = await RouteService.GetUpcomingJobsAsync(7);
+}
+
+private void OptimizeRoute()
+{
+    if (!stops.Any()) return;
+        
+    result = RouteService.OptimizeRoute(stops);
+    googleMapsUrl = RouteService.GenerateGoogleMapsUrl(result.OptimizedStops);
+}
+
+private async Task SelectDate(DateTime date)
+{
+        selectedDate = date;
+        await LoadJobsAsync();
+    }
+
+    private string GetPriorityColor(JobPriority priority)
+    {
+        return priority switch
+        {
+            JobPriority.Low => "secondary",
+            JobPriority.Normal => "primary",
+            JobPriority.High => "warning",
+            JobPriority.Emergency => "danger",
+            _ => "secondary"
+        };
+    }
+}

@@ -3,7 +3,8 @@
 @using OneManVan.Shared.Data
 @using OneManVan.Shared.Models
 @using OneManVan.Shared.Models.Enums
-@* [Authorize] temporarily disabled for development *@
+@using OneManVan.Web.Components.Shared
+
 @inject IDbContextFactory<OneManVanDbContext> DbFactory
 @inject NavigationManager Navigation
 
@@ -16,9 +17,12 @@
             <h1 class="h2 mb-0">Warranty Claims</h1>
             <p class="text-muted mb-0">Track equipment warranty repairs and manufacturer claims</p>
         </div>
-        <button class="btn btn-primary" @onclick="CreateClaim">
-            <i class="bi bi-plus-circle me-2"></i>File New Claim
-        </button>
+        <div class="d-flex gap-2">
+            <ExportButton EntityType="warrantyclaims" />
+            <button class="btn btn-primary" @onclick="CreateClaim">
+                <i class="bi bi-plus-circle me-2"></i>File New Claim
+            </button>
+        </div>
     </div>
 
     <!-- Summary Cards -->
@@ -281,7 +285,7 @@
             await using var db = await DbFactory.CreateDbContextAsync();
             allClaims = await db.WarrantyClaims
                 .Include(c => c.Asset)
-                .ThenInclude(a => a.Customer)
+                .ThenInclude(a => a!.Customer)
                 .OrderByDescending(c => c.ClaimDate)
                 .AsNoTracking()
                 .ToListAsync();

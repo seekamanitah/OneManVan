@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using OneManVan.Web.Services.Export;
+using OneManVan.Web.Services;
 using OneManVan.Shared.Data;
 using Microsoft.EntityFrameworkCore;
 using OneManVan.Web.Services.Pdf;
@@ -14,18 +15,21 @@ public class ExportController : ControllerBase
 {
     private readonly ICsvExportService _csvService;
     private readonly IExcelExportService _excelService;
-    private readonly IInvoicePdfGenerator _pdfGenerator;
+    private readonly IInvoicePdfGenerator _invoicePdfGenerator;
+    private readonly IEstimatePdfGenerator _estimatePdfGenerator;
     private readonly OneManVanDbContext _context;
 
     public ExportController(
         ICsvExportService csvService,
         IExcelExportService excelService,
-        IInvoicePdfGenerator pdfGenerator,
+        IInvoicePdfGenerator invoicePdfGenerator,
+        IEstimatePdfGenerator estimatePdfGenerator,
         OneManVanDbContext context)
     {
         _csvService = csvService;
         _excelService = excelService;
-        _pdfGenerator = pdfGenerator;
+        _invoicePdfGenerator = invoicePdfGenerator;
+        _estimatePdfGenerator = estimatePdfGenerator;
         _context = context;
     }
 
@@ -195,6 +199,138 @@ public class ExportController : ControllerBase
             $"ServiceAgreements_{DateTime.Now:yyyyMMdd}.xlsx");
     }
 
+
+    [HttpGet("warrantyclaims/csv")]
+    public async Task<IActionResult> ExportWarrantyClaimsCsv()
+    {
+        var claims = await _context.WarrantyClaims
+            .Include(c => c.Asset)
+            .ThenInclude(a => a!.Customer)
+            .OrderByDescending(c => c.ClaimDate)
+            .AsNoTracking()
+            .ToListAsync();
+
+        var csv = new System.Text.StringBuilder();
+        csv.AppendLine("Id,ClaimNumber,AssetSerial,CustomerName,Status,ClaimDate,ResolvedDate,RepairCost,CustomerCharge");
+        
+        foreach (var claim in claims)
+        {
+            csv.AppendLine($"{claim.Id},{claim.ClaimNumber},{claim.Asset?.Serial ?? ""},{claim.Asset?.Customer?.Name ?? ""},{claim.Status},{claim.ClaimDate:yyyy-MM-dd},{claim.ResolvedDate?.ToString("yyyy-MM-dd") ?? ""},{claim.RepairCost},{claim.CustomerCharge}");
+        }
+        
+        return File(System.Text.Encoding.UTF8.GetBytes(csv.ToString()), "text/csv", $"WarrantyClaims_{DateTime.Now:yyyyMMdd}.csv");
+    }
+
+    [HttpGet("warrantyclaims/excel")]
+    public async Task<IActionResult> ExportWarrantyClaimsExcel()
+    {
+        var claims = await _context.WarrantyClaims
+            .Include(c => c.Asset)
+            .ThenInclude(a => a!.Customer)
+            .OrderByDescending(c => c.ClaimDate)
+            .AsNoTracking()
+            .ToListAsync();
+
+        // For now, return CSV format as Excel (simple implementation)
+        var csv = new System.Text.StringBuilder();
+        csv.AppendLine("Id,ClaimNumber,AssetSerial,CustomerName,Status,ClaimDate,ResolvedDate,RepairCost,CustomerCharge,IssueDescription");
+        
+        foreach (var claim in claims)
+        {
+            csv.AppendLine($"{claim.Id},{claim.ClaimNumber},{claim.Asset?.Serial ?? ""},{claim.Asset?.Customer?.Name ?? ""},{claim.Status},{claim.ClaimDate:yyyy-MM-dd},{claim.ResolvedDate?.ToString("yyyy-MM-dd") ?? ""},{claim.RepairCost},{claim.CustomerCharge},\"{claim.IssueDescription?.Replace("\"", "'") ?? ""}\"");
+        }
+        
+        return File(System.Text.Encoding.UTF8.GetBytes(csv.ToString()), 
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"WarrantyClaims_{DateTime.Now:yyyyMMdd}.xlsx");
+    }
+
+    [HttpGet("documents/csv")]
+    public async Task<IActionResult> ExportDocumentsCsv()
+    {
+        var docs = await _context.Documents
+            .Where(d => d.IsActive)
+            .OrderBy(d => d.Category)
+            .ThenBy(d => d.Name)
+            .AsNoTracking()
+            .ToListAsync();
+
+        var csv = new System.Text.StringBuilder();
+        csv.AppendLine("Id,Name,Category,Manufacturer,ModelNumber,EquipmentType,FileName,FileSize,Tags,CreatedAt,ViewCount");
+        
+        foreach (var doc in docs)
+        {
+            csv.AppendLine($"{doc.Id},\"{doc.Name?.Replace("\"", "'")}\",{doc.Category},{doc.Manufacturer ?? ""},{doc.ModelNumber ?? ""},{doc.EquipmentType ?? ""},{doc.FileName},{doc.FileSizeBytes},\"{doc.Tags?.Replace("\"", "'") ?? ""}\",{doc.CreatedAt:yyyy-MM-dd},{doc.ViewCount}");
+        }
+        
+        return File(System.Text.Encoding.UTF8.GetBytes(csv.ToString()), "text/csv", $"Documents_{DateTime.Now:yyyyMMdd}.csv");
+    }
+
+    [HttpGet("documents/excel")]
+    public async Task<IActionResult> ExportDocumentsExcel()
+    {
+        var docs = await _context.Documents
+            .Where(d => d.IsActive)
+            .OrderBy(d => d.Category)
+            .ThenBy(d => d.Name)
+            .AsNoTracking()
+            .ToListAsync();
+
+        var csv = new System.Text.StringBuilder();
+        csv.AppendLine("Id,Name,Description,Category,Manufacturer,ModelNumber,EquipmentType,FileName,FileSize,ContentType,Tags,IsCustomDocument,IsFavorite,CreatedAt,ViewCount");
+        
+        foreach (var doc in docs)
+        {
+            csv.AppendLine($"{doc.Id},\"{doc.Name?.Replace("\"", "'")}\",\"{doc.Description?.Replace("\"", "'") ?? ""}\",{doc.Category},{doc.Manufacturer ?? ""},{doc.ModelNumber ?? ""},{doc.EquipmentType ?? ""},{doc.FileName},{doc.FileSizeBytes},{doc.ContentType},\"{doc.Tags?.Replace("\"", "'") ?? ""}\",{doc.IsCustomDocument},{doc.IsFavorite},{doc.CreatedAt:yyyy-MM-dd},{doc.ViewCount}");
+        }
+        
+        return File(System.Text.Encoding.UTF8.GetBytes(csv.ToString()), 
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"Documents_{DateTime.Now:yyyyMMdd}.xlsx");
+    }
+
+    [HttpGet("employees/csv")]
+    public async Task<IActionResult> ExportEmployeesCsv()
+    {
+        var employees = await _context.Employees
+            .OrderBy(e => e.LastName)
+            .ThenBy(e => e.FirstName)
+            .AsNoTracking()
+            .ToListAsync();
+
+        var csv = new System.Text.StringBuilder();
+        csv.AppendLine("Id,FirstName,LastName,Type,Status,StartDate,Phone,Email,PayRate,PayRateType,PaymentMethod");
+        
+        foreach (var emp in employees)
+        {
+            csv.AppendLine($"{emp.Id},{emp.FirstName},{emp.LastName},{emp.Type},{emp.Status},{emp.StartDate:yyyy-MM-dd},{emp.Phone ?? ""},{emp.Email ?? ""},{emp.PayRate},{emp.PayRateType},{emp.PaymentMethod}");
+        }
+        
+        return File(System.Text.Encoding.UTF8.GetBytes(csv.ToString()), "text/csv", $"Employees_{DateTime.Now:yyyyMMdd}.csv");
+    }
+
+    [HttpGet("employees/excel")]
+    public async Task<IActionResult> ExportEmployeesExcel()
+    {
+        var employees = await _context.Employees
+            .OrderBy(e => e.LastName)
+            .ThenBy(e => e.FirstName)
+            .AsNoTracking()
+            .ToListAsync();
+
+        var csv = new System.Text.StringBuilder();
+        csv.AppendLine("Id,FirstName,LastName,Type,Status,StartDate,TerminationDate,Address,City,State,ZipCode,Phone,Email,PayRate,PayRateType,PaymentMethod,OvertimeMultiplier,PtoBalance,CompanyName,ServiceProvided,HasW4,HasI9,Has1099Setup,BackgroundCheckDate,BackgroundCheckResult,DrugTestDate,DrugTestResult");
+        
+        foreach (var emp in employees)
+        {
+            csv.AppendLine($"{emp.Id},{emp.FirstName},{emp.LastName},{emp.Type},{emp.Status},{emp.StartDate:yyyy-MM-dd},{emp.TerminationDate?.ToString("yyyy-MM-dd") ?? ""},{emp.Address ?? ""},{emp.City ?? ""},{emp.State ?? ""},{emp.ZipCode ?? ""},{emp.Phone ?? ""},{emp.Email ?? ""},{emp.PayRate},{emp.PayRateType},{emp.PaymentMethod},{emp.OvertimeMultiplier},{emp.PtoBalanceHours},{emp.CompanyName ?? ""},{emp.ServiceProvided ?? ""},{emp.HasW4},{emp.HasI9},{emp.Has1099Setup},{emp.BackgroundCheckDate?.ToString("yyyy-MM-dd") ?? ""},{emp.BackgroundCheckResult ?? ""},{emp.DrugTestDate?.ToString("yyyy-MM-dd") ?? ""},{emp.DrugTestResult ?? ""}");
+        }
+        
+        return File(System.Text.Encoding.UTF8.GetBytes(csv.ToString()), 
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"Employees_{DateTime.Now:yyyyMMdd}.xlsx");
+    }
+
     #endregion
 
     #region PDF Exports
@@ -210,8 +346,141 @@ public class ExportController : ControllerBase
         if (invoice == null)
             return NotFound();
 
-        var data = _pdfGenerator.GenerateInvoicePdf(invoice);
+        var data = _invoicePdfGenerator.GenerateInvoicePdf(invoice);
         return File(data, "application/pdf", $"Invoice_{invoice.InvoiceNumber}.pdf");
+    }
+
+    [HttpGet("estimate/{id}/pdf")]
+    public async Task<IActionResult> ExportEstimatePdf(int id)
+    {
+        var estimate = await _context.Estimates
+            .Include(e => e.Customer)
+            .FirstOrDefaultAsync(e => e.Id == id);
+
+        if (estimate == null)
+            return NotFound();
+
+        var data = _estimatePdfGenerator.GenerateEstimatePdf(estimate);
+        return File(data, "application/pdf", $"Estimate_{estimate.Title}.pdf");
+    }
+
+    [HttpGet("agreement/{id}/pdf")]
+    public async Task<IActionResult> ExportAgreementPdf(int id, [FromServices] IServiceAgreementPdfGenerator pdfGenerator)
+    {
+        var agreement = await _context.ServiceAgreements
+            .Include(a => a.Customer)
+            .FirstOrDefaultAsync(a => a.Id == id);
+
+        if (agreement == null)
+            return NotFound();
+
+        var data = pdfGenerator.GenerateAgreementPdf(agreement);
+        return File(data, "application/pdf", $"ServiceAgreement_{agreement.AgreementNumber ?? agreement.Id.ToString()}.pdf");
+    }
+
+    #endregion
+
+    #region Email
+
+    [HttpPost("invoice/{id}/email")]
+    public async Task<IActionResult> EmailInvoice(int id, [FromServices] IEmailService emailService)
+    {
+        var invoice = await _context.Invoices
+            .Include(i => i.Customer)
+            .Include(i => i.LineItems)
+            .FirstOrDefaultAsync(i => i.Id == id);
+
+        if (invoice == null)
+            return NotFound(new { message = "Invoice not found" });
+
+        if (invoice.Customer?.Email == null)
+            return BadRequest(new { message = "Customer does not have an email address" });
+
+        if (!emailService.IsConfigured)
+            return BadRequest(new { message = "Email service is not configured. Please configure SMTP settings in appsettings.json." });
+
+        var pdfData = _invoicePdfGenerator.GenerateInvoicePdf(invoice);
+        var success = await emailService.SendInvoiceEmailAsync(invoice.Customer.Email, invoice.InvoiceNumber, pdfData);
+
+        if (success)
+            return Ok(new { message = $"Invoice emailed to {invoice.Customer.Email}" });
+        else
+            return BadRequest(new { message = "Failed to send email. Please check email configuration." });
+    }
+
+    [HttpPost("estimate/{id}/email")]
+    public async Task<IActionResult> EmailEstimate(int id, [FromServices] IEmailService emailService)
+    {
+        var estimate = await _context.Estimates
+            .Include(e => e.Customer)
+            .FirstOrDefaultAsync(e => e.Id == id);
+
+        if (estimate == null)
+            return NotFound(new { message = "Estimate not found" });
+
+        if (estimate.Customer?.Email == null)
+            return BadRequest(new { message = "Customer does not have an email address" });
+
+        if (!emailService.IsConfigured)
+            return BadRequest(new { message = "Email service is not configured. Please configure SMTP settings in appsettings.json." });
+
+        var pdfData = _estimatePdfGenerator.GenerateEstimatePdf(estimate);
+        var success = await emailService.SendEstimateEmailAsync(estimate.Customer.Email, estimate.Title, pdfData);
+
+        if (success)
+            return Ok(new { message = $"Estimate emailed to {estimate.Customer.Email}" });
+        else
+            return BadRequest(new { message = "Failed to send email. Please check email configuration." });
+    }
+
+    #endregion
+
+    #region Material Lists Export
+
+    [HttpGet("material-lists/csv")]
+    public async Task<IActionResult> ExportMaterialListsCsv()
+    {
+        var lists = await _context.MaterialLists
+            .Include(ml => ml.Customer)
+            .Include(ml => ml.Site)
+            .Include(ml => ml.Items)
+            .OrderByDescending(ml => ml.CreatedAt)
+            .AsNoTracking()
+            .ToListAsync();
+
+        var csv = new System.Text.StringBuilder();
+        csv.AppendLine("Id,ListNumber,Title,Customer,Site,Status,Priority,ItemCount,MaterialCost,LaborTotal,TotalBidPrice,CreatedAt");
+        
+        foreach (var list in lists)
+        {
+            csv.AppendLine($"{list.Id},{list.ListNumber},\"{list.Title?.Replace("\"", "'")}\",\"{list.Customer?.DisplayName ?? ""}\",\"{list.Site?.SiteName ?? ""}\",{list.Status},{list.Priority},{list.Items.Count},{list.TotalMaterialCost:F2},{list.LaborTotal:F2},{list.TotalBidPrice:F2},{list.CreatedAt:yyyy-MM-dd}");
+        }
+        
+        return File(System.Text.Encoding.UTF8.GetBytes(csv.ToString()), "text/csv", $"MaterialLists_{DateTime.Now:yyyyMMdd}.csv");
+    }
+
+    [HttpGet("material-lists/excel")]
+    public async Task<IActionResult> ExportMaterialListsExcel()
+    {
+        var lists = await _context.MaterialLists
+            .Include(ml => ml.Customer)
+            .Include(ml => ml.Site)
+            .Include(ml => ml.Items)
+            .OrderByDescending(ml => ml.CreatedAt)
+            .AsNoTracking()
+            .ToListAsync();
+
+        var csv = new System.Text.StringBuilder();
+        csv.AppendLine("Id,ListNumber,Title,Customer,Site,SquareFootage,Zones,Stories,Status,Priority,ItemCount,MaterialCost,MarkupPercent,LaborTotal,DisposalFees,PermitCost,ContingencyAmount,TaxAmount,TotalBidPrice,CreatedAt");
+        
+        foreach (var list in lists)
+        {
+            csv.AppendLine($"{list.Id},{list.ListNumber},\"{list.Title?.Replace("\"", "'")}\",\"{list.Customer?.DisplayName ?? ""}\",\"{list.Site?.SiteName ?? ""}\",{list.SquareFootage ?? 0},{list.Zones},{list.Stories},{list.Status},{list.Priority},{list.Items.Count},{list.TotalMaterialCost:F2},{list.MarkupPercent:F2},{list.LaborTotal:F2},{list.DisposalFee + list.RefrigerantReclaimFee:F2},{list.PermitCost + list.InspectionFees:F2},{list.ContingencyAmount:F2},{list.TaxAmount:F2},{list.TotalBidPrice:F2},{list.CreatedAt:yyyy-MM-dd}");
+        }
+        
+        return File(System.Text.Encoding.UTF8.GetBytes(csv.ToString()), 
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"MaterialLists_{DateTime.Now:yyyyMMdd}.xlsx");
     }
 
     #endregion

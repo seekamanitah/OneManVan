@@ -1,0 +1,216 @@
+@page "/employees/{EmployeeId:int}/log-time"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@using OneManVan.Shared.Models.Enums
+@using OneManVan.Shared.Services
+@inject EmployeeService EmployeeService
+@inject IDbContextFactory<OneManVanDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Log Time - OneManVan</PageTitle>
+
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <!-- Header -->
+            <div class="mb-4">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/employees">Employees</a></li>
+                        <li class="breadcrumb-item"><a href="/employees/@EmployeeId">@(employee?.DisplayName ?? "Employee")</a></li>
+                        <li class="breadcrumb-item active">Log Time</li>
+                    </ol>
+                </nav>
+                <h1 class="h2">Log Time Entry</h1>
+                @if (employee != null)
+                {
+                    <p class="text-muted">Recording hours for @employee.DisplayName</p>
+                }
+            </div>
+
+            @if (isLoading)
+            {
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary"></div>
+                </div>
+            }
+            else
+            {
+                <EditForm Model="@model" OnValidSubmit="HandleSubmit">
+                    <DataAnnotationsValidator />
+
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0"><i class="bi bi-clock me-2"></i>Time Entry</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Date *</label>
+                                    <InputDate class="form-control" @bind-Value="model.Date" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Hours Worked *</label>
+                                    <InputNumber class="form-control" @bind-Value="model.HoursWorked" step="0.25" min="0" max="24" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Start Time</label>
+                                    <InputText class="form-control" type="time" @bind-Value="startTimeStr" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">End Time</label>
+                                    <InputText class="form-control" type="time" @bind-Value="endTimeStr" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Break (minutes)</label>
+                                    <InputNumber class="form-control" @bind-Value="model.BreakMinutes" min="0" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label d-block">&nbsp;</label>
+                                    <div class="form-check">
+                                        <InputCheckbox class="form-check-input" @bind-Value="model.IsOvertime" id="isOT" />
+                                        <label class="form-check-label" for="isOT">Overtime Hours</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0"><i class="bi bi-briefcase me-2"></i>Job (Optional)</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label">Associated Job</label>
+                                    <InputSelect class="form-select" @bind-Value="model.JobId">
+                                        <option value="">-- No Job --</option>
+                                        @foreach (var job in jobs)
+                                        {
+                                            <option value="@job.Id">@job.Title - @job.Customer?.Name</option>
+                                        }
+                                    </InputSelect>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Notes</label>
+                                    <InputTextArea class="form-control" rows="3" @bind-Value="model.Notes" placeholder="Work performed, tasks completed..." />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Entry Buttons -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-body">
+                            <label class="form-label text-muted small">Quick Entry</label>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <button type="button" class="btn btn-outline-primary btn-sm" @onclick='() => SetQuickHours(4)'>4 hrs</button>
+                                <button type="button" class="btn btn-outline-primary btn-sm" @onclick='() => SetQuickHours(6)'>6 hrs</button>
+                                <button type="button" class="btn btn-outline-primary btn-sm" @onclick='() => SetQuickHours(8)'>8 hrs</button>
+                                <button type="button" class="btn btn-outline-primary btn-sm" @onclick='() => SetQuickHours(10)'>10 hrs</button>
+                                <button type="button" class="btn btn-outline-warning btn-sm" @onclick="SetFullDayOT">8 + 2 OT</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <button type="button" class="btn btn-outline-secondary" @onclick="Cancel">Cancel</button>
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                                        @if (isSaving)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-2"></span>
+                                        }
+                                        <i class="bi bi-check-circle me-2"></i>Save Entry
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger mt-3">@errorMessage</div>
+                    }
+                </EditForm>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int EmployeeId { get; set; }
+
+    private Employee? employee;
+    private List<Job> jobs = new();
+    private EmployeeTimeLog model = new() { Date = DateTime.Today };
+    private string startTimeStr = "";
+    private string endTimeStr = "";
+    private bool isLoading = true;
+    private bool isSaving = false;
+    private string errorMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var context = await DbFactory.CreateDbContextAsync();
+        
+        
+        employee = await EmployeeService.GetByIdAsync(EmployeeId);
+        model.EmployeeId = EmployeeId;
+
+        // Load recent jobs for selection
+        jobs = await context.Jobs
+            .Include(j => j.Customer)
+            .Where(j => j.Status != JobStatus.Completed && j.Status != JobStatus.Cancelled)
+            .OrderByDescending(j => j.ScheduledDate)
+            .Take(50)
+            .ToListAsync();
+
+        isLoading = false;
+    }
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            isSaving = true;
+            errorMessage = "";
+
+            // Parse times
+            if (TimeSpan.TryParse(startTimeStr, out var start))
+                model.StartTime = start;
+            if (TimeSpan.TryParse(endTimeStr, out var end))
+                model.EndTime = end;
+
+            await EmployeeService.LogTimeAsync(model);
+            Navigation.NavigateTo($"/employees/{EmployeeId}");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to save: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private void SetQuickHours(decimal hours)
+    {
+        model.HoursWorked = hours;
+        model.IsOvertime = false;
+    }
+
+    private void SetFullDayOT()
+    {
+        model.HoursWorked = 10;
+        model.IsOvertime = true;
+    }
+
+    private void Cancel() => Navigation.NavigateTo($"/employees/{EmployeeId}");
+}

@@ -4,7 +4,7 @@
 @using OneManVan.Shared.Data
 @using OneManVan.Shared.Models
 @using OneManVan.Shared.Models.Enums
-@* [Authorize] temporarily disabled for development *@
+
 @inject IDbContextFactory<OneManVanDbContext> DbFactory
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -35,6 +35,59 @@
             {
                 <EditForm Model="@model" OnValidSubmit="HandleSubmit">
                     <DataAnnotationsValidator />
+
+                    <!-- Service Tier Selection -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-primary text-white py-3">
+                            <h5 class="mb-0"><i class="bi bi-star me-2"></i>Select Service Level</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                @foreach (var tier in new[] { ServiceTier.Basic, ServiceTier.Standard, ServiceTier.Premium })
+                                {
+                                    <div class="col-md-4">
+                                        <div class="card h-100 @(model.ServiceTier == tier ? "border-primary border-2" : "border")" 
+                                             style="cursor: pointer;" @onclick="() => SelectTier(tier)">
+                                            <div class="card-body text-center">
+                                                <div class="form-check d-flex justify-content-center mb-2">
+                                                    <input class="form-check-input" type="radio" 
+                                                           checked="@(model.ServiceTier == tier)" 
+                                                           @onchange="() => SelectTier(tier)" />
+                                                </div>
+                                                <h5 class="card-title @(tier == ServiceTier.Premium ? "text-warning" : tier == ServiceTier.Standard ? "text-primary" : "")">
+                                                    @tier.ToString()
+                                                </h5>
+                                                <ul class="list-unstyled text-start small mb-0">
+                                                    @if (tier == ServiceTier.Basic)
+                                                    {
+                                                        <li><i class="bi bi-check text-success me-1"></i>1 annual tune-up</li>
+                                                        <li><i class="bi bi-check text-success me-1"></i>Priority scheduling</li>
+                                                        <li><i class="bi bi-check text-success me-1"></i>10% repair discount</li>
+                                                    }
+                                                    else if (tier == ServiceTier.Standard)
+                                                    {
+                                                        <li><i class="bi bi-check text-success me-1"></i>2 annual tune-ups</li>
+                                                        <li><i class="bi bi-check text-success me-1"></i>24hr priority response</li>
+                                                        <li><i class="bi bi-check text-success me-1"></i>15% repair discount</li>
+                                                        <li><i class="bi bi-check text-success me-1"></i>No dispatch fee</li>
+                                                    }
+                                                    else if (tier == ServiceTier.Premium)
+                                                    {
+                                                        <li><i class="bi bi-check text-success me-1"></i>2 tune-ups + 1 check</li>
+                                                        <li><i class="bi bi-check text-success me-1"></i>12hr priority response</li>
+                                                        <li><i class="bi bi-check text-success me-1"></i>20% repair discount</li>
+                                                        <li><i class="bi bi-check text-success me-1"></i>No dispatch fee</li>
+                                                        <li><i class="bi bi-check text-success me-1"></i>Free minor adjustments</li>
+                                                        <li><i class="bi bi-check text-success me-1"></i>2 filters/year</li>
+                                                    }
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
 
                     <!-- Basic Info -->
                     <div class="card border-0 shadow-sm mb-3">
@@ -111,13 +164,66 @@
                         </div>
                         <div class="card-body">
                             <div class="row g-3">
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <label class="form-label">Annual Price</label>
-                                    <InputNumber class="form-control" @bind-Value="model.AnnualPrice" step="0.01" />
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <InputNumber class="form-control" @bind-Value="model.AnnualPrice" step="0.01" />
+                                    </div>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <label class="form-label">Visits Included</label>
                                     <InputNumber class="form-control" @bind-Value="model.IncludedVisitsPerYear" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Repair Discount %</label>
+                                    <div class="input-group">
+                                        <InputNumber class="form-control" @bind-Value="model.RepairDiscountPercent" step="1" />
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tier Benefits (Read-only display) -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0"><i class="bi bi-gift me-2"></i>Included Benefits (@model.ServiceTierDisplay)</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <InputCheckbox class="form-check-input" @bind-Value="model.PriorityService" id="priorityService" />
+                                        <label class="form-check-label" for="priorityService">Priority Scheduling</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <InputCheckbox class="form-check-input" @bind-Value="model.WaiveTripCharge" id="waiveTripCharge" />
+                                        <label class="form-check-label" for="waiveTripCharge">Waive Trip Charge</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <InputCheckbox class="form-check-input" @bind-Value="model.NoEmergencyDispatchFee" id="noDispatchFee" />
+                                        <label class="form-check-label" for="noDispatchFee">No Emergency Dispatch Fee</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <InputCheckbox class="form-check-input" @bind-Value="model.FreeMinorAdjustments" id="freeAdjustments" />
+                                        <label class="form-check-label" for="freeAdjustments">Free Minor Adjustments</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Filters/Year</label>
+                                    <InputNumber class="form-control form-control-sm" @bind-Value="model.FiltersIncludedPerYear" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Response Time (hrs)</label>
+                                    <InputNumber class="form-control form-control-sm" @bind-Value="model.ResponseTimeHours" />
                                 </div>
                             </div>
                         </div>
@@ -320,5 +426,11 @@
             Navigation.NavigateTo("/agreements");
         else
             Navigation.NavigateTo($"/agreements/{Id}");
+    }
+
+    private void SelectTier(ServiceTier tier)
+    {
+        model.ServiceTier = tier;
+        model.ApplyTierDefaults();
     }
 }

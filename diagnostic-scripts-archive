@@ -1,0 +1,173 @@
+#!/bin/bash
+# Fix Blazor Server SignalR/WebSocket connection issues
+
+echo "==================================="
+echo "Blazor SignalR Connection Fix"
+echo "==================================="
+
+# Check if nginx is installed
+if command -v nginx &> /dev/null; then
+    echo "? Nginx detected"
+    
+    # Backup existing config
+    if [ -f /etc/nginx/sites-available/onemanvan ]; then
+        sudo cp /etc/nginx/sites-available/onemanvan /etc/nginx/sites-available/onemanvan.backup.$(date +%Y%m%d_%H%M%S)
+        echo "? Backed up existing nginx config"
+    fi
+    
+    # Create proper nginx config with WebSocket support
+    sudo tee /etc/nginx/sites-available/onemanvan > /dev/null << 'EOF'
+server {
+    listen 80;
+    server_name _;  # Change to your domain if needed
+    
+    # Increase timeouts for long-running Blazor circuits
+    proxy_read_timeout 3600s;
+    proxy_send_timeout 3600s;
+    
+    location / {
+        proxy_pass http://localhost:5000;
+        proxy_http_version 1.1;
+        
+        # Critical WebSocket headers for SignalR
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        
+        # Standard proxy headers
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # Disable buffering for real-time communication
+        proxy_buffering off;
+        proxy_cache_bypass $http_upgrade;
+    }
+    
+    # Health check endpoint
+    location /health {
+        proxy_pass http://localhost:5000/health;
+        access_log off;
+    }
+}
+
+# Map for WebSocket upgrade header
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    '' close;
+}
+EOF
+    
+    # Enable site if not already enabled
+    if [ ! -L /etc/nginx/sites-enabled/onemanvan ]; then
+        sudo ln -s /etc/nginx/sites-available/onemanvan /etc/nginx/sites-enabled/
+        echo "? Enabled nginx site"
+    fi
+    
+    # Test configuration
+    echo ""
+    echo "Testing nginx configuration..."
+    if sudo nginx -t; then
+        echo "? Nginx config is valid"
+        echo ""
+        echo "Reloading nginx..."
+        sudo systemctl reload nginx
+        echo "? Nginx reloaded successfully"
+    else
+        echo "? Nginx config has errors!"
+        echo "Restoring backup..."
+        sudo mv /etc/nginx/sites-available/onemanvan.backup.* /etc/nginx/sites-available/onemanvan 2>/dev/null || true
+        exit 1
+    fi
+    
+    echo ""
+    echo "? Nginx configured for Blazor SignalR!"
+    echo ""
+    echo "If using HTTPS, also run:"
+    echo "  sudo certbot --nginx -d yourdomain.com"
+    
+elif command -v apache2 &> /dev/null; then
+    echo "? Apache detected"
+    
+    # Enable required modules
+    sudo a2enmod proxy
+    sudo a2enmod proxy_http
+    sudo a2enmod proxy_wstunnel
+    
+    # Create Apache config
+    sudo tee /etc/apache2/sites-available/onemanvan.conf > /dev/null << 'EOF'
+<VirtualHost *:80>
+    ServerName yourdomain.com
+    
+    ProxyPreserveHost On
+    ProxyRequests Off
+    
+    # WebSocket proxy for SignalR
+    ProxyPass /_blazor ws://localhost:5000/_blazor
+    ProxyPassReverse /_blazor ws://localhost:5000/_blazor
+    
+    # HTTP proxy for everything else
+    ProxyPass / http://localhost:5000/
+    ProxyPassReverse / http://localhost:5000/
+    
+    # Disable buffering
+    SetEnv proxy-sendchunked 1
+</VirtualHost>
+EOF
+    
+    sudo a2ensite onemanvan
+    sudo systemctl reload apache2
+    
+    echo "? Apache configured for Blazor SignalR!"
+    
+else
+    echo "? No reverse proxy detected"
+    echo ""
+    echo "If you're running Docker directly on port 5000:"
+    echo "1. Ensure Docker is exposing the port correctly"
+    echo "2. Check firewall allows port 5000"
+    echo "3. Try accessing directly: http://your-server-ip:5000"
+fi
+
+echo ""
+echo "==================================="
+echo "Additional Checks"
+echo "==================================="
+
+# Check if Docker is running
+if command -v docker &> /dev/null; then
+    if docker ps | grep -q onemanvan; then
+        echo "? OneManVan container is running"
+    else
+        echo "? OneManVan container not found"
+        echo "  Start it with: docker-compose up -d"
+    fi
+fi
+
+# Check firewall
+if command -v ufw &> /dev/null; then
+    if sudo ufw status | grep -q "5000.*ALLOW"; then
+        echo "? Firewall allows port 5000"
+    else
+        echo "? Firewall may be blocking port 5000"
+        echo "  To allow: sudo ufw allow 5000/tcp"
+    fi
+fi
+
+echo ""
+echo "==================================="
+echo "Testing Connection"
+echo "==================================="
+echo ""
+echo "Test the SignalR endpoint:"
+echo "  curl -i http://localhost:5000/_blazor/negotiate"
+echo ""
+echo "You should see a 200 OK response with JSON containing 'availableTransports'"
+echo ""
+echo "Then test from your browser:"
+echo "1. Open browser DevTools (F12)"
+echo "2. Go to Network tab"
+echo "3. Filter for 'WS' (WebSocket)"
+echo "4. Reload the page"
+echo "5. You should see a WebSocket connection to '_blazor?id=...'"
+echo ""

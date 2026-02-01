@@ -4,10 +4,14 @@
 @using OneManVan.Shared.Data
 @using OneManVan.Shared.Models
 @using OneManVan.Shared.Models.Enums
-@* [Authorize] temporarily disabled for development *@
+@using OneManVan.Shared.Services
+
 @inject IDbContextFactory<OneManVanDbContext> DbFactory
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject ISettingsStorage SettingsStorage
+@inject INotificationService NotificationService
+@inject IEmployeeTimeLogAutoService TimeLogAutoService
 
 <PageTitle>@(IsNew ? "New Invoice" : $"Edit Invoice") - OneManVan</PageTitle>
 
@@ -75,59 +79,11 @@
                         </div>
                     </div>
 
-                    <!-- Amounts -->
-                    <div class="card border-0 shadow-sm mb-3">
-                        <div class="card-header bg-white border-0 py-3">
-                            <h5 class="mb-0">Amounts</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row g-3">
-                                <div class="col-md-4">
-                                    <label class="form-label">Subtotal</label>
-                                    <InputNumber class="form-control" @bind-Value="model.SubTotal" step="0.01" />
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Tax Rate (%)</label>
-                                    <InputNumber class="form-control" @bind-Value="model.TaxRate" step="0.01" disabled="@model.TaxIncluded" />
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Tax Amount</label>
-                                    @if (model.TaxIncluded)
-                                    {
-                                        <input type="text" class="form-control" value="Included" disabled />
-                                    }
-                                    else
-                                    {
-                                        <InputNumber class="form-control" @bind-Value="model.TaxAmount" step="0.01" />
-                                    }
-                                </div>
-                                <div class="col-12">
-                                    <div class="form-check">
-                                        <InputCheckbox class="form-check-input" @bind-Value="model.TaxIncluded" />
-                                        <label class="form-check-label">Tax Already Included in Price (flat rate with tax)</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Total</label>
-                                    <InputNumber class="form-control" @bind-Value="model.Total" step="0.01" />
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Amount Paid</label>
-                                    <InputNumber class="form-control" @bind-Value="model.AmountPaid" step="0.01" />
-                                </div>
-                            </div>
-                            
-                            <div class="alert alert-info mt-3">
-                                <strong>Balance Due:</strong> @((model.Total - model.AmountPaid).ToString("C"))
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- Line Items -->
                     <div class="card border-0 shadow-sm mb-3">
                         <div class="card-header bg-white border-0 py-3">
                             <div class="d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0">Line Items</h5>
+                                <h5 class="mb-0">Parts & Materials</h5>
                                 <button type="button" class="btn btn-sm btn-primary" @onclick="AddLineItem">
                                     <i class="bi bi-plus-circle"></i> Add Item
                                 </button>
@@ -138,7 +94,7 @@
                             {
                                 <div class="text-center text-muted py-4">
                                     <i class="bi bi-inbox" style="font-size: 3rem;"></i>
-                                    <p class="mt-2">No line items yet. Click "Add Item" to get started.</p>
+                                    <p class="mt-2">No items yet. Click "Add Item" to get started.</p>
                                 </div>
                             }
                             else
@@ -182,7 +138,7 @@
                                         </tbody>
                                         <tfoot>
                                             <tr class="table-secondary">
-                                                <td colspan="3" class="text-end"><strong>Subtotal:</strong></td>
+                                                <td colspan="3" class="text-end"><strong>Parts Subtotal:</strong></td>
                                                 <td class="text-end"><strong>@lineItems.Sum(i => i.Total).ToString("C")</strong></td>
                                                 <td></td>
                                             </tr>
@@ -190,6 +146,132 @@
                                     </table>
                                 </div>
                             }
+                        </div>
+                    </div>
+
+                    <!-- Labor/Time Section -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Labor & Time (Optional)</h5>
+                                <button type="button" class="btn btn-sm btn-outline-primary" @onclick="AddLaborItem">
+                                    <i class="bi bi-plus-circle"></i> Add Labor
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            @if (laborItems.Count == 0)
+                            {
+                                <div class="text-center text-muted py-3">
+                                    <i class="bi bi-clock-history" style="font-size: 2rem;"></i>
+                                    <p class="mt-2 small">No labor charges. Click "Add Labor" to add time/labor costs.</p>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 40%">Description</th>
+                                                <th style="width: 15%" class="text-end">Hours</th>
+                                                <th style="width: 15%" class="text-end">Rate/Hour</th>
+                                                <th style="width: 15%" class="text-end">Total</th>
+                                                <th style="width: 15%" class="text-center">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var item in laborItems)
+                                            {
+                                                <tr>
+                                                    <td>
+                                                        <strong>@item.Description</strong>
+                                                        @if (!string.IsNullOrEmpty(item.Notes))
+                                                        {
+                                                            <br />
+                                                            <small class="text-muted">@item.Notes</small>
+                                                        }
+                                                    </td>
+                                                    <td class="text-end">@item.Quantity.ToString("N2")</td>
+                                                    <td class="text-end">@item.UnitPrice.ToString("C")</td>
+                                                    <td class="text-end"><strong>@item.Total.ToString("C")</strong></td>
+                                                    <td class="text-center">
+                                                        <button type="button" class="btn btn-sm btn-outline-primary me-1" @onclick="() => EditLaborItem(item)">
+                                                            <i class="bi bi-pencil"></i>
+                                                        </button>
+                                                        <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => DeleteLaborItem(item)">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                        <tfoot>
+                                            <tr class="table-secondary">
+                                                <td colspan="3" class="text-end"><strong>Labor Subtotal:</strong></td>
+                                                <td class="text-end"><strong>@laborItems.Sum(i => i.Total).ToString("C")</strong></td>
+                                                <td></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Totals (Read-Only, Calculated) -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0">Invoice Totals</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Subtotal (Parts + Labor)</label>
+                                    <input type="text" class="form-control bg-light" value="@CalculatedSubtotal.ToString("C")" disabled />
+                                    <small class="text-muted">Automatically calculated from line items</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label d-flex justify-content-between align-items-center">
+                                        <span>Tax Rate (%)</span>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="ResetToGlobalTaxRate" title="Reset to global default">
+                                            <i class="bi bi-arrow-counterclockwise"></i> Reset
+                                        </button>
+                                    </label>
+                                    <InputNumber class="form-control" @bind-Value="model.TaxRate" step="0.01" @oninput="RecalculateTotals" disabled="@model.TaxIncluded" />
+                                    <small class="text-muted">Current default: @defaultTaxRate%</small>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check">
+                                        <InputCheckbox class="form-check-input" @bind-Value="model.TaxIncluded" @onchange="RecalculateTotals" />
+                                        <label class="form-check-label">Tax Already Included in Price (flat rate with tax)</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Tax Amount</label>
+                                    @if (model.TaxIncluded)
+                                    {
+                                        <input type="text" class="form-control bg-light" value="Included" disabled />
+                                    }
+                                    else
+                                    {
+                                        <input type="text" class="form-control bg-light" value="@CalculatedTaxAmount.ToString("C")" disabled />
+                                    }
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Total</label>
+                                    <input type="text" class="form-control bg-light fw-bold" value="@CalculatedTotal.ToString("C")" disabled />
+                                    <small class="text-muted">Automatically calculated</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Amount Paid</label>
+                                    <InputNumber class="form-control" @bind-Value="model.AmountPaid" step="0.01" @oninput="RecalculateTotals" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Balance Due</label>
+                                    <input type="text" class="form-control bg-warning bg-opacity-25 fw-bold" value="@((CalculatedTotal - model.AmountPaid).ToString("C"))" disabled />
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -275,26 +357,98 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">@(editingLineItem.Id > 0 ? "Edit" : "Add") Line Item</h5>
+                    <h5 class="modal-title">@(editingLineItem.Id > 0 ? "Edit" : "Add") @(editingLineItem.Source == LineItemSource.Labor ? "Labor" : "Line Item")</h5>
                     <button type="button" class="btn-close" @onclick="CancelLineItemEdit"></button>
                 </div>
                 <div class="modal-body">
+                    @if (editingLineItem.Source != LineItemSource.Labor)
+                    {
+                        <!-- Source Selection (only for non-labor items) -->
+                        <div class="mb-3">
+                            <label class="form-label">Item Source</label>
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="itemSource" id="sourceCustom" 
+                                       checked="@(editingLineItem.Source == LineItemSource.Custom)"
+                                       @onchange="@(() => ChangeItemSource(LineItemSource.Custom))" />
+                                <label class="btn btn-outline-primary" for="sourceCustom">
+                                    <i class="bi bi-pencil-square me-1"></i>Custom Item
+                                </label>
+                                
+                                <input type="radio" class="btn-check" name="itemSource" id="sourceInventory"
+                                       checked="@(editingLineItem.Source == LineItemSource.Inventory)"
+                                       @onchange="@(() => ChangeItemSource(LineItemSource.Inventory))" />
+                                <label class="btn btn-outline-primary" for="sourceInventory">
+                                    <i class="bi bi-box-seam me-1"></i>From Inventory
+                                </label>
+                            </div>
+                        </div>
+
+                        @if (editingLineItem.Source == LineItemSource.Inventory)
+                        {
+                            <!-- Inventory Item Selection -->
+                            <div class="mb-3">
+                                <label class="form-label">Select Inventory Item *</label>
+                                <select class="form-select" @onchange="OnInventoryItemSelected">
+                                    <option value="">-- Select Item --</option>
+                                    @foreach (var item in inventoryItems)
+                                    {
+                                        <option value="@item.Id" selected="@(editingLineItem.SourceId == item.Id)">
+                                            @item.Name (@item.QuantityOnHand @item.Unit available) - @item.Price.ToString("C")
+                                        </option>
+                                    }
+                                </select>
+                                <small class="text-muted">Items shown: Name (Stock) - Price</small>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <!-- Employee Selection for Labor -->
+                        <div class="mb-3">
+                            <label class="form-label">Employee (Optional)</label>
+                            <select class="form-select" @onchange="OnEmployeeSelected">
+                                <option value="">-- No Employee (Use Default Rate) --</option>
+                                @foreach (var emp in employees)
+                                {
+                                    <option value="@emp.Id" selected="@(editingLineItem.SourceId == emp.Id)">
+                                        @emp.DisplayName @(!SettingsStorage.GetBool("HideEmployeeRatesOnInvoice", false) ? $" - {emp.PayRate:C}/hr" : "")
+                                    </option>
+                                }
+                            </select>
+                            <small class="text-muted">Select an employee to auto-fill their hourly rate</small>
+                        </div>
+                    }
+
                     <div class="row g-3">
                         <div class="col-12">
                             <label class="form-label">Description *</label>
-                            <input type="text" class="form-control" @bind="editingLineItem.Description" placeholder="Item description" />
+                            <input type="text" class="form-control" @bind="editingLineItem.Description" 
+                                   placeholder="@(editingLineItem.Source == LineItemSource.Labor ? "Labor description (e.g., Installation, Repairs)" : "Item description")" 
+                                   disabled="@(editingLineItem.Source == LineItemSource.Inventory && editingLineItem.SourceId.HasValue)" />
+                            @if (editingLineItem.Source == LineItemSource.Inventory && editingLineItem.SourceId.HasValue)
+                            {
+                                <small class="text-muted">Description is auto-filled from inventory</small>
+                            }
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Quantity *</label>
-                            <input type="number" class="form-control" @bind="editingLineItem.Quantity" step="0.01" min="0" />
+                            <label class="form-label">@(editingLineItem.Source == LineItemSource.Labor ? "Hours" : "Quantity") *</label>
+                            <input type="number" class="form-control" @bind="editingLineItem.Quantity" step="0.01" min="0" @oninput="UpdateLineItemTotal" />
+                            @if (editingLineItem.Source == LineItemSource.Inventory && selectedInventoryItem != null)
+                            {
+                                <small class="text-muted">Available: @selectedInventoryItem.QuantityOnHand @selectedInventoryItem.Unit</small>
+                            }
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Unit Price *</label>
-                            <input type="number" class="form-control" @bind="editingLineItem.UnitPrice" step="0.01" min="0" />
+                            <label class="form-label">@(editingLineItem.Source == LineItemSource.Labor ? "Rate/Hour" : "Unit Price") *</label>
+                            <input type="number" class="form-control" @bind="editingLineItem.UnitPrice" step="0.01" min="0" @oninput="UpdateLineItemTotal" />
+                            @if (editingLineItem.Source == LineItemSource.Inventory && editingLineItem.SourceId.HasValue)
+                            {
+                                <small class="text-muted">Price from inventory (editable)</small>
+                            }
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Total</label>
-                            <input type="text" class="form-control" value="@((editingLineItem.Quantity * editingLineItem.UnitPrice).ToString("C"))" disabled />
+                            <input type="text" class="form-control bg-light fw-bold" value="@((editingLineItem.Quantity * editingLineItem.UnitPrice).ToString("C"))" disabled />
                         </div>
                         <div class="col-12">
                             <label class="form-label">Notes</label>
@@ -305,7 +459,7 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" @onclick="CancelLineItemEdit">Cancel</button>
                     <button type="button" class="btn btn-primary" @onclick="SaveLineItem" disabled="@(string.IsNullOrWhiteSpace(editingLineItem.Description))">
-                        <i class="bi bi-check-circle me-2"></i>Save Item
+                        <i class="bi bi-check-circle me-2"></i>Save @(editingLineItem.Source == LineItemSource.Labor ? "Labor" : "Item")
                     </button>
                 </div>
             </div>
@@ -323,13 +477,32 @@
     private string errorMessage = "";
     private Invoice model = new();
     private List<Customer> customers = new();
+    private List<InventoryItem> inventoryItems = new();
+    private List<Employee> employees = new();
+    private InventoryItem? selectedInventoryItem = null;
+    private Employee? selectedEmployee = null;
     private List<InvoiceLineItem> lineItems = new();
+    private List<InvoiceLineItem> laborItems = new();
     private InvoiceLineItem? editingLineItem = null;
     private bool showLineItemModal = false;
+    private decimal defaultTaxRate = 7.0m; // Store global default for reference
+    private decimal defaultLaborRate = 75.0m;
+
+    // Calculated properties
+    private decimal CalculatedSubtotal => lineItems.Sum(i => i.Total) + laborItems.Sum(i => i.Total);
+    private decimal CalculatedTaxAmount => model.TaxIncluded ? 0 : CalculatedSubtotal * (model.TaxRate / 100);
+    private decimal CalculatedTotal => CalculatedSubtotal + CalculatedTaxAmount;
 
     protected override async Task OnInitializedAsync()
     {
         await LoadCustomersAsync();
+        await LoadInventoryAsync();
+        await LoadEmployeesAsync();
+        
+        // Get default tax rate from settings
+        defaultTaxRate = SettingsStorage.GetDecimal("DefaultTaxRate", 7.0m);
+        defaultLaborRate = SettingsStorage.GetDecimal("DefaultLaborRate", 75.0m);
+        var defaultPaymentDays = SettingsStorage.GetInt("DefaultPaymentTermsDays", 30);
         
         if (IsNew)
         {
@@ -338,7 +511,9 @@
                 InvoiceNumber = $"INV-{DateTime.Now:yyyyMMddHHmmss}", // Temporary, regenerated on save
                 Status = InvoiceStatus.Draft,
                 InvoiceDate = DateTime.Today,
-                DueDate = DateTime.Today.AddDays(30)
+                DueDate = DateTime.Today.AddDays(defaultPaymentDays),
+                TaxRate = defaultTaxRate,
+                TaxIncluded = SettingsStorage.GetBool("TaxIncludedByDefault", false) // Use setting
             };
             isLoading = false;
         }
@@ -358,6 +533,27 @@
             .ToListAsync();
     }
 
+    private async Task LoadInventoryAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        inventoryItems = await db.InventoryItems
+            .Where(i => i.QuantityOnHand > 0) // Only show in-stock items
+            .OrderBy(i => i.Name)
+            .AsNoTracking()
+            .ToListAsync();
+    }
+
+    private async Task LoadEmployeesAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        employees = await db.Employees
+            .Where(e => e.Status == EmployeeStatus.Active)
+            .OrderBy(e => e.FirstName)
+            .ThenBy(e => e.LastName)
+            .AsNoTracking()
+            .ToListAsync();
+    }
+
     private async Task LoadInvoiceAsync()
     {
         try
@@ -371,7 +567,11 @@
             if (invoice != null)
             {
                 model = invoice;
-                lineItems = invoice.LineItems?.ToList() ?? new();
+                var allItems = invoice.LineItems?.ToList() ?? new();
+                
+                // Separate parts and labor
+                lineItems = allItems.Where(i => i.Source != LineItemSource.Labor).ToList();
+                laborItems = allItems.Where(i => i.Source == LineItemSource.Labor).ToList();
             }
         }
         catch (Exception ex)
@@ -393,17 +593,10 @@
 
             await using var db = await DbFactory.CreateDbContextAsync();
 
-            // Calculate totals from line items
-            model.SubTotal = lineItems.Sum(i => i.Total);
-            if (!model.TaxIncluded)
-            {
-                model.TaxAmount = model.SubTotal * (model.TaxRate / 100);
-            }
-            else
-            {
-                model.TaxAmount = 0;
-            }
-            model.Total = model.SubTotal + model.TaxAmount;
+            // Use calculated totals from line items
+            model.SubTotal = CalculatedSubtotal;
+            model.TaxAmount = CalculatedTaxAmount;
+            model.Total = CalculatedTotal;
 
             if (IsNew)
             {
@@ -415,28 +608,41 @@
                 db.Invoices.Add(model);
                 await db.SaveChangesAsync(); // Save invoice first to get ID
 
-                // Add line items
-                foreach (var item in lineItems)
+                // Combine and add all line items
+                var allItems = lineItems.Concat(laborItems).ToList();
+                foreach (var item in allItems)
                 {
                     item.InvoiceId = model.Id;
                     item.CreatedAt = DateTime.UtcNow;
                     db.InvoiceLineItems.Add(item);
                 }
                 await db.SaveChangesAsync();
+
+                // Send notification email if not draft
+                if (model.Status != InvoiceStatus.Draft)
+                {
+                    _ = NotificationService.SendInvoiceCreatedAsync(model);
+                }
+
+                // Auto-create employee time logs from labor items
+                await TimeLogAutoService.CreateTimeLogsFromInvoiceAsync(model.Id);
             }
             else
             {
                 db.Invoices.Update(model);
                 
+                // Combine all items
+                var allItems = lineItems.Concat(laborItems).ToList();
+                
                 // Delete removed line items
-                var existingIds = lineItems.Where(i => i.Id > 0).Select(i => i.Id).ToList();
+                var existingIds = allItems.Where(i => i.Id > 0).Select(i => i.Id).ToList();
                 var toDelete = await db.InvoiceLineItems
                     .Where(i => i.InvoiceId == model.Id && !existingIds.Contains(i.Id))
                     .ToListAsync();
                 db.InvoiceLineItems.RemoveRange(toDelete);
 
                 // Update/add line items
-                foreach (var item in lineItems)
+                foreach (var item in allItems)
                 {
                     item.InvoiceId = model.Id;
                     if (item.Id > 0)
@@ -451,6 +657,9 @@
                 }
                 
                 await db.SaveChangesAsync();
+
+                // Update employee time logs
+                await TimeLogAutoService.UpdateTimeLogsFromInvoiceAsync(model.Id);
             }
 
             Navigation.NavigateTo(IsNew ? "/invoices" : $"/invoices/{model.Id}");
@@ -578,7 +787,8 @@
         editingLineItem = new InvoiceLineItem
         {
             Quantity = 1,
-            UnitPrice = 0
+            UnitPrice = 0,
+            Source = LineItemSource.Custom
         };
         showLineItemModal = true;
     }
@@ -592,27 +802,143 @@
     private void DeleteLineItem(InvoiceLineItem item)
     {
         lineItems.Remove(item);
+        StateHasChanged(); // Trigger recalculation
+    }
+
+    // Labor Item Management
+    private void AddLaborItem()
+    {
+        editingLineItem = new InvoiceLineItem
+        {
+            Quantity = 1,
+            UnitPrice = defaultLaborRate, // Use default from settings
+            Source = LineItemSource.Labor
+        };
+        showLineItemModal = true;
+    }
+
+    private void EditLaborItem(InvoiceLineItem item)
+    {
+        editingLineItem = item;
+        showLineItemModal = true;
+    }
+
+    private void DeleteLaborItem(InvoiceLineItem item)
+    {
+        laborItems.Remove(item);
+        StateHasChanged(); // Trigger recalculation
     }
 
     private void SaveLineItem()
     {
         if (editingLineItem == null) return;
 
-        // Total is calculated property, no need to set it
-
-        // Add to list if new
-        if (!lineItems.Contains(editingLineItem))
+        // Add to appropriate list if new
+        if (editingLineItem.Source == LineItemSource.Labor)
         {
-            lineItems.Add(editingLineItem);
+            if (!laborItems.Contains(editingLineItem))
+            {
+                laborItems.Add(editingLineItem);
+            }
+        }
+        else
+        {
+            if (!lineItems.Contains(editingLineItem))
+            {
+                lineItems.Add(editingLineItem);
+            }
         }
 
-        showLineItemModal = false;
-        editingLineItem = null;
+        CancelLineItemEdit();
+        StateHasChanged(); // Trigger recalculation
+    }
+
+    private void UpdateLineItemTotal()
+    {
+        // This is called on input to trigger a re-render showing the updated total
+        StateHasChanged();
+    }
+
+    private void RecalculateTotals()
+    {
+        StateHasChanged(); // Recalculate displayed totals
+    }
+
+    private void ResetToGlobalTaxRate()
+    {
+        model.TaxRate = defaultTaxRate;
+        StateHasChanged();
+    }
+
+    private void ChangeItemSource(string newSource)
+    {
+        if (editingLineItem == null) return;
+        
+        editingLineItem.Source = newSource;
+        
+        // Clear inventory-specific fields when switching to custom
+        if (newSource == LineItemSource.Custom)
+        {
+            editingLineItem.SourceId = null;
+            selectedInventoryItem = null;
+        }
+        
+        StateHasChanged();
+    }
+
+    private void OnInventoryItemSelected(ChangeEventArgs e)
+    {
+        if (editingLineItem == null || string.IsNullOrEmpty(e.Value?.ToString())) return;
+        
+        var itemId = int.Parse(e.Value.ToString()!);
+        selectedInventoryItem = inventoryItems.FirstOrDefault(i => i.Id == itemId);
+        
+        if (selectedInventoryItem != null)
+        {
+            editingLineItem.SourceId = selectedInventoryItem.Id;
+            editingLineItem.Description = selectedInventoryItem.Name;
+            editingLineItem.UnitPrice = selectedInventoryItem.Price;
+            editingLineItem.Quantity = 1; // Default quantity
+            
+            StateHasChanged();
+        }
+    }
+
+    private void OnEmployeeSelected(ChangeEventArgs e)
+    {
+        if (editingLineItem == null) return;
+        
+        if (string.IsNullOrEmpty(e.Value?.ToString()))
+        {
+            // No employee selected - use default
+            editingLineItem.SourceId = null;
+            editingLineItem.UnitPrice = defaultLaborRate;
+            selectedEmployee = null;
+        }
+        else
+        {
+            var empId = int.Parse(e.Value.ToString()!);
+            selectedEmployee = employees.FirstOrDefault(emp => emp.Id == empId);
+            
+            if (selectedEmployee != null)
+            {
+                editingLineItem.SourceId = selectedEmployee.Id;
+                editingLineItem.UnitPrice = selectedEmployee.PayRate;
+            }
+        }
+        
+        StateHasChanged();
     }
 
     private void CancelLineItemEdit()
     {
         showLineItemModal = false;
         editingLineItem = null;
+        selectedInventoryItem = null;
+        selectedEmployee = null;
     }
 }
+
+
+
+

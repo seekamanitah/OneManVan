@@ -1,19 +1,40 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using OneManVan.Web.Data;
 
 namespace OneManVan.Web.Services;
 
 /// <summary>
-/// Seeds the database with default admin user for development.
+/// Seeds the database with admin user from environment configuration.
+/// In production, admin accounts should be created through a secure setup wizard.
 /// </summary>
 public static class AdminAccountSeeder
 {
+    private static bool _hasRun = false;
+    
     public static async Task SeedAdminUserAsync(IServiceProvider serviceProvider)
     {
+        // Skip if already run this session (optimization)
+        if (_hasRun) return;
+        
         var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+        var logger = serviceProvider.GetService<ILogger<Program>>();
+        
+        // Get admin credentials from configuration (environment variables or appsettings)
+        var adminEmail = configuration["AdminUser:Email"];
+        var adminPassword = configuration["AdminUser:Password"];
+        
+        // Skip seeding if no admin credentials configured
+        if (string.IsNullOrEmpty(adminEmail) || string.IsNullOrEmpty(adminPassword))
+        {
+            logger?.LogInformation("Admin user seeding skipped - no credentials configured. Set AdminUser:Email and AdminUser:Password in environment or configuration.");
+            _hasRun = true;
+            return;
+        }
         
         // Check if admin already exists
-        var adminEmail = "admin@onemanvan.com";
         var existingAdmin = await userManager.FindByEmailAsync(adminEmail);
         
         if (existingAdmin == null)
@@ -23,27 +44,22 @@ public static class AdminAccountSeeder
             {
                 UserName = adminEmail,
                 Email = adminEmail,
-                EmailConfirmed = true // Auto-confirm for dev
+                EmailConfirmed = true
             };
             
-            var result = await userManager.CreateAsync(adminUser, "Admin123!");
+            var result = await userManager.CreateAsync(adminUser, adminPassword);
             
             if (result.Succeeded)
             {
-                Console.WriteLine($"? Default admin account created: {adminEmail} / Admin123!");
+                logger?.LogInformation("Admin account created successfully.");
             }
             else
             {
-                Console.WriteLine($"?? Failed to create admin account:");
-                foreach (var error in result.Errors)
-                {
-                    Console.WriteLine($"   - {error.Description}");
-                }
+                logger?.LogWarning("Failed to create admin account: {Errors}", 
+                    string.Join(", ", result.Errors.Select(e => e.Description)));
             }
         }
-        else
-        {
-            Console.WriteLine($"?? Admin account already exists: {adminEmail}");
-        }
+        
+        _hasRun = true;
     }
 }

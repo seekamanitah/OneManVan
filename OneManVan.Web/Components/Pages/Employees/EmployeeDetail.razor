@@ -1,0 +1,529 @@
+@page "/employees/{Id:int}"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@using OneManVan.Shared.Models.Enums
+@using OneManVan.Shared.Services
+@inject EmployeeService EmployeeService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<PageTitle>@(employee?.DisplayName ?? "Employee") - OneManVan</PageTitle>
+
+<div class="container-fluid py-4">
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary"></div>
+        </div>
+    }
+    else if (employee == null)
+    {
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>Employee not found
+        </div>
+    }
+    else
+    {
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-start mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/employees">Employees</a></li>
+                        <li class="breadcrumb-item active">@employee.DisplayName</li>
+                    </ol>
+                </nav>
+                <div class="d-flex align-items-center">
+                    <div class="avatar-circle bg-primary bg-opacity-10 text-primary me-3" style="width: 60px; height: 60px; font-size: 24px;">
+                        @if (employee.IsSubcontractor)
+                        {
+                            <i class="bi bi-building"></i>
+                        }
+                        else
+                        {
+                            <span>@employee.FirstName[0]@employee.LastName[0]</span>
+                        }
+                    </div>
+                    <div>
+                        <h1 class="h2 mb-1">@employee.DisplayName</h1>
+                        <span class="badge @GetTypeBadge(employee.Type) me-2">@employee.TypeDisplay</span>
+                        <span class="badge @GetStatusBadge(employee.Status)">@employee.StatusDisplay</span>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary" @onclick="GoBack">
+                    <i class="bi bi-arrow-left me-2"></i>Back
+                </button>
+                <a href="/employees/@Id/edit" class="btn btn-primary">
+                    <i class="bi bi-pencil me-2"></i>Edit
+                </a>
+            </div>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <div class="h3 text-primary mb-0">@ytdHours.ToString("N1")</div>
+                        <small class="text-muted">YTD Hours</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <div class="h3 text-success mb-0">$@ytdPay.ToString("N0")</div>
+                        <small class="text-muted">YTD Paid</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <div class="h3 text-info mb-0">@unpaidHours.ToString("N1")</div>
+                        <small class="text-muted">Unpaid Hours</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <div class="h3 text-warning mb-0">@employee.TenureDisplay</div>
+                        <small class="text-muted">Tenure</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <ul class="nav nav-tabs mb-4">
+            <li class="nav-item">
+                <button class="nav-link @(activeTab == "overview" ? "active" : "")" @onclick='() => activeTab = "overview"'>
+                    <i class="bi bi-info-circle me-2"></i>Overview
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link @(activeTab == "timelog" ? "active" : "")" @onclick='() => activeTab = "timelog"'>
+                    <i class="bi bi-clock me-2"></i>Time Log
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link @(activeTab == "performance" ? "active" : "")" @onclick='() => activeTab = "performance"'>
+                    <i class="bi bi-star me-2"></i>Performance
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link @(activeTab == "payments" ? "active" : "")" @onclick='() => activeTab = "payments"'>
+                    <i class="bi bi-currency-dollar me-2"></i>Payments
+                </button>
+            </li>
+        </ul>
+
+        <!-- Tab Content -->
+        @if (activeTab == "overview")
+        {
+            <div class="row g-4">
+                <!-- Contact Info -->
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0"><i class="bi bi-telephone me-2"></i>Contact Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                @if (!string.IsNullOrEmpty(employee.Phone))
+                                {
+                                    <div class="col-12">
+                                        <label class="text-muted small">Phone</label>
+                                        <div><a href="tel:@employee.Phone">@employee.Phone</a></div>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(employee.Email))
+                                {
+                                    <div class="col-12">
+                                        <label class="text-muted small">Email</label>
+                                        <div><a href="mailto:@employee.Email">@employee.Email</a></div>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(employee.Address))
+                                {
+                                    <div class="col-12">
+                                        <label class="text-muted small">Address</label>
+                                        <div>@employee.Address</div>
+                                        <div>@employee.City, @employee.State @employee.ZipCode</div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pay Info -->
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0"><i class="bi bi-currency-dollar me-2"></i>Pay Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-6">
+                                    <label class="text-muted small">Pay Rate</label>
+                                    <div class="fw-bold">@employee.PayRateDisplay</div>
+                                </div>
+                                <div class="col-6">
+                                    <label class="text-muted small">Payment Method</label>
+                                    <div>@employee.PaymentMethod</div>
+                                </div>
+                                <div class="col-6">
+                                    <label class="text-muted small">OT Multiplier</label>
+                                    <div>@employee.OvertimeMultiplier x</div>
+                                </div>
+                                <div class="col-6">
+                                    <label class="text-muted small">OT Threshold</label>
+                                    <div>@employee.OvertimeThresholdHours hrs/week</div>
+                                </div>
+                                <div class="col-6">
+                                    <label class="text-muted small">PTO Balance</label>
+                                    <div>@employee.PtoBalanceHours hrs</div>
+                                </div>
+                                @if (employee.LastPaidDate.HasValue)
+                                {
+                                    <div class="col-6">
+                                        <label class="text-muted small">Last Paid</label>
+                                        <div>@employee.LastPaidDate.Value.ToString("MMM dd, yyyy")</div>
+                                        <div class="text-success">$@employee.LastPaidAmount?.ToString("N2")</div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Compliance -->
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0"><i class="bi bi-file-earmark-check me-2"></i>Documents & Compliance</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-2">
+                                <div class="col-4">
+                                    <span class="badge @(employee.HasW4 ? "bg-success" : "bg-secondary")">
+                                        <i class="bi @(employee.HasW4 ? "bi-check" : "bi-x") me-1"></i>W-4
+                                    </span>
+                                </div>
+                                <div class="col-4">
+                                    <span class="badge @(employee.HasI9 ? "bg-success" : "bg-secondary")">
+                                        <i class="bi @(employee.HasI9 ? "bi-check" : "bi-x") me-1"></i>I-9
+                                    </span>
+                                </div>
+                                <div class="col-4">
+                                    <span class="badge @(employee.Has1099Setup ? "bg-success" : "bg-secondary")">
+                                        <i class="bi @(employee.Has1099Setup ? "bi-check" : "bi-x") me-1"></i>W-9
+                                    </span>
+                                </div>
+                            </div>
+                            @if (employee.BackgroundCheckDate.HasValue)
+                            {
+                                <div class="mt-3">
+                                    <label class="text-muted small">Background Check</label>
+                                    <div>@employee.BackgroundCheckDate.Value.ToString("MMM dd, yyyy") - @employee.BackgroundCheckResult</div>
+                                </div>
+                            }
+                            @if (employee.DrugTestDate.HasValue)
+                            {
+                                <div class="mt-2">
+                                    <label class="text-muted small">Drug Test</label>
+                                    <div>@employee.DrugTestDate.Value.ToString("MMM dd, yyyy") - @employee.DrugTestResult</div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Emergency Contact -->
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0"><i class="bi bi-heart-pulse me-2"></i>Emergency Contact</h5>
+                        </div>
+                        <div class="card-body">
+                            @if (!string.IsNullOrEmpty(employee.EmergencyContactName))
+                            {
+                                <div class="fw-medium">@employee.EmergencyContactName</div>
+                                <div class="text-muted">@employee.EmergencyContactRelationship</div>
+                                <a href="tel:@employee.EmergencyContactPhone">@employee.EmergencyContactPhone</a>
+                            }
+                            else
+                            {
+                                <span class="text-muted">No emergency contact on file</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else if (activeTab == "timelog")
+        {
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3 d-flex justify-content-between">
+                    <h5 class="mb-0">Time Log</h5>
+                    <button class="btn btn-success btn-sm" @onclick="ShowAddTimeLog">
+                        <i class="bi bi-plus-circle me-2"></i>Log Time
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    @if (!timeLogs.Any())
+                    {
+                        <div class="text-center py-4 text-muted">No time entries recorded</div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Hours</th>
+                                        <th>Job</th>
+                                        <th>Notes</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var log in timeLogs)
+                                    {
+                                        <tr>
+                                            <td>@log.Date.ToString("MMM dd, yyyy")</td>
+                                            <td>
+                                                @log.HoursWorked hrs
+                                                @if (log.IsOvertime)
+                                                {
+                                                    <span class="badge bg-warning text-dark ms-1">OT</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (log.Job != null)
+                                                {
+                                                    <a href="/jobs/@log.JobId">@log.Job.Title</a>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">-</span>
+                                                }
+                                            </td>
+                                            <td>@(log.Notes ?? "-")</td>
+                                            <td>
+                                                @if (log.IsPaid)
+                                                {
+                                                    <span class="badge bg-success">Paid</span>
+                                                }
+                                                else if (log.IsApproved)
+                                                {
+                                                    <span class="badge bg-info">Approved</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">Pending</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+        else if (activeTab == "performance")
+        {
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3 d-flex justify-content-between">
+                    <h5 class="mb-0">Performance Notes</h5>
+                    <button class="btn btn-success btn-sm" @onclick="ShowAddPerformanceNote">
+                        <i class="bi bi-plus-circle me-2"></i>Add Note
+                    </button>
+                </div>
+                <div class="card-body">
+                    @if (!performanceNotes.Any())
+                    {
+                        <div class="text-center py-4 text-muted">No performance notes recorded</div>
+                    }
+                    else
+                    {
+                        <div class="timeline">
+                            @foreach (var note in performanceNotes)
+                            {
+                                <div class="timeline-item mb-3 pb-3 border-bottom">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <span class="badge @GetCategoryBadge(note.Category) me-2">@note.CategoryDisplay</span>
+                                            @if (note.Rating.HasValue)
+                                            {
+                                                <span class="text-warning">@(new string('*', note.Rating.Value))</span>
+                                            }
+                                        </div>
+                                        <small class="text-muted">@note.Date.ToString("MMM dd, yyyy")</small>
+                                    </div>
+                                    <p class="mb-1 mt-2">@note.Note</p>
+                                    @if (note.Job != null)
+                                    {
+                                        <small class="text-muted">Job: <a href="/jobs/@note.JobId">@note.Job.Title</a></small>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+        else if (activeTab == "payments")
+        {
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0">Payment History</h5>
+                </div>
+                <div class="card-body p-0">
+                    @if (!payments.Any())
+                    {
+                        <div class="text-center py-4 text-muted">No payments recorded</div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Period</th>
+                                        <th>Hours</th>
+                                        <th>Gross</th>
+                                        <th>Net</th>
+                                        <th>Method</th>
+                                        <th>Ref #</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var pay in payments)
+                                    {
+                                        <tr>
+                                            <td>@pay.PayDate.ToString("MMM dd, yyyy")</td>
+                                            <td>@pay.PeriodDisplay</td>
+                                            <td>@pay.TotalHours hrs</td>
+                                            <td>$@pay.GrossAmount.ToString("N2")</td>
+                                            <td class="fw-bold text-success">$@pay.NetAmount.ToString("N2")</td>
+                                            <td>@pay.PaymentMethodDisplay</td>
+                                            <td>@(pay.ReferenceNumber ?? "-")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<!-- Performance Note Modal -->
+<AddPerformanceNoteModal 
+    EmployeeId="@Id" 
+    @bind-IsVisible="showPerformanceNoteModal" 
+    OnNoteSaved="OnPerformanceNoteSaved" />
+
+<style>
+    .avatar-circle {
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+    }
+</style>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private Employee? employee;
+    private List<EmployeeTimeLog> timeLogs = new();
+    private List<EmployeePerformanceNote> performanceNotes = new();
+    private List<EmployeePayment> payments = new();
+    private decimal ytdHours, ytdPay, unpaidHours;
+    private bool isLoading = true;
+    private string activeTab = "overview";
+    private bool showPerformanceNoteModal = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        isLoading = true;
+        employee = await EmployeeService.GetByIdAsync(Id);
+        
+        if (employee != null)
+        {
+            timeLogs = await EmployeeService.GetTimeLogsAsync(Id);
+            performanceNotes = await EmployeeService.GetPerformanceNotesAsync(Id);
+            payments = await EmployeeService.GetPaymentsAsync(Id);
+            ytdHours = await EmployeeService.GetYtdHoursAsync(Id);
+            ytdPay = await EmployeeService.GetYtdPayAsync(Id);
+            unpaidHours = await EmployeeService.GetUnpaidHoursAsync(Id);
+        }
+        
+        isLoading = false;
+    }
+
+    private void GoBack() => Navigation.NavigateTo("/employees");
+
+    private void ShowAddTimeLog()
+    {
+        Navigation.NavigateTo($"/employees/{Id}/log-time");
+    }
+
+    private void ShowAddPerformanceNote()
+    {
+        showPerformanceNoteModal = true;
+    }
+
+    private async Task OnPerformanceNoteSaved(EmployeePerformanceNote note)
+    {
+        // Reload performance notes
+        performanceNotes = await EmployeeService.GetPerformanceNotesAsync(Id);
+        StateHasChanged();
+    }
+
+    private string GetStatusBadge(EmployeeStatus s) => s switch
+    {
+        EmployeeStatus.Active => "bg-success",
+        EmployeeStatus.Inactive => "bg-secondary",
+        EmployeeStatus.Terminated => "bg-danger",
+        EmployeeStatus.OnLeave => "bg-warning text-dark",
+        _ => "bg-secondary"
+    };
+
+    private string GetTypeBadge(EmployeeType t) => t switch
+    {
+        EmployeeType.FullTime => "bg-primary",
+        EmployeeType.PartTime => "bg-info",
+        EmployeeType.Contractor1099 => "bg-warning text-dark",
+        EmployeeType.SubcontractorCompany => "bg-dark",
+        _ => "bg-secondary"
+    };
+
+    private string GetCategoryBadge(PerformanceCategory c) => c switch
+    {
+        PerformanceCategory.Positive => "bg-success",
+        PerformanceCategory.Issue => "bg-danger",
+        PerformanceCategory.Quality => "bg-primary",
+        PerformanceCategory.Reliability => "bg-info",
+        _ => "bg-secondary"
+    };
+}

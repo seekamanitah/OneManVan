@@ -68,11 +68,30 @@ public class OneManVanDbContext : DbContext
     public DbSet<CustomerDocument> CustomerDocuments => Set<CustomerDocument>();
     public DbSet<CustomerNote> CustomerNotes => Set<CustomerNote>();
     
+    // Document Library (service manuals, technical guides, business templates)
+    public DbSet<Document> Documents => Set<Document>();
+    
+    // Employees & Contractors
+    public DbSet<Employee> Employees => Set<Employee>();
+    public DbSet<EmployeeTimeLog> EmployeeTimeLogs => Set<EmployeeTimeLog>();
+    public DbSet<EmployeePerformanceNote> EmployeePerformanceNotes => Set<EmployeePerformanceNote>();
+    public DbSet<EmployeePayment> EmployeePayments => Set<EmployeePayment>();
+    
     // Service Agreements
     public DbSet<ServiceAgreement> ServiceAgreements => Set<ServiceAgreement>();
     
     // Quick Notes (standalone notes/reminders)
     public DbSet<QuickNote> QuickNotes => Set<QuickNote>();
+    
+    // Company Settings (singleton - branding, contact info for documents)
+    public DbSet<CompanySettings> CompanySettings => Set<CompanySettings>();
+    
+    // Material Lists (HVAC job bidding and material tracking)
+    public DbSet<MaterialList> MaterialLists => Set<MaterialList>();
+    public DbSet<MaterialListSystem> MaterialListSystems => Set<MaterialListSystem>();
+    public DbSet<MaterialListItem> MaterialListItems => Set<MaterialListItem>();
+    public DbSet<MaterialListTemplate> MaterialListTemplates => Set<MaterialListTemplate>();
+    public DbSet<MaterialListTemplateItem> MaterialListTemplateItems => Set<MaterialListTemplateItem>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -764,6 +783,135 @@ public class OneManVanDbContext : DbContext
                 .HasForeignKey(e => e.JobId)
                 .OnDelete(DeleteBehavior.SetNull);
         });
+
+        // =====================
+        // MaterialList configuration
+        // =====================
+        modelBuilder.Entity<MaterialList>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.ListNumber).IsUnique();
+            entity.HasIndex(e => e.CustomerId);
+            entity.HasIndex(e => e.SiteId);
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.CreatedAt);
+
+            entity.HasOne(e => e.Customer)
+                .WithMany()
+                .HasForeignKey(e => e.CustomerId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Site)
+                .WithMany()
+                .HasForeignKey(e => e.SiteId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.Job)
+                .WithMany()
+                .HasForeignKey(e => e.JobId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.Estimate)
+                .WithMany()
+                .HasForeignKey(e => e.EstimateId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasMany(e => e.Systems)
+                .WithOne(s => s.MaterialList)
+                .HasForeignKey(s => s.MaterialListId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasMany(e => e.Items)
+                .WithOne(i => i.MaterialList)
+                .HasForeignKey(i => i.MaterialListId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.Ignore(e => e.IsFinalized);
+            entity.Ignore(e => e.HasMultipleSystems);
+            entity.Ignore(e => e.TotalItemCount);
+            entity.Ignore(e => e.StatusDisplay);
+        });
+
+        // =====================
+        // MaterialListSystem configuration
+        // =====================
+        modelBuilder.Entity<MaterialListSystem>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.MaterialListId);
+            entity.HasIndex(e => e.SortOrder);
+
+            entity.HasMany(e => e.Items)
+                .WithOne(i => i.MaterialListSystem)
+                .HasForeignKey(i => i.MaterialListSystemId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.Ignore(e => e.SystemTypeDisplay);
+            entity.Ignore(e => e.DuctSystemDisplay);
+            entity.Ignore(e => e.TotalCost);
+            entity.Ignore(e => e.ItemCount);
+        });
+
+        // =====================
+        // MaterialListItem configuration
+        // =====================
+        modelBuilder.Entity<MaterialListItem>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.MaterialListId);
+            entity.HasIndex(e => e.MaterialListSystemId);
+            entity.HasIndex(e => e.Category);
+            entity.HasIndex(e => e.SortOrder);
+
+            entity.HasOne(e => e.InventoryItem)
+                .WithMany()
+                .HasForeignKey(e => e.InventoryItemId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.Ignore(e => e.TotalCost);
+            entity.Ignore(e => e.CategoryDisplay);
+            entity.Ignore(e => e.DisplayName);
+            entity.Ignore(e => e.QuantityDisplay);
+        });
+
+        // =====================
+        // MaterialListTemplate configuration
+        // =====================
+        modelBuilder.Entity<MaterialListTemplate>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.Name);
+            entity.HasIndex(e => e.SystemType);
+            entity.HasIndex(e => e.IsBuiltIn);
+            entity.HasIndex(e => e.IsActive);
+
+            entity.HasMany(e => e.Items)
+                .WithOne(i => i.Template)
+                .HasForeignKey(i => i.MaterialListTemplateId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.Ignore(e => e.ItemCount);
+            entity.Ignore(e => e.SystemTypeDisplay);
+        });
+
+        // =====================
+        // MaterialListTemplateItem configuration
+        // =====================
+        modelBuilder.Entity<MaterialListTemplateItem>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.MaterialListTemplateId);
+            entity.HasIndex(e => e.Category);
+            entity.HasIndex(e => e.SortOrder);
+
+            entity.HasOne(e => e.InventoryItem)
+                .WithMany()
+                .HasForeignKey(e => e.InventoryItemId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.Ignore(e => e.DisplayName);
+        });
     }
 }
+
 

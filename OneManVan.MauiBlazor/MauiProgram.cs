@@ -50,13 +50,6 @@ public static class MauiProgram
         builder.Services.AddSingleton<TradeConfigurationService>();
         builder.Services.AddScoped<DatabaseInitializer>();
 
-        // HTTP Client for API calls (if needed)
-        builder.Services.AddHttpClient("OneManVanAPI", client =>
-        {
-            // Configure for your API endpoint
-            client.BaseAddress = new Uri("https://your-api-url.com");
-        });
-
         return builder.Build();
     }
 }
@@ -64,23 +57,63 @@ public static class MauiProgram
 // Mobile Settings Storage Implementation
 public class MobileSettingsStorage : ISettingsStorage
 {
-    public Task<string?> GetValueAsync(string key)
+    public string GetString(string key, string defaultValue = "")
     {
-        var value = Preferences.Get(key, null);
-        return Task.FromResult(value);
+        return Preferences.Get(key, defaultValue);
     }
 
-    public Task SetValueAsync(string key, string value)
+    public void SetString(string key, string value)
     {
         Preferences.Set(key, value);
-        return Task.CompletedTask;
     }
 
-    public Task RemoveValueAsync(string key)
+    public bool GetBool(string key, bool defaultValue = false)
+    {
+        return Preferences.Get(key, defaultValue);
+    }
+
+    public void SetBool(string key, bool value)
+    {
+        Preferences.Set(key, value);
+    }
+
+    public int GetInt(string key, int defaultValue = 0)
+    {
+        return Preferences.Get(key, defaultValue);
+    }
+
+    public void SetInt(string key, int value)
+    {
+        Preferences.Set(key, value);
+    }
+
+    public decimal GetDecimal(string key, decimal defaultValue = 0)
+    {
+        var stringValue = Preferences.Get(key, defaultValue.ToString());
+        return decimal.TryParse(stringValue, out var result) ? result : defaultValue;
+    }
+
+    public void SetDecimal(string key, decimal value)
+    {
+        Preferences.Set(key, value.ToString());
+    }
+
+    public void Remove(string key)
     {
         Preferences.Remove(key);
-        return Task.CompletedTask;
     }
+
+    public bool ContainsKey(string key)
+    {
+        return Preferences.ContainsKey(key);
+    }
+
+    public void Clear()
+    {
+        Preferences.Clear();
+    }
+
+    public string AppDataDirectory => FileSystem.AppDataDirectory;
 }
 
 // Database Initializer
@@ -105,7 +138,7 @@ public class DatabaseInitializer
             
             // Get database path for logging
             var dbPath = context.Database.GetDbConnection().DataSource;
-            _logger.LogInformation($"?? Database path: {dbPath}");
+            _logger.LogInformation("Database path: {DbPath}", dbPath);
             
             // Ensure directory exists
             var directory = Path.GetDirectoryName(dbPath);
@@ -114,22 +147,22 @@ public class DatabaseInitializer
                 if (!Directory.Exists(directory))
                 {
                     Directory.CreateDirectory(directory);
-                    _logger.LogInformation($"?? Created directory: {directory}");
+                    _logger.LogInformation("Created directory: {Directory}", directory);
                 }
                 else
                 {
-                    _logger.LogInformation($"? Directory exists: {directory}");
+                    _logger.LogInformation("Directory exists: {Directory}", directory);
                 }
             }
             
             // Ensure database is created
             await context.Database.EnsureCreatedAsync();
             
-            _logger.LogInformation("? Database initialized successfully");
+            _logger.LogInformation("Database initialized successfully");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "? Failed to initialize database");
+            _logger.LogError(ex, "Failed to initialize database");
             throw;
         }
     }

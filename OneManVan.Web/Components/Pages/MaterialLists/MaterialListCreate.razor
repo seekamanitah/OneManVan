@@ -1,0 +1,347 @@
+@page "/material-lists/new"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@using OneManVan.Shared.Models.Enums
+@using OneManVan.Shared.Services
+@inject MaterialListService MaterialListService
+@inject MaterialListTemplateService TemplateService
+@inject IDbContextFactory<OneManVanDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>New Material List - OneManVan</PageTitle>
+
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-1">New Material List</h1>
+            <small class="text-muted">Create a new material list for job bidding</small>
+        </div>
+        <a href="/material-lists" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>Back to Lists
+        </a>
+    </div>
+
+    <!-- Step 1: Customer & Site Selection -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-0 py-3">
+            <h5 class="mb-0"><i class="bi bi-1-circle me-2 text-primary"></i>Customer & Location</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Title *</label>
+                    <input type="text" class="form-control" @bind="model.Title" 
+                           placeholder="e.g., 3-Ton Split System Install - Smith Residence" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Customer *</label>
+                    <select class="form-select" @bind="model.CustomerId" @bind:after="OnCustomerChanged">
+                        <option value="0">-- Select Customer --</option>
+                        @foreach (var customer in customers)
+                        {
+                            <option value="@customer.Id">@customer.DisplayName</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Site (Optional)</label>
+                    <select class="form-select" @bind="model.SiteId">
+                        <option value="">-- Select Site --</option>
+                        @foreach (var site in availableSites)
+                        {
+                            <option value="@site.Id">@site.SiteName - @site.Address</option>
+                        }
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 2: Property Information -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-0 py-3">
+            <h5 class="mb-0"><i class="bi bi-2-circle me-2 text-primary"></i>Property Information</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Square Footage</label>
+                    <input type="number" class="form-control" @bind="model.SquareFootage" placeholder="e.g., 2000" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Zones</label>
+                    <select class="form-select" @bind="model.Zones">
+                        @for (int i = 1; i <= 8; i++)
+                        {
+                            <option value="@i">@i zone@(i > 1 ? "s" : "")</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Stories</label>
+                    <select class="form-select" @bind="model.Stories">
+                        @for (int i = 1; i <= 4; i++)
+                        {
+                            <option value="@i">@i stor@(i > 1 ? "ies" : "y")</option>
+                        }
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 3: Template Selection -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-0 py-3">
+            <h5 class="mb-0"><i class="bi bi-3-circle me-2 text-primary"></i>Start from Template</h5>
+        </div>
+        <div class="card-body">
+            <p class="text-muted mb-3">Select a template to pre-populate material items, or start with a blank list.</p>
+            
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="card h-100 @(selectedTemplateId == null ? "border-primary" : "")" 
+                         style="cursor: pointer;" @onclick="() => selectedTemplateId = null">
+                        <div class="card-body text-center py-4">
+                            <i class="bi bi-file-earmark-plus display-4 text-muted mb-2"></i>
+                            <h6>Blank List</h6>
+                            <small class="text-muted">Start with no items</small>
+                        </div>
+                    </div>
+                </div>
+                
+                @foreach (var template in templates)
+                {
+                    <div class="col-md-4">
+                        <div class="card h-100 @(selectedTemplateId == template.Id ? "border-primary" : "")" 
+                             style="cursor: pointer;" @onclick="() => selectedTemplateId = template.Id">
+                            <div class="card-body text-center py-4">
+                                <i class="bi bi-clipboard-data display-4 text-primary mb-2"></i>
+                                <h6>@template.Name</h6>
+                                <small class="text-muted">@template.ItemCount items</small>
+                                <br />
+                                <span class="badge bg-secondary mt-2">@template.SystemTypeDisplay</span>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 4: System Configuration -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-4-circle me-2 text-primary"></i>System Configuration</h5>
+            @if (systems.Count > 0)
+            {
+                <button class="btn btn-sm btn-outline-primary" @onclick="AddSystem">
+                    <i class="bi bi-plus"></i> Add System
+                </button>
+            }
+        </div>
+        <div class="card-body">
+            @if (systems.Count == 0)
+            {
+                <div class="text-center py-4">
+                    <p class="text-muted">No systems configured. Add your first system.</p>
+                    <button class="btn btn-primary" @onclick="AddSystem">
+                        <i class="bi bi-plus-circle me-2"></i>Add System
+                    </button>
+                </div>
+            }
+            else
+            {
+                @foreach (var system in systems)
+                {
+                    <div class="card mb-3 @(systems.Count > 1 ? "border" : "border-0 bg-light")">
+                        <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                            <div>
+                                <input type="text" class="form-control form-control-sm d-inline-block" 
+                                       style="width: 200px;" @bind="system.Name" />
+                            </div>
+                            @if (systems.Count > 1)
+                            {
+                                <button class="btn btn-sm btn-outline-danger" @onclick="() => RemoveSystem(system)">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            }
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label class="form-label">System Type</label>
+                                    <select class="form-select form-select-sm" @bind="system.SystemType">
+                                        <option value="@HvacSystemType.SplitSystem">Split System</option>
+                                        <option value="@HvacSystemType.HeatPump">Heat Pump</option>
+                                        <option value="@HvacSystemType.GasFurnace">Gas Furnace</option>
+                                        <option value="@HvacSystemType.PackageUnit">Package Unit</option>
+                                        <option value="@HvacSystemType.MiniSplit">Mini-Split</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Duct System</label>
+                                    <select class="form-select form-select-sm" @bind="system.IsTrunkSystem">
+                                        <option value="false">Spider/Radial</option>
+                                        <option value="true">Trunk & Branch</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Tonnage</label>
+                                    <select class="form-select form-select-sm" @bind="system.Tonnage">
+                                        <option value="">--</option>
+                                        <option value="1.5">1.5 Ton</option>
+                                        <option value="2">2 Ton</option>
+                                        <option value="2.5">2.5 Ton</option>
+                                        <option value="3">3 Ton</option>
+                                        <option value="3.5">3.5 Ton</option>
+                                        <option value="4">4 Ton</option>
+                                        <option value="5">5 Ton</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Square Footage</label>
+                                    <input type="number" class="form-control form-control-sm" @bind="system.SquareFootage" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-0 py-3">
+            <h5 class="mb-0"><i class="bi bi-5-circle me-2 text-primary"></i>Notes</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Notes (shown to customer)</label>
+                    <textarea class="form-control" @bind="model.Notes" rows="3" 
+                              placeholder="General notes about the job..."></textarea>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Internal Notes</label>
+                    <textarea class="form-control" @bind="model.InternalNotes" rows="3" 
+                              placeholder="Notes for internal use only..."></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="d-flex justify-content-between">
+        <a href="/material-lists" class="btn btn-outline-secondary">
+            <i class="bi bi-x-circle me-2"></i>Cancel
+        </a>
+        <div>
+            <button class="btn btn-primary" @onclick="CreateAndEdit" disabled="@(!IsValid)">
+                <i class="bi bi-check-circle me-2"></i>Create & Add Materials
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private MaterialList model = new()
+    {
+        Zones = 1,
+        Stories = 1
+    };
+
+    private List<Customer> customers = new();
+    private List<Site> availableSites = new();
+    private List<MaterialListTemplate> templates = new();
+    private List<MaterialListSystem> systems = new();
+    
+    private int? selectedTemplateId = null;
+
+    private bool IsValid => model.CustomerId > 0 && !string.IsNullOrWhiteSpace(model.Title);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var context = await DbFactory.CreateDbContextAsync();
+        
+        customers = await context.Customers
+            .Where(c => c.Status == CustomerStatus.Active)
+            .OrderBy(c => c.Name)
+            .ToListAsync();
+
+        templates = await TemplateService.GetAllAsync();
+
+        // Add default system
+        AddSystem();
+    }
+
+    private async Task OnCustomerChanged()
+    {
+        if (model.CustomerId > 0)
+        {
+            await using var context = await DbFactory.CreateDbContextAsync();
+            
+            // Load sites for this customer's company
+            var customer = await context.Customers
+                .Include(c => c.Company)
+                    .ThenInclude(c => c!.Sites)
+                .FirstOrDefaultAsync(c => c.Id == model.CustomerId);
+
+            availableSites = customer?.Company?.Sites?.ToList() ?? new();
+        }
+        else
+        {
+            availableSites = new();
+        }
+        
+        model.SiteId = null;
+    }
+
+    private void AddSystem()
+    {
+        var number = systems.Count + 1;
+        systems.Add(new MaterialListSystem
+        {
+            Name = $"System {number}",
+            SortOrder = number,
+            SystemType = HvacSystemType.SplitSystem
+        });
+    }
+
+    private void RemoveSystem(MaterialListSystem system)
+    {
+        systems.Remove(system);
+        // Renumber
+        for (int i = 0; i < systems.Count; i++)
+        {
+            systems[i].SortOrder = i + 1;
+        }
+    }
+
+    private async Task CreateAndEdit()
+    {
+        if (!IsValid) return;
+
+        // Add systems to model
+        foreach (var system in systems)
+        {
+            model.Systems.Add(system);
+        }
+
+        // Create the material list
+        var created = await MaterialListService.CreateAsync(model);
+
+        // Apply template if selected
+        if (selectedTemplateId.HasValue && created.Systems.Any())
+        {
+            var firstSystemId = created.Systems.First().Id;
+            await MaterialListService.ApplyTemplateAsync(created.Id, selectedTemplateId.Value, firstSystemId);
+        }
+
+        // Navigate to edit page to add materials
+        Navigation.NavigateTo($"/material-lists/{created.Id}/edit");
+    }
+}

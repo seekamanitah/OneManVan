@@ -3,9 +3,10 @@
 @using OneManVan.Shared.Data
 @using OneManVan.Shared.Models
 @using OneManVan.Shared.Models.Enums
-@* [Authorize] temporarily disabled for development *@
+
 @inject IDbContextFactory<OneManVanDbContext> DbFactory
 @inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
 
 <PageTitle>@(estimate?.Title ?? "Estimate") - OneManVan</PageTitle>
 
@@ -50,6 +51,12 @@
                 </div>
             </div>
             <div class="d-flex gap-2">
+                <a href="/api/export/estimate/@Id/pdf" target="_blank" class="btn btn-outline-success">
+                    <i class="bi bi-file-pdf me-2"></i>Download PDF
+                </a>
+                <button class="btn btn-outline-info" @onclick="PrintEstimate">
+                    <i class="bi bi-printer me-2"></i>Print
+                </button>
                 <button class="btn btn-outline-secondary" @onclick="GoBack">
                     <i class="bi bi-arrow-left me-2"></i>Back
                 </button>
@@ -288,6 +295,12 @@
     private void EditEstimate()
     {
         Navigation.NavigateTo($"/estimates/{Id}/edit");
+    }
+
+    private async Task PrintEstimate()
+    {
+        // Open PDF in new tab for printing
+        await JSRuntime.InvokeVoidAsync("open", $"/api/export/estimate/{Id}/pdf", "_blank");
     }
 
     private void ViewCustomer()

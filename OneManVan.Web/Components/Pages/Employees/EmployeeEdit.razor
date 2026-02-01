@@ -1,0 +1,424 @@
+@page "/employees/new"
+@page "/employees/{Id:int}/edit"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@using OneManVan.Shared.Models.Enums
+@using OneManVan.Shared.Services
+@inject EmployeeService EmployeeService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<PageTitle>@(IsNew ? "Add Employee" : $"Edit {model.FullName}") - OneManVan</PageTitle>
+
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Header -->
+            <div class="mb-4">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/employees">Employees</a></li>
+                        <li class="breadcrumb-item active">@(IsNew ? "New" : "Edit")</li>
+                    </ol>
+                </nav>
+                <h1 class="h2">@(IsNew ? "Add Employee / Contractor" : $"Edit: {model.FullName}")</h1>
+            </div>
+
+            @if (isLoading)
+            {
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary"></div>
+                </div>
+            }
+            else
+            {
+                <EditForm Model="@model" OnValidSubmit="HandleSubmit">
+                    <DataAnnotationsValidator />
+
+                    <!-- Basic Info -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0"><i class="bi bi-person me-2"></i>Basic Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">First Name *</label>
+                                    <InputText class="form-control" @bind-Value="model.FirstName" />
+                                    <ValidationMessage For="@(() => model.FirstName)" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Last Name *</label>
+                                    <InputText class="form-control" @bind-Value="model.LastName" />
+                                    <ValidationMessage For="@(() => model.LastName)" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Type *</label>
+                                    <InputSelect class="form-select" @bind-Value="model.Type">
+                                        @foreach (var t in Enum.GetValues<EmployeeType>())
+                                        {
+                                            <option value="@t">@GetTypeDisplay(t)</option>
+                                        }
+                                    </InputSelect>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Status</label>
+                                    <InputSelect class="form-select" @bind-Value="model.Status">
+                                        @foreach (var s in Enum.GetValues<EmployeeStatus>())
+                                        {
+                                            <option value="@s">@GetStatusDisplay(s)</option>
+                                        }
+                                    </InputSelect>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Start Date</label>
+                                    <InputDate class="form-control" @bind-Value="model.StartDate" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Termination Date</label>
+                                    <InputDate class="form-control" @bind-Value="model.TerminationDate" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contact Info -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0"><i class="bi bi-telephone me-2"></i>Contact Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label">Address</label>
+                                    <InputText class="form-control" @bind-Value="model.Address" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">City</label>
+                                    <InputText class="form-control" @bind-Value="model.City" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">State</label>
+                                    <InputText class="form-control" @bind-Value="model.State" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Zip Code</label>
+                                    <InputText class="form-control" @bind-Value="model.ZipCode" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Phone</label>
+                                    <InputText class="form-control" @bind-Value="model.Phone" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Email</label>
+                                    <InputText class="form-control" type="email" @bind-Value="model.Email" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Emergency Contact -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0"><i class="bi bi-heart-pulse me-2"></i>Emergency Contact</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Contact Name</label>
+                                    <InputText class="form-control" @bind-Value="model.EmergencyContactName" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Contact Phone</label>
+                                    <InputText class="form-control" @bind-Value="model.EmergencyContactPhone" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Relationship</label>
+                                    <InputText class="form-control" @bind-Value="model.EmergencyContactRelationship" placeholder="e.g., Spouse, Parent" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pay Information -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0"><i class="bi bi-currency-dollar me-2"></i>Pay Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label class="form-label">Pay Rate Type</label>
+                                    <InputSelect class="form-select" @bind-Value="model.PayRateType">
+                                        <option value="@PayRateType.Hourly">Hourly</option>
+                                        <option value="@PayRateType.Flat">Flat (per job)</option>
+                                        <option value="@PayRateType.Salary">Salary (annual)</option>
+                                    </InputSelect>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Pay Rate</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <InputNumber class="form-control" @bind-Value="model.PayRate" step="0.01" />
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Overtime Multiplier</label>
+                                    <InputNumber class="form-control" @bind-Value="model.OvertimeMultiplier" step="0.1" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">OT Threshold (hrs/wk)</label>
+                                    <InputNumber class="form-control" @bind-Value="model.OvertimeThresholdHours" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Payment Method</label>
+                                    <InputSelect class="form-select" @bind-Value="model.PaymentMethod">
+                                        <option value="@PaymentMethod.DirectDeposit">Direct Deposit</option>
+                                        <option value="@PaymentMethod.Check">Check</option>
+                                        <option value="@PaymentMethod.ACH">ACH</option>
+                                        <option value="@PaymentMethod.Invoice">Invoice</option>
+                                        <option value="@PaymentMethod.Cash">Cash</option>
+                                    </InputSelect>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">PTO Balance (hrs)</label>
+                                    <InputNumber class="form-control" @bind-Value="model.PtoBalanceHours" step="0.5" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">PTO Accrual/Year (hrs)</label>
+                                    <InputNumber class="form-control" @bind-Value="model.PtoAccrualPerYear" step="1" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tax & Sensitive Info -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0"><i class="bi bi-shield-lock me-2"></i>Tax Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">SSN / EIN</label>
+                                    <InputText class="form-control" @bind-Value="model.TaxId" type="password" placeholder="XXX-XX-XXXX or XX-XXXXXXX" />
+                                    <div class="form-text">Stored securely</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label d-block">&nbsp;</label>
+                                    <div class="form-check">
+                                        <InputCheckbox class="form-check-input" @bind-Value="model.IsEin" id="isEin" />
+                                        <label class="form-check-label" for="isEin">This is an EIN (not SSN)</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Subcontractor Section (conditional) -->
+                    @if (model.Type == EmployeeType.SubcontractorCompany)
+                    {
+                        <div class="card border-0 shadow-sm mb-3 border-warning">
+                            <div class="card-header bg-warning bg-opacity-10 border-0 py-3">
+                                <h5 class="mb-0"><i class="bi bi-building me-2"></i>Subcontractor Company Details</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Company Name *</label>
+                                        <InputText class="form-control" @bind-Value="model.CompanyName" />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Contact Person</label>
+                                        <InputText class="form-control" @bind-Value="model.ContactPerson" />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Company EIN</label>
+                                        <InputText class="form-control" @bind-Value="model.CompanyEin" />
+                                    </div>
+                                    <div class="col-md-8">
+                                        <label class="form-label">Services Provided</label>
+                                        <InputText class="form-control" @bind-Value="model.ServiceProvided" placeholder="e.g., Ductwork, Electrical, Plumbing" />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-check">
+                                            <InputCheckbox class="form-check-input" @bind-Value="model.InvoiceRequired" id="invoiceReq" />
+                                            <label class="form-check-label" for="invoiceReq">Invoice Required</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-check">
+                                            <InputCheckbox class="form-check-input" @bind-Value="model.InsuranceOnFile" id="insOnFile" />
+                                            <label class="form-check-label" for="insOnFile">Insurance Certificate on File</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Documents & Compliance -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0"><i class="bi bi-file-earmark-check me-2"></i>Documents & Compliance</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <InputCheckbox class="form-check-input" @bind-Value="model.HasW4" id="hasW4" />
+                                        <label class="form-check-label" for="hasW4">W-4 on File</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <InputCheckbox class="form-check-input" @bind-Value="model.HasI9" id="hasI9" />
+                                        <label class="form-check-label" for="hasI9">I-9 on File</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <InputCheckbox class="form-check-input" @bind-Value="model.Has1099Setup" id="has1099" />
+                                        <label class="form-check-label" for="has1099">1099 Setup / W-9 on File</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Background Check Date</label>
+                                    <InputDate class="form-control" @bind-Value="model.BackgroundCheckDate" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Background Check Result</label>
+                                    <InputText class="form-control" @bind-Value="model.BackgroundCheckResult" placeholder="e.g., Pass, Fail, Pending" />
+                                </div>
+                                <div class="col-md-4"></div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Drug Test Date</label>
+                                    <InputDate class="form-control" @bind-Value="model.DrugTestDate" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Drug Test Result</label>
+                                    <InputText class="form-control" @bind-Value="model.DrugTestResult" placeholder="e.g., Negative, Positive" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0"><i class="bi bi-sticky me-2"></i>Notes</h5>
+                        </div>
+                        <div class="card-body">
+                            <InputTextArea class="form-control" rows="4" @bind-Value="model.Notes" placeholder="General notes about this employee..." />
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <button type="button" class="btn btn-outline-secondary" @onclick="Cancel">Cancel</button>
+                                <div class="d-flex gap-2">
+                                    @if (!IsNew)
+                                    {
+                                        <button type="button" class="btn btn-outline-danger" @onclick="DeleteEmployee">
+                                            <i class="bi bi-trash me-2"></i>Delete
+                                        </button>
+                                    }
+                                    <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                                        @if (isSaving)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-2"></span>
+                                        }
+                                        <i class="bi bi-check-circle me-2"></i>
+                                        @(IsNew ? "Add Employee" : "Save Changes")
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger mt-3">@errorMessage</div>
+                    }
+                </EditForm>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    private bool IsNew => !Id.HasValue;
+    private bool isLoading = true;
+    private bool isSaving = false;
+    private string errorMessage = "";
+    private Employee model = new() { StartDate = DateTime.Today };
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!IsNew)
+        {
+            var existing = await EmployeeService.GetByIdAsync(Id!.Value);
+            if (existing != null)
+                model = existing;
+        }
+        isLoading = false;
+    }
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            isSaving = true;
+            errorMessage = "";
+
+            if (IsNew)
+                await EmployeeService.CreateAsync(model);
+            else
+                await EmployeeService.UpdateAsync(model);
+
+            Navigation.NavigateTo(IsNew ? "/employees" : $"/employees/{model.Id}");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to save: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task DeleteEmployee()
+    {
+        if (!await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this employee?"))
+            return;
+
+        await EmployeeService.DeleteAsync(Id!.Value);
+        Navigation.NavigateTo("/employees");
+    }
+
+    private void Cancel() => Navigation.NavigateTo(IsNew ? "/employees" : $"/employees/{Id}");
+
+    private string GetTypeDisplay(EmployeeType t) => t switch
+    {
+        EmployeeType.FullTime => "Full-Time Employee",
+        EmployeeType.PartTime => "Part-Time Employee",
+        EmployeeType.Contractor1099 => "1099 Contractor",
+        EmployeeType.SubcontractorCompany => "Subcontractor Company",
+        _ => t.ToString()
+    };
+
+    private string GetStatusDisplay(EmployeeStatus s) => s switch
+    {
+        EmployeeStatus.Active => "Active",
+        EmployeeStatus.Inactive => "Inactive",
+        EmployeeStatus.Terminated => "Terminated",
+        EmployeeStatus.OnLeave => "On Leave",
+        _ => s.ToString()
+    };
+}

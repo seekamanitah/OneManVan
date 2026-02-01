@@ -1,11 +1,17 @@
-﻿@page "/"
+@page "/"
+@using Microsoft.AspNetCore.Authorization
+@attribute [AllowAnonymous]
 @inject NavigationManager Navigation
+
+<PageTitle>OneManVan - Field Service Management</PageTitle>
+
+@* Redirect to login - handled via navigation *@
 
 @code {
     protected override void OnInitialized()
     {
-        // Redirect to dashboard when accessing root
-        Navigation.NavigateTo("/dashboard", replace: true);
+        // Always redirect to login for now - auth state checked there
+        Navigation.NavigateTo("/Account/Login", replace: true);
     }
 }
 

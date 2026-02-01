@@ -1,11 +1,18 @@
 @page "/settings"
 @using OneManVan.Shared.Services
 @using OneManVan.Shared.Models
-@* [Authorize] temporarily disabled for development *@
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using Microsoft.AspNetCore.Components.Forms
+@using OneManVan.Web.Services
+
 @inject TradeConfigurationService TradeService
 @inject ISettingsStorage SettingsStorage
 @inject DatabaseConfigService DbConfigService
 @inject NavigationManager Navigation
+@inject IDbContextFactory<OneManVanDbContext> DbFactory
+@inject CompanySettingsService CompanyService
+@inject IEmailService EmailService
 
 <PageTitle>Settings - OneManVan</PageTitle>
 
@@ -120,14 +127,56 @@
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
+                        <div class="col-12">
+                            <h6 class="text-muted mb-3">Tax Settings</h6>
+                        </div>
                         <div class="col-md-6">
                             <label class="form-label">Default Tax Rate (%)</label>
                             <input type="number" class="form-control" @bind="taxRate" step="0.01" style="max-width: 150px;" />
                         </div>
                         <div class="col-md-6">
+                            <div class="form-check mt-4">
+                                <input type="checkbox" class="form-check-input" id="taxIncludedByDefault" @bind="taxIncludedByDefault" />
+                                <label class="form-check-label" for="taxIncludedByDefault">
+                                    Tax Included in Price by Default
+                                </label>
+                                <small class="d-block text-muted">When enabled, new invoices/estimates will have "Tax Included" checked</small>
+                            </div>
+                        </div>
+                        
+                        <div class="col-12 mt-4">
+                            <h6 class="text-muted mb-3">Labor Settings</h6>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Default Labor Rate (per hour)</label>
+                            <input type="number" class="form-control" @bind="defaultLaborRate" step="0.01" style="max-width: 150px;" />
+                            <small class="text-muted">Used when adding labor without selecting an employee</small>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check mt-4">
+                                <input type="checkbox" class="form-check-input" id="hideEmployeeRates" @bind="hideEmployeeRatesOnInvoice" />
+                                <label class="form-check-label" for="hideEmployeeRates">
+                                    Hide Employee Rates from Customer
+                                </label>
+                                <small class="d-block text-muted">Hides individual hourly rates on invoices</small>
+                            </div>
+                            <div class="form-check mt-2">
+                                <input type="checkbox" class="form-check-input" id="hideEmployeeBreakdown" @bind="hideEmployeeBreakdownOnInvoice" />
+                                <label class="form-check-label" for="hideEmployeeBreakdown">
+                                    Hide Employee Breakdown from Customer
+                                </label>
+                                <small class="d-block text-muted">Shows only total labor cost without employee details</small>
+                            </div>
+                        </div>
+                        
+                        <div class="col-12 mt-4">
+                            <h6 class="text-muted mb-3">General Settings</h6>
+                        </div>
+                        <div class="col-md-6">
                             <label class="form-label">Default Payment Terms (days)</label>
                             <input type="number" class="form-control" @bind="paymentTermsDays" style="max-width: 150px;" />
                         </div>
+                        
                         <div class="col-12">
                             <button class="btn btn-primary" @onclick="SaveAppSettings">
                                 <i class="bi bi-check-circle me-2"></i>Save Settings
@@ -226,8 +275,237 @@
                 </div>
             </div>
 
+            <!-- Email Configuration -->
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0"><i class="bi bi-envelope me-2"></i>Email Configuration</h5>
+                    <small class="text-muted">Configure SMTP settings to send invoices, estimates, and other documents via email</small>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <!-- Gmail Quick Setup Info -->
+                        <div class="col-12">
+                            <div class="alert alert-info mb-3">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>Gmail Setup:</strong> Use <code>smtp.gmail.com</code> with port <code>587</code>. 
+                                You'll need to create an <a href="https://myaccount.google.com/apppasswords" target="_blank">App Password</a> 
+                                (not your regular Gmail password) for SMTP access.
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">SMTP Server</label>
+                            <input type="text" class="form-control" @bind="emailSettings.SmtpHost" placeholder="smtp.gmail.com" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">SMTP Port</label>
+                            <input type="number" class="form-control" @bind="emailSettings.SmtpPort" placeholder="587" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">SMTP Username (Email)</label>
+                            <input type="email" class="form-control" @bind="emailSettings.SmtpUser" placeholder="yourname@gmail.com" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">SMTP Password / App Password</label>
+                            <input type="password" class="form-control" @bind="emailSettings.SmtpPassword" placeholder="Your app password" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">From Email Address</label>
+                            <input type="email" class="form-control" @bind="emailSettings.FromEmail" placeholder="yourname@gmail.com" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">From Name (Display Name)</label>
+                            <input type="text" class="form-control" @bind="emailSettings.FromName" placeholder="Your Company Name" />
+                        </div>
+                        
+                        <!-- BCC Settings -->
+                        <div class="col-12">
+                            <hr class="my-3" />
+                            <h6><i class="bi bi-copy me-2"></i>Email Copy (BCC)</h6>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" @bind="emailSettings.EnableBcc" id="enableBcc" />
+                                <label class="form-check-label" for="enableBcc">
+                                    Send a copy (BCC) of all outgoing emails to a secondary address for your records
+                                </label>
+                            </div>
+                        </div>
+                        @if (emailSettings.EnableBcc)
+                        {
+                            <div class="col-md-6">
+                                <label class="form-label">BCC Email Address</label>
+                                <input type="email" class="form-control" @bind="emailSettings.BccEmail" placeholder="records@yourcompany.com" />
+                                <small class="text-muted">All sent emails will be copied here</small>
+                            </div>
+                        }
+                        
+                        <div class="col-12">
+                            <button class="btn btn-primary me-2" @onclick="SaveEmailSettings">
+                                <i class="bi bi-check-circle me-2"></i>Save Email Settings
+                            </button>
+                            <button class="btn btn-outline-secondary me-2" @onclick="TestEmailSettings" disabled="@isSendingTestEmail">
+                                @if (isSendingTestEmail)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2"></span>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-send me-2"></i>
+                                }
+                                Send Test Email
+                            </button>
+                        </div>
+                        
+                        @if (!string.IsNullOrEmpty(emailTestMessage))
+                        {
+                            <div class="col-12">
+                                <div class="alert @(emailTestSuccess ? "alert-success" : "alert-danger") mb-0">
+                                    <i class="bi @(emailTestSuccess ? "bi-check-circle" : "bi-exclamation-triangle") me-2"></i>
+                                    @emailTestMessage
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Automatic Notifications -->
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0"><i class="bi bi-bell me-2"></i>Automatic Notifications</h5>
+                    <small class="text-muted">Control when emails are automatically sent to customers</small>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch" 
+                                       id="autoNotificationsEnabled" 
+                                       checked="@autoNotificationsEnabled"
+                                       @onchange="ToggleAutoNotifications" />
+                                <label class="form-check-label" for="autoNotificationsEnabled">
+                                    <strong>Enable Automatic Email Notifications</strong>
+                                </label>
+                            </div>
+                            <small class="text-muted d-block mt-1">
+                                When enabled, emails will be automatically sent to customers when:
+                            </small>
+                        </div>
+                        
+                        @if (autoNotificationsEnabled)
+                        {
+                            <div class="col-12">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item bg-transparent">
+                                        <i class="bi bi-receipt text-primary me-2"></i>
+                                        <strong>Invoices</strong> - When a non-draft invoice is created
+                                    </li>
+                                    <li class="list-group-item bg-transparent">
+                                        <i class="bi bi-file-text text-info me-2"></i>
+                                        <strong>Estimates</strong> - When a non-draft estimate is created
+                                    </li>
+                                    <li class="list-group-item bg-transparent">
+                                        <i class="bi bi-calendar-check text-success me-2"></i>
+                                        <strong>Jobs</strong> - When a job is scheduled
+                                    </li>
+                                    <li class="list-group-item bg-transparent">
+                                        <i class="bi bi-credit-card text-success me-2"></i>
+                                        <strong>Payments</strong> - Thank you email when payment received
+                                    </li>
+                                    <li class="list-group-item bg-transparent">
+                                        <i class="bi bi-file-earmark-text text-warning me-2"></i>
+                                        <strong>Service Agreements</strong> - Confirmation and renewal reminders
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="col-12">
+                                <div class="alert alert-warning mb-0">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    <strong>Note:</strong> Email must be configured above for notifications to work.
+                                    You can still manually send emails from individual pages even with auto-notifications disabled.
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="col-12">
+                                <div class="alert alert-secondary mb-0">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    Automatic notifications are disabled. You can still manually send emails from invoices, estimates, and other pages.
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Google Calendar & Maps Integration -->
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0"><i class="bi bi-calendar3 me-2"></i>Calendar & Maps Integration</h5>
+                    <small class="text-muted">Configure Google Calendar sync and Maps API for route optimization</small>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <!-- Google Calendar Section -->
+                        <div class="col-12">
+                            <h6 class="text-muted mb-3"><i class="bi bi-google me-2"></i>Google Calendar</h6>
+                        </div>
+                        <div class="col-12">
+                            <div class="alert alert-info mb-3">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>Calendar Export:</strong> You can export jobs to your Google Calendar by clicking "Add to Calendar" on any job.
+                                For automated sync, you'll need to set up Google Calendar API credentials.
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" @bind="calendarAutoSync" id="calendarSyncCheck" />
+                                <label class="form-check-label" for="calendarSyncCheck">
+                                    Enable Calendar Sync (Coming Soon)
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Days Ahead to Sync</label>
+                            <select class="form-select" @bind="calendarSyncDays" style="max-width: 150px;">
+                                <option value="7">7 days</option>
+                                <option value="14">14 days</option>
+                                <option value="30">30 days</option>
+                                <option value="60">60 days</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-12 mt-3">
+                            <hr />
+                            <h6 class="text-muted mb-3"><i class="bi bi-geo-alt me-2"></i>Maps API (Optional)</h6>
+                        </div>
+                        <div class="col-12">
+                            <div class="alert alert-secondary mb-3">
+                                <i class="bi bi-lightbulb me-2"></i>
+                                Route optimization works without an API key using basic distance calculations.
+                                Adding a Google Maps API key enables enhanced features like traffic-aware routing and accurate drive times.
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label">Google Maps API Key</label>
+                            <input type="password" class="form-control" @bind="companySettings.MapsApiKey" 
+                                   placeholder="AIza..." />
+                            <small class="text-muted">Get an API key from <a href="https://console.cloud.google.com/apis/credentials" target="_blank">Google Cloud Console</a></small>
+                        </div>
+                        <div class="col-12 mt-2">
+                            <button class="btn btn-primary" @onclick="SaveCalendarSettings">
+                                <i class="bi bi-check-circle me-2"></i>Save Integration Settings
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- About -->
-            <div class="card border-0 shadow-sm">
+            <div class="card border-0 shadow-sm mb-3">
                 <div class="card-header bg-white border-0 py-3">
                     <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>About OneManVan</h5>
                 </div>
@@ -251,9 +529,194 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Company Details -->
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0"><i class="bi bi-building me-2"></i>Company Details</h5>
+                    <small class="text-muted">This information appears on invoices, estimates, and other documents</small>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Company Name *</label>
+                            <input type="text" class="form-control" @bind="companySettings.CompanyName" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Tagline</label>
+                            <input type="text" class="form-control" @bind="companySettings.Tagline" placeholder="Your trusted service partner" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Street Address</label>
+                            <input type="text" class="form-control" @bind="companySettings.Address" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">City</label>
+                            <input type="text" class="form-control" @bind="companySettings.City" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">State</label>
+                            <input type="text" class="form-control" @bind="companySettings.State" maxlength="2" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Zip Code</label>
+                            <input type="text" class="form-control" @bind="companySettings.ZipCode" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Phone</label>
+                            <input type="tel" class="form-control" @bind="companySettings.Phone" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" @bind="companySettings.Email" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Website</label>
+                            <input type="url" class="form-control" @bind="companySettings.Website" placeholder="https://" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Tax ID / EIN</label>
+                            <input type="text" class="form-control" @bind="companySettings.TaxId" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">License Number</label>
+                            <input type="text" class="form-control" @bind="companySettings.LicenseNumber" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Insurance Number</label>
+                            <input type="text" class="form-control" @bind="companySettings.InsuranceNumber" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Payment Terms</label>
+                            <textarea class="form-control" @bind="companySettings.PaymentTerms" rows="2"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Document Footer</label>
+                            <textarea class="form-control" @bind="companySettings.DocumentFooter" rows="2" placeholder="Thank you for your business!"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Bank Details (for payments)</label>
+                            <textarea class="form-control" @bind="companySettings.BankDetails" rows="2" placeholder="Bank name, Account number, Routing number"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Company Logo</label>
+                            <InputFile OnChange="HandleLogoUpload" accept="image/*" class="form-control" />
+                            @if (!string.IsNullOrEmpty(companySettings.LogoBase64))
+                            {
+                                <div class="mt-2">
+                                    <img src="data:image/png;base64,@companySettings.LogoBase64" alt="Company Logo" style="max-height: 100px; max-width: 300px;" class="border rounded" />
+                                    <button type="button" class="btn btn-sm btn-outline-danger ms-2" @onclick="RemoveLogo">
+                                        <i class="bi bi-trash"></i> Remove
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                        <div class="col-12">
+                            <button class="btn btn-primary" @onclick="SaveCompanySettings">
+                                <i class="bi bi-check-circle me-2"></i>Save Company Details
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Management -->
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0"><i class="bi bi-database-gear me-2"></i>Data Management</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="card bg-light border-0">
+                                <div class="card-body">
+                                    <h6><i class="bi bi-magic me-2"></i>Seed Sample Data</h6>
+                                    <p class="text-muted small mb-2">
+                                        Populate the database with sample customers, jobs, invoices, and more for testing.
+                                    </p>
+                                    <button class="btn btn-outline-primary" @onclick="SeedSampleData" disabled="@isSeeding">
+                                        @if (isSeeding)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-2"></span>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-plus-circle me-2"></i>
+                                        }
+                                        Seed Sample Data
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-danger bg-opacity-10 border-0">
+                                <div class="card-body">
+                                    <h6 class="text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Reset All Data</h6>
+                                    <p class="text-muted small mb-2">
+                                        Delete ALL data from the database. This cannot be undone!
+                                    </p>
+                                    <button class="btn btn-danger" @onclick="ShowResetConfirmation" disabled="@isResetting">
+                                        @if (isResetting)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-2"></span>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-trash me-2"></i>
+                                        }
+                                        Reset All Data
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        @if (!string.IsNullOrEmpty(dataManagementMessage))
+                        {
+                            <div class="col-12">
+                                <div class="alert @(dataManagementSuccess ? "alert-success" : "alert-danger") mb-0">
+                                    <i class="bi @(dataManagementSuccess ? "bi-check-circle" : "bi-exclamation-triangle") me-2"></i>
+                                    @dataManagementMessage
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+<!-- Reset Confirmation Modal -->
+@if (showResetModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="bi bi-exclamation-triangle me-2"></i>Confirm Data Reset</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="@(() => showResetModal = false)"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-3">This will <strong>permanently delete ALL data</strong> including:</p>
+                    <ul>
+                        <li>All Customers</li>
+                        <li>All Jobs, Invoices, Estimates</li>
+                        <li>All Assets, Products, Inventory</li>
+                        <li>All Service History and Notes</li>
+                    </ul>
+                    <p class="text-danger fw-bold">This action cannot be undone!</p>
+                    <p>Type <strong>RESET</strong> to confirm:</p>
+                    <input type="text" class="form-control" @bind="resetConfirmText" placeholder="Type RESET" />
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="@(() => showResetModal = false)">Cancel</button>
+                    <button class="btn btn-danger" @onclick="ConfirmResetData" disabled="@(resetConfirmText != "RESET")">
+                        <i class="bi bi-trash me-2"></i>Yes, Delete All Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
 @if (showToast)
 {
@@ -271,24 +734,72 @@
 }
 
 @code {
-    private TradeType selectedTrade;
-    private decimal taxRate = 7.0m;
-    private int paymentTermsDays = 30;
-    private bool showToast = false;
-    private string toastMessage = "";
+private TradeType selectedTrade;
+private decimal taxRate = 7.0m;
+private int paymentTermsDays = 30;
+private bool taxIncludedByDefault = false;
+private decimal defaultLaborRate = 75.0m;
+private bool hideEmployeeRatesOnInvoice = false;
+private bool hideEmployeeBreakdownOnInvoice = false;
+private bool showToast = false;
+private string toastMessage = "";
     
-    private DatabaseConfig dbConfig = new();
-    private string dbTestMessage = "";
-    private bool dbTestSuccess = false;
+private DatabaseConfig dbConfig = new();
+private string dbTestMessage = "";
+private bool dbTestSuccess = false;
 
-    protected override void OnInitialized()
-    {
-        selectedTrade = TradeService.CurrentTrade;
-        taxRate = SettingsStorage.GetDecimal("DefaultTaxRate", 7.0m);
-        paymentTermsDays = SettingsStorage.GetInt("DefaultPaymentTermsDays", 30);
+// Email Settings
+private EmailSettings emailSettings = new();
+private string emailTestMessage = "";
+private bool emailTestSuccess = false;
+private bool isSendingTestEmail = false;
+
+// Auto Notifications
+private bool autoNotificationsEnabled = false;
+    
+// Company Settings
+private CompanySettings companySettings = new();
+    
+// Calendar Settings
+private bool calendarAutoSync = false;
+private int calendarSyncDays = 30;
+
+// Data Management
+private bool isSeeding = false;
+private bool isResetting = false;
+private bool showResetModal = false;
+private string resetConfirmText = "";
+private string dataManagementMessage = "";
+private bool dataManagementSuccess = false;
+
+protected override async Task OnInitializedAsync()
+{
+    selectedTrade = TradeService.CurrentTrade;
+    taxRate = SettingsStorage.GetDecimal("DefaultTaxRate", 7.0m);
+    paymentTermsDays = SettingsStorage.GetInt("DefaultPaymentTermsDays", 30);
+    taxIncludedByDefault = SettingsStorage.GetBool("TaxIncludedByDefault", false);
+    defaultLaborRate = SettingsStorage.GetDecimal("DefaultLaborRate", 75.0m);
+    hideEmployeeRatesOnInvoice = SettingsStorage.GetBool("HideEmployeeRatesOnInvoice", false);
+    hideEmployeeBreakdownOnInvoice = SettingsStorage.GetBool("HideEmployeeBreakdownOnInvoice", false);
+    
+    // Load auto-notification setting
+    autoNotificationsEnabled = SettingsStorage.GetBool("AutoNotificationsEnabled", false);
         
-        // Load database configuration
-        dbConfig = DbConfigService.GetCurrentConfiguration();
+    // Load database configuration
+    dbConfig = DbConfigService.GetCurrentConfiguration();
+    
+    // Load email settings
+    emailSettings = EmailService.GetSettings();
+        
+    // Load company settings
+    try
+    {
+        companySettings = await CompanyService.GetCompanySettingsAsync();
+    }
+    catch
+    {
+        companySettings = new CompanySettings();
+    }
     }
 
     private async Task ChangeTrade()
@@ -302,8 +813,78 @@
     {
         SettingsStorage.SetDecimal("DefaultTaxRate", taxRate);
         SettingsStorage.SetInt("DefaultPaymentTermsDays", paymentTermsDays);
+        SettingsStorage.SetBool("TaxIncludedByDefault", taxIncludedByDefault);
+        SettingsStorage.SetDecimal("DefaultLaborRate", defaultLaborRate);
+        SettingsStorage.SetBool("HideEmployeeRatesOnInvoice", hideEmployeeRatesOnInvoice);
+        SettingsStorage.SetBool("HideEmployeeBreakdownOnInvoice", hideEmployeeBreakdownOnInvoice);
         ShowToast("Settings saved successfully");
     }
+
+    #region Email Settings
+
+    private void SaveEmailSettings()
+    {
+        EmailService.SaveSettings(emailSettings);
+        emailTestMessage = "";
+        ShowToast("Email settings saved successfully!");
+    }
+
+    private async Task TestEmailSettings()
+    {
+        if (string.IsNullOrEmpty(emailSettings.FromEmail))
+        {
+            emailTestMessage = "Please enter a From Email address first.";
+            emailTestSuccess = false;
+            return;
+        }
+
+        isSendingTestEmail = true;
+        emailTestMessage = "";
+        StateHasChanged();
+
+        try
+        {
+            // Save settings first so they're available for the test
+            EmailService.SaveSettings(emailSettings);
+            
+            var success = await EmailService.SendTestEmailAsync(emailSettings.FromEmail);
+            
+            if (success)
+            {
+                emailTestMessage = $"Test email sent successfully to {emailSettings.FromEmail}! Check your inbox.";
+                emailTestSuccess = true;
+            }
+            else
+            {
+                emailTestMessage = "Failed to send test email. Please check your SMTP settings and try again.";
+                emailTestSuccess = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            emailTestMessage = $"Error: {ex.Message}";
+            emailTestSuccess = false;
+        }
+        finally
+        {
+            isSendingTestEmail = false;
+        }
+    }
+
+    #endregion
+
+    #region Auto Notifications
+
+    private void ToggleAutoNotifications(ChangeEventArgs e)
+    {
+        autoNotificationsEnabled = (bool)(e.Value ?? false);
+        SettingsStorage.SetBool("AutoNotificationsEnabled", autoNotificationsEnabled);
+        ShowToast(autoNotificationsEnabled 
+            ? "Automatic notifications enabled" 
+            : "Automatic notifications disabled");
+    }
+
+    #endregion
 
     private async Task TestDatabaseConnection()
     {
@@ -372,4 +953,140 @@
             InvokeAsync(StateHasChanged);
         });
     }
+
+    #region Company Settings
+
+    private async Task SaveCompanySettings()
+    {
+        try
+        {
+            await CompanyService.UpdateCompanySettingsAsync(companySettings);
+            ShowToast("Company details saved successfully!");
+        }
+        catch (Exception ex)
+        {
+            dataManagementMessage = $"Error saving company settings: {ex.Message}";
+            dataManagementSuccess = false;
+        }
+    }
+
+    private async Task HandleLogoUpload(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var file = e.File;
+            if (file.Size > 2 * 1024 * 1024) // 2MB max
+            {
+                ShowToast("Logo file must be less than 2MB");
+                return;
+            }
+
+            using var stream = new MemoryStream();
+            await file.OpenReadStream(maxAllowedSize: 2 * 1024 * 1024).CopyToAsync(stream);
+            companySettings.LogoBase64 = Convert.ToBase64String(stream.ToArray());
+            companySettings.LogoFileName = file.Name;
+            
+            ShowToast("Logo uploaded! Remember to save company details.");
+        }
+        catch (Exception ex)
+        {
+            ShowToast($"Error uploading logo: {ex.Message}");
+        }
+    }
+
+    private void RemoveLogo()
+    {
+        companySettings.LogoBase64 = null;
+        companySettings.LogoFileName = null;
+        ShowToast("Logo removed. Remember to save company details.");
+    }
+
+    private async Task SaveCalendarSettings()
+    {
+        try
+        {
+            await CompanyService.UpdateCompanySettingsAsync(companySettings);
+            ShowToast("Calendar & Maps settings saved!");
+        }
+        catch (Exception ex)
+        {
+            dataManagementMessage = $"Error saving settings: {ex.Message}";
+            dataManagementSuccess = false;
+        }
+    }
+
+    #endregion
+
+    #region Data Management
+
+    private async Task SeedSampleData()
+    {
+        isSeeding = true;
+        dataManagementMessage = "";
+        StateHasChanged();
+
+        try
+        {
+            var result = await CompanyService.SeedAllDataAsync();
+            
+            if (result.Success)
+            {
+                dataManagementMessage = $"Sample data created: {result.CustomersCreated} customers, " +
+                    $"{result.JobsCreated} jobs, {result.InvoicesCreated} invoices, " +
+                    $"{result.EstimatesCreated} estimates, {result.AssetsCreated} assets, " +
+                    $"{result.ProductsCreated} products, {result.InventoryCreated} inventory items";
+                dataManagementSuccess = true;
+            }
+            else
+            {
+                dataManagementMessage = result.Message;
+                dataManagementSuccess = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            dataManagementMessage = $"Error seeding data: {ex.Message}";
+            dataManagementSuccess = false;
+        }
+        finally
+        {
+            isSeeding = false;
+        }
+    }
+
+    private void ShowResetConfirmation()
+    {
+        resetConfirmText = "";
+        showResetModal = true;
+    }
+
+    private async Task ConfirmResetData()
+    {
+        if (resetConfirmText != "RESET")
+            return;
+
+        showResetModal = false;
+        isResetting = true;
+        dataManagementMessage = "";
+        StateHasChanged();
+
+        try
+        {
+            await CompanyService.ResetAllDataAsync();
+            dataManagementMessage = "All data has been deleted. Database is now empty.";
+            dataManagementSuccess = true;
+            resetConfirmText = "";
+        }
+        catch (Exception ex)
+        {
+            dataManagementMessage = $"Error resetting data: {ex.Message}";
+            dataManagementSuccess = false;
+        }
+        finally
+        {
+            isResetting = false;
+        }
+    }
+
+    #endregion
 }
