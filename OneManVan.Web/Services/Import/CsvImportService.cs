@@ -2,6 +2,7 @@ using CsvHelper;
 using CsvHelper.Configuration;
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
+using OneManVan.Shared.Constants;
 using OneManVan.Shared.Data;
 using OneManVan.Shared.Models;
 using OneManVan.Shared.Models.Enums;
@@ -104,7 +105,7 @@ public class CsvImportService : ICsvImportService
             
             // Get the next customer number for auto-generation
             var existingNumbers = await db.Customers
-                .Where(c => c.CustomerNumber != null && c.CustomerNumber.StartsWith("C-"))
+                .Where(c => c.CustomerNumber != null && c.CustomerNumber.StartsWith(EntityIdPrefixes.Customer))
                 .Select(c => c.CustomerNumber)
                 .ToListAsync();
             
@@ -112,7 +113,7 @@ public class CsvImportService : ICsvImportService
             if (existingNumbers.Any())
             {
                 nextNumber = existingNumbers
-                    .Select(n => int.TryParse(n?.Substring(2), out int num) ? num : 0)
+                    .Select(n => int.TryParse(n?.Substring(EntityIdPrefixes.Customer.Length), out int num) ? num : 0)
                     .DefaultIfEmpty(0)
                     .Max() + 1;
             }
@@ -134,10 +135,20 @@ public class CsvImportService : ICsvImportService
                     
                     // Check for existing customer
                     Customer? existing = null;
+                    
                     if (!string.IsNullOrEmpty(record.Email))
                     {
+                        // Primary check: by email (most reliable)
                         existing = await db.Customers
                             .FirstOrDefaultAsync(c => c.Email!.ToLower() == record.Email.ToLower());
+                    }
+                    else if (!string.IsNullOrEmpty(record.Name))
+                    {
+                        // Fallback check: by exact name match when no email provided
+                        // Only checks among customers who also have no email
+                        existing = await db.Customers
+                            .Where(c => string.IsNullOrEmpty(c.Email))
+                            .FirstOrDefaultAsync(c => c.Name.ToLower() == record.Name.ToLower());
                     }
                     
                     if (existing != null)
@@ -159,7 +170,7 @@ public class CsvImportService : ICsvImportService
                         // Auto-generate customer number if not provided
                         if (string.IsNullOrEmpty(customer.CustomerNumber))
                         {
-                            customer.CustomerNumber = $"C-{nextNumber:D4}";
+                            customer.CustomerNumber = EntityIdPrefixes.FormatId(EntityIdPrefixes.Customer, nextNumber);
                             nextNumber++;
                         }
                         
@@ -323,6 +334,21 @@ public class CsvImportService : ICsvImportService
             
             await using var db = await _dbFactory.CreateDbContextAsync();
             
+            // Get the next ProductNumber for auto-generation
+            var existingProductNumbers = await db.Products
+                .Where(p => p.ProductNumber != null && p.ProductNumber.StartsWith(EntityIdPrefixes.Product))
+                .Select(p => p.ProductNumber)
+                .ToListAsync();
+            
+            var nextProductNumber = 1;
+            if (existingProductNumbers.Any())
+            {
+                nextProductNumber = existingProductNumbers
+                    .Select(s => int.TryParse(s?.Substring(EntityIdPrefixes.Product.Length), out int num) ? num : 0)
+                    .DefaultIfEmpty(0)
+                    .Max() + 1;
+            }
+            
             foreach (var (record, index) in records.Select((r, i) => (r, i + 2)))
             {
                 try
@@ -358,6 +384,14 @@ public class CsvImportService : ICsvImportService
                     else
                     {
                         var product = MapToProduct(record);
+                        
+                        // Auto-generate ProductNumber if not provided
+                        if (string.IsNullOrEmpty(product.ProductNumber))
+                        {
+                            product.ProductNumber = EntityIdPrefixes.FormatId(EntityIdPrefixes.Product, nextProductNumber);
+                            nextProductNumber++;
+                        }
+                        
                         db.Products.Add(product);
                         result.ImportedCount++;
                     }

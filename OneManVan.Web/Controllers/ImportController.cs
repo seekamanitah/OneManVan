@@ -41,7 +41,7 @@ public class ImportController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error previewing customers import");
-            return StatusCode(500, new { error = ex.Message });
+            return StatusCode(500, new { error = "An error occurred while processing the file. Please check the file format and try again." });
         }
     }
 
@@ -76,7 +76,7 @@ public class ImportController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error importing customers");
-            return StatusCode(500, new { error = ex.Message });
+            return StatusCode(500, new { error = "An error occurred during import. Please check the file format and try again." });
         }
     }
 
@@ -102,7 +102,7 @@ public class ImportController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error previewing products import");
-            return StatusCode(500, new { error = ex.Message });
+            return StatusCode(500, new { error = "An error occurred while processing the file. Please check the file format and try again." });
         }
     }
 
@@ -137,7 +137,7 @@ public class ImportController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error importing products");
-            return StatusCode(500, new { error = ex.Message });
+            return StatusCode(500, new { error = "An error occurred during import. Please check the file format and try again." });
         }
     }
 

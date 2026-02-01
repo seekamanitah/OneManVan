@@ -15,6 +15,12 @@ public class Asset
     public int Id { get; set; }
 
     /// <summary>
+    /// Auto-generated asset number (e.g., AST-0001).
+    /// </summary>
+    [MaxLength(20)]
+    public string? AssetNumber { get; set; }
+
+    /// <summary>
     /// Friendly asset name (e.g., "Main Office RTU", "Lobby AC Unit").
     /// </summary>
     [MaxLength(200)]

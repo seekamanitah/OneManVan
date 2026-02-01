@@ -198,6 +198,7 @@ public class OneManVanDbContext : DbContext
         modelBuilder.Entity<Asset>(entity =>
         {
             entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.AssetNumber);
             entity.HasIndex(e => e.AssetTag).IsUnique();
             entity.HasIndex(e => e.Serial);
             entity.HasIndex(e => e.CustomerId);
@@ -236,6 +237,8 @@ public class OneManVanDbContext : DbContext
             entity.Ignore(e => e.IsServiceDue);
             entity.Ignore(e => e.CapacitySummary);
             entity.Ignore(e => e.EfficiencySummary);
+            entity.Ignore(e => e.HasValidLocation);
+            entity.Ignore(e => e.LocationDescription);
         });
 
         // =====================
@@ -320,6 +323,7 @@ public class OneManVanDbContext : DbContext
         modelBuilder.Entity<InventoryItem>(entity =>
         {
             entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.InventoryNumber);
             entity.HasIndex(e => e.Name);
             entity.HasIndex(e => e.Sku);
             entity.HasIndex(e => e.Category);

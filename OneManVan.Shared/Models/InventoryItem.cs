@@ -11,6 +11,12 @@ public class InventoryItem
 {
     public int Id { get; set; }
 
+    /// <summary>
+    /// Auto-generated inventory number (e.g., INV-0001).
+    /// </summary>
+    [MaxLength(20)]
+    public string? InventoryNumber { get; set; }
+
     [Required]
     [MaxLength(200)]
     public string Name { get; set; } = string.Empty;
