@@ -1,5 +1,6 @@
 @using System.Net.Http.Headers
-@inject HttpClient Http
+@inject IHttpClientFactory HttpClientFactory
+@inject NavigationManager NavigationManager
 @inject IJSRuntime JS
 
 <div class="import-button-container">
@@ -240,7 +241,12 @@
             content.Add(fileContent, "file", selectedFile.Name);
             
             var url = $"/api/import/{EntityType}?updateExisting={updateExisting}";
-            var response = await Http.PostAsync(url, content);
+            
+            // Use HttpClientFactory with the actual base URL from NavigationManager
+            using var httpClient = HttpClientFactory.CreateClient();
+            httpClient.BaseAddress = new Uri(NavigationManager.BaseUri);
+            
+            var response = await httpClient.PostAsync(url, content);
             
             if (response.IsSuccessStatusCode)
             {

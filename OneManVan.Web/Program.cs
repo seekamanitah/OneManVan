@@ -212,8 +212,8 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 // Register import services
 builder.Services.AddScoped<ICsvImportService, CsvImportService>();
 
-// Add HttpClient for Blazor components
-builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://localhost:5024") });
+// Add HttpClient for Blazor components - configured per-request with NavigationManager
+builder.Services.AddHttpClient();
 
 // Add controllers for API endpoints
 builder.Services.AddControllers();

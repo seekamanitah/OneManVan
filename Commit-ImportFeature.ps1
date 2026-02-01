@@ -22,7 +22,7 @@ Write-Host "   - ImportController.cs - API endpoints"
 Write-Host ""
 Write-Host "2. ImportButton Component" -ForegroundColor Green
 Write-Host "   - Supports CSV and Excel (.xlsx, .xls) files"
-Write-Host "   - File upload with progress and error display"
+Write-Host "   - Fixed HttpClient to use correct base URL for remote access"
 Write-Host ""
 Write-Host "3. Import Buttons Added to All List Pages" -ForegroundColor Green
 Write-Host "   - Customers, Products, Assets, Inventory"
@@ -43,7 +43,7 @@ git add -A
 
 # Commit
 $commitMsg = @"
-Feature: Add import functionality for all entity types
+Feature: Add import functionality with remote access fix
 
 NEW FILES:
 - Services/Import/IImportService.cs - Import interfaces and DTOs
@@ -57,6 +57,10 @@ IMPORT FEATURES:
 - Duplicate detection with update option
 - Validation with error reporting
 - Template download for each entity type
+
+FIX: HttpClient now uses NavigationManager.BaseUri
+- Resolves 'Connection refused localhost:5024' error
+- Import now works from remote computers
 
 PAGES UPDATED (Import buttons added):
 - CustomerList, ProductList, AssetList, InventoryList
@@ -108,9 +112,6 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host "git pull origin master" -ForegroundColor Gray
     Write-Host "docker-compose build --no-cache onemanvan-web" -ForegroundColor Gray
     Write-Host "docker-compose up -d" -ForegroundColor Gray
-    Write-Host ""
-    Write-Host "Or use the quick deploy script:" -ForegroundColor White
-    Write-Host "curl -sSL https://raw.githubusercontent.com/seekamanitah/OneManVan/master/deploy-import-update.sh | bash" -ForegroundColor Gray
     Write-Host ""
     Write-Host "==========================================" -ForegroundColor Cyan
 } else {
