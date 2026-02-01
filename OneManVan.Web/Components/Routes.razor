@@ -5,7 +5,20 @@
     <Found Context="routeData">
         <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
             <NotAuthorized>
-                <RedirectToLogin />
+                @if (context.User?.Identity?.IsAuthenticated == true)
+                {
+                    <div class="container mt-5">
+                        <div class="alert alert-danger">
+                            <h4>Access Denied</h4>
+                            <p>You do not have permission to access this resource.</p>
+                            <a href="/dashboard" class="btn btn-primary">Go to Dashboard</a>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <RedirectToLogin />
+                }
             </NotAuthorized>
             <Authorizing>
                 <div class="d-flex justify-content-center align-items-center" style="height: 100vh;">

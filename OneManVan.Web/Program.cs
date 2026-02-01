@@ -238,6 +238,35 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
 
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
+// CRITICAL FIX: Configure cookie options for Blazor SignalR
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    options.Cookie.SameSite = SameSiteMode.Lax; // Critical for SignalR
+    options.ExpireTimeSpan = TimeSpan.FromHours(24);
+    options.SlidingExpiration = true;
+    
+    options.LoginPath = "/Account/Login";
+    options.LogoutPath = "/Account/Logout";
+    options.AccessDeniedPath = "/Account/AccessDenied";
+    
+    // CRITICAL: Prevent auth redirects for SignalR/API requests
+    options.Events.OnRedirectToLogin = context =>
+    {
+        if (context.Request.Path.StartsWithSegments("/_blazor") ||
+            context.Request.Path.StartsWithSegments("/api"))
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        }
+        else
+        {
+            context.Response.Redirect(context.RedirectUri);
+        }
+        return Task.CompletedTask;
+    };
+});
+
 var app = builder.Build();
 
 // Initialize databases
@@ -352,13 +381,12 @@ app.UseStaticFiles(); // Serve static files
 
 app.UseRouting(); // Enable routing
 
-// Rate limiting middleware
-app.UseRateLimiter();
-
-// Authentication and authorization
+// CRITICAL: Authentication MUST come before Authorization and RateLimiter
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Rate limiting middleware (after auth so we can identify users)
+app.UseRateLimiter();
 
 // Antiforgery is REQUIRED for Blazor forms even without authentication
 app.UseAntiforgery();
