@@ -54,6 +54,9 @@
                 <button class="btn btn-primary" @onclick="EditItem">
                     <i class="bi bi-pencil me-2"></i>Edit
                 </button>
+                <button class="btn btn-outline-danger" @onclick="ShowDeleteConfirmation">
+                    <i class="bi bi-trash me-2"></i>Delete
+                </button>
             </div>
         </div>
 
@@ -170,6 +173,13 @@
     }
 </div>
 
+<DeleteConfirmationModal 
+    IsVisible="showDeleteModal"
+    EntityType="inventory item"
+    EntityName="@(item?.Name)"
+    OnConfirm="DeleteItem"
+    OnCancel="CancelDelete" />
+
 <style>
     .avatar-circle {
         border-radius: 50%;
@@ -186,6 +196,7 @@
 
     private bool isLoading = true;
     private InventoryItem? item;
+    private bool showDeleteModal = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -247,5 +258,27 @@
         if (item.IsOutOfStock) return "Out of Stock";
         if (item.IsLowStock) return "Low Stock";
         return "In Stock";
+    }
+
+    private void ShowDeleteConfirmation() => showDeleteModal = true;
+    private void CancelDelete() => showDeleteModal = false;
+
+    private async Task DeleteItem()
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var itemToDelete = await db.InventoryItems.FindAsync(Id);
+            if (itemToDelete != null)
+            {
+                db.InventoryItems.Remove(itemToDelete);
+                await db.SaveChangesAsync();
+                Navigation.NavigateTo("/inventory");
+            }
+        }
+        catch
+        {
+            showDeleteModal = false;
+        }
     }
 }

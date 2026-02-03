@@ -180,15 +180,75 @@
         </Setter>
     </Style>
 
+    <!-- =====================================================
+         DESIGN SYSTEM TYPOGRAPHY v1.0
+         Based on MobileUIDesignSystem.md specifications
+         ===================================================== -->
+    
+    <!-- Display: 28sp Bold - Page titles, hero numbers -->
+    <Style TargetType="Label" x:Key="DisplayStyle">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource TextPrimary}, Dark={StaticResource White}}" />
+        <Setter Property="FontFamily" Value="OpenSansSemiBold" />
+        <Setter Property="FontSize" Value="28" />
+        <Setter Property="FontAttributes" Value="Bold" />
+    </Style>
+    
+    <!-- Headline: 18sp Bold - Section headers -->
+    <Style TargetType="Label" x:Key="HeadlineStyle">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource TextPrimary}, Dark={StaticResource White}}" />
+        <Setter Property="FontFamily" Value="OpenSansSemiBold" />
+        <Setter Property="FontSize" Value="18" />
+        <Setter Property="FontAttributes" Value="Bold" />
+    </Style>
+    
+    <!-- Title: 16sp Bold - Card titles, list item primary -->
+    <Style TargetType="Label" x:Key="TitleStyle">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource TextPrimary}, Dark={StaticResource White}}" />
+        <Setter Property="FontFamily" Value="OpenSansSemiBold" />
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="FontAttributes" Value="Bold" />
+    </Style>
+    
+    <!-- Body: 14sp Regular - Body text, descriptions -->
+    <Style TargetType="Label" x:Key="BodyStyle">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource TextPrimary}, Dark={StaticResource White}}" />
+        <Setter Property="FontFamily" Value="OpenSansRegular" />
+        <Setter Property="FontSize" Value="14" />
+    </Style>
+    
+    <!-- Caption: 12sp Regular - Labels, metadata -->
+    <Style TargetType="Label" x:Key="CaptionStyle">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource TextSecondary}, Dark={StaticResource Gray400}}" />
+        <Setter Property="FontFamily" Value="OpenSansRegular" />
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+    
+    <!-- Micro: 10sp Regular - Badges, timestamps -->
+    <Style TargetType="Label" x:Key="MicroStyle">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource TextTertiary}, Dark={StaticResource Gray500}}" />
+        <Setter Property="FontFamily" Value="OpenSansRegular" />
+        <Setter Property="FontSize" Value="10" />
+    </Style>
+    
+    <!-- Section Header Style -->
+    <Style TargetType="Label" x:Key="SectionHeaderStyle">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource TextPrimary}, Dark={StaticResource White}}" />
+        <Setter Property="FontFamily" Value="OpenSansSemiBold" />
+        <Setter Property="FontSize" Value="18" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="Margin" Value="0,8,0,0" />
+    </Style>
+    
+    <!-- Legacy styles for backward compatibility -->
     <Style TargetType="Label" x:Key="Headline">
-        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource White}}" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource TextPrimary}, Dark={StaticResource White}}" />
         <Setter Property="FontSize" Value="32" />
         <Setter Property="HorizontalOptions" Value="Center" />
         <Setter Property="HorizontalTextAlignment" Value="Center" />
     </Style>
 
     <Style TargetType="Label" x:Key="SubHeadline">
-        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource MidnightBlue}, Dark={StaticResource White}}" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource TextPrimary}, Dark={StaticResource White}}" />
         <Setter Property="FontSize" Value="24" />
         <Setter Property="HorizontalOptions" Value="Center" />
         <Setter Property="HorizontalTextAlignment" Value="Center" />
@@ -391,6 +451,178 @@
                 </VisualStateGroup>
             </VisualStateGroupList>
         </Setter>
+    </Style>
+
+    <!-- =====================================================
+         DESIGN SYSTEM COMPONENT STYLES v1.0
+         Based on MobileUIDesignSystem.md specifications
+         ===================================================== -->
+    
+    <!-- Primary Action Button - Full width primary actions -->
+    <Style TargetType="Button" x:Key="PrimaryButtonStyle">
+        <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+        <Setter Property="TextColor" Value="White" />
+        <Setter Property="FontFamily" Value="OpenSansSemiBold" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="HeightRequest" Value="50" />
+        <Setter Property="MinimumHeightRequest" Value="44" />
+        <Setter Property="Padding" Value="16,0" />
+    </Style>
+    
+    <!-- Secondary Button - Less emphasis -->
+    <Style TargetType="Button" x:Key="SecondaryButtonStyle">
+        <Setter Property="BackgroundColor" Value="{StaticResource PrimaryLight}" />
+        <Setter Property="TextColor" Value="{StaticResource Primary}" />
+        <Setter Property="FontFamily" Value="OpenSansSemiBold" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="HeightRequest" Value="50" />
+        <Setter Property="MinimumHeightRequest" Value="44" />
+        <Setter Property="Padding" Value="16,0" />
+    </Style>
+    
+    <!-- Success Button -->
+    <Style TargetType="Button" x:Key="SuccessButtonStyle">
+        <Setter Property="BackgroundColor" Value="{StaticResource Success}" />
+        <Setter Property="TextColor" Value="White" />
+        <Setter Property="FontFamily" Value="OpenSansSemiBold" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="HeightRequest" Value="50" />
+        <Setter Property="MinimumHeightRequest" Value="44" />
+    </Style>
+    
+    <!-- Warning Button -->
+    <Style TargetType="Button" x:Key="WarningButtonStyle">
+        <Setter Property="BackgroundColor" Value="{StaticResource Warning}" />
+        <Setter Property="TextColor" Value="White" />
+        <Setter Property="FontFamily" Value="OpenSansSemiBold" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="HeightRequest" Value="50" />
+        <Setter Property="MinimumHeightRequest" Value="44" />
+    </Style>
+    
+    <!-- Danger/Error Button -->
+    <Style TargetType="Button" x:Key="DangerButtonStyle">
+        <Setter Property="BackgroundColor" Value="{StaticResource Error}" />
+        <Setter Property="TextColor" Value="White" />
+        <Setter Property="FontFamily" Value="OpenSansSemiBold" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="HeightRequest" Value="50" />
+        <Setter Property="MinimumHeightRequest" Value="44" />
+    </Style>
+    
+    <!-- Filter Chip - Inactive state -->
+    <Style TargetType="Button" x:Key="FilterChipStyle">
+        <Setter Property="BackgroundColor" Value="{StaticResource PrimaryLight}" />
+        <Setter Property="TextColor" Value="{StaticResource Primary}" />
+        <Setter Property="FontFamily" Value="OpenSansRegular" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="HeightRequest" Value="32" />
+        <Setter Property="MinimumHeightRequest" Value="32" />
+        <Setter Property="CornerRadius" Value="16" />
+        <Setter Property="Padding" Value="16,0" />
+        <Setter Property="BorderWidth" Value="0" />
+    </Style>
+    
+    <!-- Filter Chip - Active state -->
+    <Style TargetType="Button" x:Key="FilterChipActiveStyle">
+        <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+        <Setter Property="TextColor" Value="White" />
+        <Setter Property="FontFamily" Value="OpenSansRegular" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="HeightRequest" Value="32" />
+        <Setter Property="MinimumHeightRequest" Value="32" />
+        <Setter Property="CornerRadius" Value="16" />
+        <Setter Property="Padding" Value="16,0" />
+        <Setter Property="BorderWidth" Value="0" />
+    </Style>
+    
+    <!-- Filter Chip - Warning state -->
+    <Style TargetType="Button" x:Key="FilterChipWarningStyle">
+        <Setter Property="BackgroundColor" Value="{StaticResource WarningLight}" />
+        <Setter Property="TextColor" Value="{StaticResource Warning}" />
+        <Setter Property="FontFamily" Value="OpenSansRegular" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="HeightRequest" Value="32" />
+        <Setter Property="MinimumHeightRequest" Value="32" />
+        <Setter Property="CornerRadius" Value="16" />
+        <Setter Property="Padding" Value="16,0" />
+        <Setter Property="BorderWidth" Value="0" />
+    </Style>
+    
+    <!-- Floating Action Button (FAB) -->
+    <Style TargetType="Button" x:Key="FABStyle">
+        <Setter Property="Text" Value="+" />
+        <Setter Property="FontSize" Value="28" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="WidthRequest" Value="60" />
+        <Setter Property="HeightRequest" Value="60" />
+        <Setter Property="CornerRadius" Value="30" />
+        <Setter Property="BackgroundColor" Value="{StaticResource Warning}" />
+        <Setter Property="TextColor" Value="White" />
+        <Setter Property="HorizontalOptions" Value="End" />
+        <Setter Property="VerticalOptions" Value="End" />
+        <Setter Property="Margin" Value="20" />
+    </Style>
+    
+    <!-- Card Style for Border elements -->
+    <Style TargetType="Border" x:Key="CardStyle">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource Surface}, Dark={StaticResource DarkCardBackground}}" />
+        <Setter Property="StrokeShape" Value="RoundRectangle 12" />
+        <Setter Property="Stroke" Value="Transparent" />
+        <Setter Property="Padding" Value="16" />
+    </Style>
+    
+    <!-- Elevated Card Style with shadow -->
+    <Style TargetType="Border" x:Key="ElevatedCardStyle">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource Surface}, Dark={StaticResource DarkCardBackground}}" />
+        <Setter Property="StrokeShape" Value="RoundRectangle 12" />
+        <Setter Property="Stroke" Value="Transparent" />
+        <Setter Property="Padding" Value="16" />
+        <Setter Property="Shadow">
+            <Setter.Value>
+                <Shadow Brush="Black" Offset="0,2" Radius="4" Opacity="0.1" />
+            </Setter.Value>
+        </Setter>
+    </Style>
+    
+    <!-- KPI Card Style -->
+    <Style TargetType="Border" x:Key="KPICardStyle">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource Surface}, Dark={StaticResource DarkCardBackground}}" />
+        <Setter Property="StrokeShape" Value="RoundRectangle 12" />
+        <Setter Property="Stroke" Value="Transparent" />
+        <Setter Property="Padding" Value="16" />
+        <Setter Property="Shadow">
+            <Setter.Value>
+                <Shadow Brush="Black" Offset="0,2" Radius="4" Opacity="0.1" />
+            </Setter.Value>
+        </Setter>
+    </Style>
+    
+    <!-- Status Badge Border -->
+    <Style TargetType="Border" x:Key="StatusBadgeStyle">
+        <Setter Property="StrokeShape" Value="RoundRectangle 12" />
+        <Setter Property="Stroke" Value="Transparent" />
+        <Setter Property="Padding" Value="8,4" />
+    </Style>
+    
+    <!-- Stats Bar Border -->
+    <Style TargetType="Border" x:Key="StatsBarStyle">
+        <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+        <Setter Property="StrokeShape" Value="RoundRectangle 0" />
+        <Setter Property="Stroke" Value="Transparent" />
+        <Setter Property="Padding" Value="16,8" />
+    </Style>
+    
+    <!-- Empty State Border -->
+    <Style TargetType="Border" x:Key="EmptyStateStyle">
+        <Setter Property="BackgroundColor" Value="{StaticResource Background}" />
+        <Setter Property="StrokeShape" Value="RoundRectangle 8" />
+        <Setter Property="Stroke" Value="Transparent" />
+        <Setter Property="Padding" Value="24" />
     </Style>
 
 </ResourceDictionary>

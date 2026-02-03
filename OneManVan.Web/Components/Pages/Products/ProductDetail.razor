@@ -58,6 +58,9 @@
                 <button class="btn btn-primary" @onclick="EditProduct">
                     <i class="bi bi-pencil me-2"></i>Edit
                 </button>
+                <button class="btn btn-outline-danger" @onclick="ShowDeleteConfirmation">
+                    <i class="bi bi-trash me-2"></i>Delete
+                </button>
             </div>
         </div>
 
@@ -210,6 +213,14 @@
     }
 </div>
 
+<DeleteConfirmationModal 
+    IsVisible="showDeleteModal"
+    EntityType="product"
+    EntityName="@(product?.ProductName ?? product?.ModelNumber)"
+    AdditionalWarning="This may affect inventory and invoice line items."
+    OnConfirm="DeleteProduct"
+    OnCancel="CancelDelete" />
+
 <style>
     .avatar-circle {
         border-radius: 50%;
@@ -226,6 +237,7 @@
 
     private bool isLoading = true;
     private Product? product;
+    private bool showDeleteModal = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -258,5 +270,27 @@
     private void EditProduct()
     {
         Navigation.NavigateTo($"/products/{Id}/edit");
+    }
+
+    private void ShowDeleteConfirmation() => showDeleteModal = true;
+    private void CancelDelete() => showDeleteModal = false;
+
+    private async Task DeleteProduct()
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var productToDelete = await db.Products.FindAsync(Id);
+            if (productToDelete != null)
+            {
+                db.Products.Remove(productToDelete);
+                await db.SaveChangesAsync();
+                Navigation.NavigateTo("/products");
+            }
+        }
+        catch
+        {
+            showDeleteModal = false;
+        }
     }
 }

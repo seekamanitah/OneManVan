@@ -6,28 +6,45 @@
     xmlns:local="clr-namespace:OneManVan.Mobile"
     xmlns:pages="clr-namespace:OneManVan.Mobile.Pages"
     Shell.FlyoutBehavior="Flyout"
-    Shell.FlyoutBackgroundColor="{DynamicResource Primary}"
+    Shell.FlyoutBackgroundColor="{StaticResource Primary}"
+    Shell.BackgroundColor="{StaticResource Primary}"
+    Shell.ForegroundColor="White"
+    Shell.TitleColor="White"
+    Shell.DisabledColor="{StaticResource TextTertiary}"
+    Shell.UnselectedColor="{StaticResource PrimaryLight}"
+    Shell.NavBarHasShadow="True"
     Title="OneManVan FSM">
 
+    <Shell.Resources>
+        <ResourceDictionary>
+            <!-- Flyout Item Template for consistent styling -->
+            <Style TargetType="FlyoutItem" ApplyToDerivedTypes="True">
+                <Setter Property="Shell.TabBarBackgroundColor" Value="{StaticResource Surface}" />
+                <Setter Property="Shell.TabBarForegroundColor" Value="{StaticResource Primary}" />
+                <Setter Property="Shell.TabBarTitleColor" Value="{StaticResource Primary}" />
+                <Setter Property="Shell.TabBarUnselectedColor" Value="{StaticResource TextSecondary}" />
+            </Style>
+        </ResourceDictionary>
+    </Shell.Resources>
+
     <Shell.FlyoutHeader>
-        <Grid HeightRequest="120" BackgroundColor="{DynamicResource Primary}" Padding="20">
-            <VerticalStackLayout VerticalOptions="Center">
+        <Grid HeightRequest="140" BackgroundColor="{StaticResource PrimaryDark}" Padding="20">
+            <VerticalStackLayout VerticalOptions="Center" Spacing="4">
                 <Label Text="OneManVan FSM" 
-                       FontSize="24" 
-                       FontAttributes="Bold"
-                       TextColor="{DynamicResource White}"/>
-                <Label Text="HVAC Field Service" 
-                       FontSize="14" 
-                       TextColor="{DynamicResource LightText}"/>
+                       Style="{StaticResource HeadlineStyle}"
+                       TextColor="White"/>
+                <Label Text="Field Service Management" 
+                       Style="{StaticResource CaptionStyle}"
+                       TextColor="{StaticResource PrimaryLight}"/>
             </VerticalStackLayout>
         </Grid>
     </Shell.FlyoutHeader>
 
     <Shell.FlyoutFooter>
-        <Grid HeightRequest="60" BackgroundColor="{DynamicResource Primary}" Padding="20,0">
-            <Label Text="v1.0 - Offline Mode" 
-                   FontSize="12" 
-                   TextColor="{DynamicResource LightText}"
+        <Grid HeightRequest="60" BackgroundColor="{StaticResource PrimaryDark}" Padding="20,0">
+            <Label Text="v1.0 - Offline Ready" 
+                   Style="{StaticResource CaptionStyle}"
+                   TextColor="{StaticResource PrimaryLight}"
                    VerticalOptions="Center"/>
         </Grid>
     </Shell.FlyoutFooter>

@@ -158,6 +158,9 @@
                                             <button class="btn btn-outline-secondary" @onclick="@(() => EditEstimate(estimate.Id))">
                                                 <i class="bi bi-pencil"></i>
                                             </button>
+                                            <button class="btn btn-outline-danger" title="Delete" @onclick="@(() => ShowDeleteConfirmation(estimate))">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -195,6 +198,13 @@
     </div>
 </div>
 
+<DeleteConfirmationModal 
+    IsVisible="showDeleteModal"
+    EntityType="estimate"
+    EntityName="@(estimateToDelete?.Title)"
+    OnConfirm="DeleteEstimate"
+    OnCancel="CancelDelete" />
+
 @code {
     private bool isLoading = true;
     private string errorMessage = "";
@@ -210,6 +220,9 @@
     private int pendingCount = 0;
     private int acceptedCount = 0;
     private int expiredCount = 0;
+    
+    private bool showDeleteModal = false;
+    private Estimate? estimateToDelete;
 
     protected override async Task OnInitializedAsync()
     {
@@ -312,5 +325,42 @@
     private async Task OnImportComplete()
     {
         await LoadEstimatesAsync();
+    }
+
+    private void ShowDeleteConfirmation(Estimate estimate)
+    {
+        estimateToDelete = estimate;
+        showDeleteModal = true;
+    }
+
+    private void CancelDelete()
+    {
+        showDeleteModal = false;
+        estimateToDelete = null;
+    }
+
+    private async Task DeleteEstimate()
+    {
+        if (estimateToDelete == null) return;
+        
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var estimate = await db.Estimates.FindAsync(estimateToDelete.Id);
+            if (estimate != null)
+            {
+                db.Estimates.Remove(estimate);
+                await db.SaveChangesAsync();
+            }
+            
+            showDeleteModal = false;
+            estimateToDelete = null;
+            await LoadEstimatesAsync();
+        }
+        catch
+        {
+            showDeleteModal = false;
+            estimateToDelete = null;
+        }
     }
 }

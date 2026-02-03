@@ -120,6 +120,9 @@
                                             <button class="btn btn-outline-secondary" @onclick="@(() => EditProduct(product.Id))">
                                                 <i class="bi bi-pencil"></i>
                                             </button>
+                                            <button class="btn btn-outline-danger" title="Delete" @onclick="@(() => ShowDeleteConfirmation(product))">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -149,6 +152,14 @@
     </div>
 </div>
 
+<DeleteConfirmationModal 
+    IsVisible="showDeleteModal"
+    EntityType="product"
+    EntityName="@(productToDelete?.ProductName ?? productToDelete?.ModelNumber)"
+    AdditionalWarning="This may affect inventory and invoice line items."
+    OnConfirm="DeleteProduct"
+    OnCancel="CancelDelete" />
+
 @code {
     private bool isLoading = true;
     private List<Product> allProducts = new();
@@ -158,6 +169,9 @@
     private string searchText = "";
     private string filterCategory = "";
     private string filterManufacturer = "";
+    
+    private bool showDeleteModal = false;
+    private Product? productToDelete;
 
     protected override async Task OnInitializedAsync()
     {
@@ -243,5 +257,42 @@
     private async Task OnImportComplete()
     {
         await LoadProductsAsync();
+    }
+
+    private void ShowDeleteConfirmation(Product product)
+    {
+        productToDelete = product;
+        showDeleteModal = true;
+    }
+
+    private void CancelDelete()
+    {
+        showDeleteModal = false;
+        productToDelete = null;
+    }
+
+    private async Task DeleteProduct()
+    {
+        if (productToDelete == null) return;
+        
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var product = await db.Products.FindAsync(productToDelete.Id);
+            if (product != null)
+            {
+                db.Products.Remove(product);
+                await db.SaveChangesAsync();
+            }
+            
+            showDeleteModal = false;
+            productToDelete = null;
+            await LoadProductsAsync();
+        }
+        catch
+        {
+            showDeleteModal = false;
+            productToDelete = null;
+        }
     }
 }

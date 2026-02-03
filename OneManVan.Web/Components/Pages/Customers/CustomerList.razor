@@ -180,6 +180,9 @@
                                             <button class="btn btn-outline-secondary" @onclick="@(() => EditCustomer(customer.Id))">
                                                 <i class="bi bi-pencil"></i>
                                             </button>
+                                            <button class="btn btn-outline-danger" title="Delete" @onclick="@(() => ShowDeleteConfirmation(customer))">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -218,6 +221,14 @@
     </div>
 </div>
 
+<DeleteConfirmationModal 
+    IsVisible="showDeleteModal"
+    EntityType="customer"
+    EntityName="@(customerToDelete?.Name)"
+    AdditionalWarning="Related jobs, invoices, estimates, and sites may be affected."
+    OnConfirm="DeleteCustomer"
+    OnCancel="CancelDelete" />
+
 <style>
     .avatar-circle {
         width: 40px;
@@ -243,6 +254,9 @@
     private string sortColumn = "Name";
     private bool sortAscending = true;
     private int displayCount = 50;
+    
+    private bool showDeleteModal = false;
+    private Customer? customerToDelete;
 
     protected override async Task OnInitializedAsync()
     {
@@ -371,5 +385,42 @@
     private async Task OnImportComplete()
     {
         await LoadCustomersAsync();
+    }
+
+    private void ShowDeleteConfirmation(Customer customer)
+    {
+        customerToDelete = customer;
+        showDeleteModal = true;
+    }
+
+    private void CancelDelete()
+    {
+        showDeleteModal = false;
+        customerToDelete = null;
+    }
+
+    private async Task DeleteCustomer()
+    {
+        if (customerToDelete == null) return;
+        
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var customer = await db.Customers.FindAsync(customerToDelete.Id);
+            if (customer != null)
+            {
+                db.Customers.Remove(customer);
+                await db.SaveChangesAsync();
+            }
+            
+            showDeleteModal = false;
+            customerToDelete = null;
+            await LoadCustomersAsync();
+        }
+        catch
+        {
+            showDeleteModal = false;
+            customerToDelete = null;
+        }
     }
 }

@@ -160,6 +160,9 @@
                                             <button class="btn btn-outline-secondary" @onclick="@(() => EditItem(item.Id))">
                                                 <i class="bi bi-pencil"></i>
                                             </button>
+                                            <button class="btn btn-outline-danger" title="Delete" @onclick="@(() => ShowDeleteConfirmation(item))">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -189,6 +192,13 @@
     </div>
 </div>
 
+<DeleteConfirmationModal 
+    IsVisible="showDeleteModal"
+    EntityType="inventory item"
+    EntityName="@(itemToDelete?.Name)"
+    OnConfirm="DeleteItem"
+    OnCancel="CancelDelete" />
+
 @code {
     private bool isLoading = true;
     private List<InventoryItem> allItems = new();
@@ -202,6 +212,9 @@
     private int lowStockCount = 0;
     private int outOfStockCount = 0;
     private decimal totalValue = 0;
+    
+    private bool showDeleteModal = false;
+    private InventoryItem? itemToDelete;
 
     protected override async Task OnInitializedAsync()
     {
@@ -313,5 +326,42 @@
     private async Task OnImportComplete()
     {
         await LoadInventoryAsync();
+    }
+
+    private void ShowDeleteConfirmation(InventoryItem item)
+    {
+        itemToDelete = item;
+        showDeleteModal = true;
+    }
+
+    private void CancelDelete()
+    {
+        showDeleteModal = false;
+        itemToDelete = null;
+    }
+
+    private async Task DeleteItem()
+    {
+        if (itemToDelete == null) return;
+        
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var item = await db.InventoryItems.FindAsync(itemToDelete.Id);
+            if (item != null)
+            {
+                db.InventoryItems.Remove(item);
+                await db.SaveChangesAsync();
+            }
+            
+            showDeleteModal = false;
+            itemToDelete = null;
+            await LoadInventoryAsync();
+        }
+        catch
+        {
+            showDeleteModal = false;
+            itemToDelete = null;
+        }
     }
 }

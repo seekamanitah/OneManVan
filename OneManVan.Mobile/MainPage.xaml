@@ -24,9 +24,8 @@
                     <VerticalStackLayout>
                         <Label x:Name="TodayDayLabel"
                                Text="Today" 
-                               FontSize="28" 
-                               FontAttributes="Bold"
-                               TextColor="{AppThemeBinding Light=#2196F3, Dark=#64B5F6}"/>
+                               Style="{StaticResource DisplayStyle}"
+                               TextColor="{StaticResource Primary}"/>
                         <Label x:Name="TodayDateLabel"
                                Text="December 14, 2024"
                                FontSize="14"
@@ -44,9 +43,8 @@
 
                 <!-- Hero Metrics Section -->
                 <Label Text="Business Overview" 
-                       FontSize="16" 
-                       FontAttributes="Bold"
-                       TextColor="{AppThemeBinding Light=#757575, Dark=#B0B0B0}"
+                       Style="{StaticResource SectionHeaderStyle}"
+                       TextColor="{StaticResource TextSecondary}"
                        Margin="0,8,0,4"/>
                 
                 <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="12">
@@ -87,9 +85,7 @@
                 <Grid ColumnDefinitions="*,Auto" Margin="0,16,0,8">
                     <VerticalStackLayout>
                         <Label Text="Today's Focus"
-                               FontSize="18"
-                               FontAttributes="Bold"
-                               TextColor="{AppThemeBinding Light=#333, Dark=#FFF}"/>
+                               Style="{StaticResource HeadlineStyle}"/>
                         <Label x:Name="TodayFocusSummary"
                                Text="3 jobs scheduled"
                                FontSize="12"
@@ -99,27 +95,28 @@
                     <!-- Overdue Alert Badge -->
                     <Border x:Name="OverdueAlertBadge"
                             Grid.Column="1"
-                            BackgroundColor="{AppThemeBinding Light=#FFEBEE, Dark=#3D1F1F}"
+                            BackgroundColor="{StaticResource ErrorLight}"
                             StrokeShape="RoundRectangle 12"
                             Stroke="Transparent"
                             Padding="12,6"
                             IsVisible="False">
                         <HorizontalStackLayout Spacing="6">
-                            <Label Text="⚠"
+                            <Label Text="!"
                                    FontSize="14"
-                                   TextColor="{AppThemeBinding Light=#D32F2F, Dark=#EF5350}"/>
+                                   FontAttributes="Bold"
+                                   TextColor="{StaticResource Error}"/>
                             <Label x:Name="OverdueAlertText"
                                    Text="2 overdue"
                                    FontSize="12"
                                    FontAttributes="Bold"
-                                   TextColor="{AppThemeBinding Light=#D32F2F, Dark=#EF5350}"/>
+                                   TextColor="{StaticResource Error}"/>
                         </HorizontalStackLayout>
                     </Border>
                 </Grid>
 
                 <!-- Quick Stats Row -->
                 <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8" Margin="0,8,0,0">
-                    <Border BackgroundColor="{AppThemeBinding Light=#E3F2FD, Dark=#1E3A5F}"
+                    <Border BackgroundColor="{StaticResource PrimaryLight}"
                             StrokeShape="RoundRectangle 8"
                             Stroke="Transparent"
                             Padding="12">
@@ -128,15 +125,15 @@
                                    Text="0"
                                    FontSize="24"
                                    FontAttributes="Bold"
-                                   TextColor="{AppThemeBinding Light=#2196F3, Dark=#64B5F6}"
+                                   TextColor="{StaticResource Primary}"
                                    HorizontalTextAlignment="Center"/>
                             <Label Text="Today"
-                                   FontSize="10"
-                                   TextColor="{AppThemeBinding Light=#1976D2, Dark=#64B5F6}"
+                                   Style="{StaticResource MicroStyle}"
+                                   TextColor="{StaticResource Primary}"
                                    HorizontalTextAlignment="Center"/>
                         </VerticalStackLayout>
                     </Border>
-                    <Border BackgroundColor="{AppThemeBinding Light=#FFF3E0, Dark=#3D2D1F}"
+                    <Border BackgroundColor="{StaticResource WarningLight}"
                             StrokeShape="RoundRectangle 8"
                             Stroke="Transparent"
                             Padding="12">
@@ -145,15 +142,15 @@
                                    Text="0"
                                    FontSize="24"
                                    FontAttributes="Bold"
-                                   TextColor="{AppThemeBinding Light=#FF9800, Dark=#FFB74D}"
+                                   TextColor="{StaticResource Warning}"
                                    HorizontalTextAlignment="Center"/>
                             <Label Text="This Week"
-                                   FontSize="10"
-                                   TextColor="{AppThemeBinding Light=#E65100, Dark=#FFB74D}"
+                                   Style="{StaticResource MicroStyle}"
+                                   TextColor="{StaticResource Warning}"
                                    HorizontalTextAlignment="Center"/>
                         </VerticalStackLayout>
                     </Border>
-                    <Border BackgroundColor="{AppThemeBinding Light=#FFEBEE, Dark=#3D1F1F}"
+                    <Border BackgroundColor="{StaticResource ErrorLight}"
                             StrokeShape="RoundRectangle 8"
                             Stroke="Transparent"
                             Padding="12">
@@ -162,11 +159,11 @@
                                    Text="0"
                                    FontSize="24"
                                    FontAttributes="Bold"
-                                   TextColor="{AppThemeBinding Light=#F44336, Dark=#EF9A9A}"
+                                   TextColor="{StaticResource Error}"
                                    HorizontalTextAlignment="Center"/>
                             <Label Text="Overdue"
-                                   FontSize="10"
-                                   TextColor="{AppThemeBinding Light=#C62828, Dark=#EF9A9A}"
+                                   Style="{StaticResource MicroStyle}"
+                                   TextColor="{StaticResource Error}"
                                    HorizontalTextAlignment="Center"/>
                         </VerticalStackLayout>
                     </Border>
@@ -174,9 +171,7 @@
 
                 <!-- Next Up Section -->
                 <Label Text="Next Up"
-                       FontSize="18"
-                       FontAttributes="Bold"
-                       TextColor="{AppThemeBinding Light=#333, Dark=#FFF}"
+                       Style="{StaticResource HeadlineStyle}"
                        Margin="0,8,0,0"/>
 
                 <!-- Next Job Card (Large) -->
@@ -239,7 +234,7 @@
 
                         <!-- Address -->
                         <HorizontalStackLayout Grid.Row="2" Grid.Column="1" Padding="16,0,16,4" Spacing="8">
-                            <Label Text="📍" FontSize="14"/>
+                            <Label Text="Location:" FontSize="14" TextColor="{StaticResource TextSecondary}"/>
                             <Label x:Name="NextJobAddressLabel"
                                    Text="123 Main Street, Anytown"
                                    FontSize="13"
@@ -328,13 +323,11 @@
                 <!-- Today's Schedule -->
                 <Grid ColumnDefinitions="*,Auto" Margin="0,8,0,0">
                     <Label Text="Today's Schedule"
-                           FontSize="18"
-                           FontAttributes="Bold"
-                           TextColor="{AppThemeBinding Light=#333, Dark=#FFF}"/>
+                           Style="{StaticResource HeadlineStyle}"/>
                     <Button Grid.Column="1"
                             Text="View All"
                             BackgroundColor="Transparent"
-                            TextColor="{AppThemeBinding Light=#2196F3, Dark=#64B5F6}"
+                            TextColor="{StaticResource Primary}"
                             FontSize="13"
                             Padding="0"
                             Clicked="OnViewAllJobsClicked"/>
@@ -347,16 +340,14 @@
 
                 <!-- Quick Actions Section -->
                 <Label Text="Quick Actions" 
-                       FontSize="18" 
-                       FontAttributes="Bold"
-                       TextColor="{AppThemeBinding Light=#333, Dark=#FFF}"
+                       Style="{StaticResource HeadlineStyle}"
                        Margin="0,16,0,8"/>
 
                 <!-- Primary Actions Grid -->
                 <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="12">
                     
                     <!-- New Job -->
-                    <Border BackgroundColor="#2196F3"
+                    <Border BackgroundColor="{StaticResource Primary}"
                             StrokeShape="RoundRectangle 12"
                             Stroke="Transparent">
                         <Border.GestureRecognizers>
@@ -385,8 +376,10 @@
                             <TapGestureRecognizer Tapped="OnNewEstimateClicked"/>
                         </Border.GestureRecognizers>
                         <VerticalStackLayout Padding="16,20" Spacing="8" HorizontalOptions="Center">
-                            <Label Text="📋"
-                                   FontSize="28"
+                            <Label Text="EST"
+                                   FontSize="24"
+                                   FontAttributes="Bold"
+                                   TextColor="White"
                                    HorizontalTextAlignment="Center"/>
                             <Label Text="New Estimate"
                                    FontSize="14"
@@ -398,15 +391,17 @@
 
                     <!-- Add Customer -->
                     <Border Grid.Row="1"
-                            BackgroundColor="#4CAF50"
+                            BackgroundColor="{StaticResource Success}"
                             StrokeShape="RoundRectangle 12"
                             Stroke="Transparent">
                         <Border.GestureRecognizers>
                             <TapGestureRecognizer Tapped="OnAddCustomerClicked"/>
                         </Border.GestureRecognizers>
                         <VerticalStackLayout Padding="16,20" Spacing="8" HorizontalOptions="Center">
-                            <Label Text="👤"
+                            <Label Text="+"
                                    FontSize="28"
+                                   FontAttributes="Bold"
+                                   TextColor="White"
                                    HorizontalTextAlignment="Center"/>
                             <Label Text="Add Customer"
                                    FontSize="14"
@@ -418,15 +413,17 @@
 
                     <!-- Search Assets -->
                     <Border Grid.Row="1" Grid.Column="1"
-                            BackgroundColor="#FF9800"
+                            BackgroundColor="{StaticResource Warning}"
                             StrokeShape="RoundRectangle 12"
                             Stroke="Transparent">
                         <Border.GestureRecognizers>
                             <TapGestureRecognizer Tapped="OnSearchAssetsClicked"/>
                         </Border.GestureRecognizers>
                         <VerticalStackLayout Padding="16,20" Spacing="8" HorizontalOptions="Center">
-                            <Label Text="🔍"
-                                   FontSize="28"
+                            <Label Text="FIND"
+                                   FontSize="24"
+                                   FontAttributes="Bold"
+                                   TextColor="White"
                                    HorizontalTextAlignment="Center"/>
                             <Label Text="Search Assets"
                                    FontSize="14"
@@ -442,7 +439,7 @@
                     <HorizontalStackLayout Spacing="12">
                         
                         <!-- Create Invoice -->
-                        <Border BackgroundColor="{AppThemeBinding Light=#E3F2FD, Dark=#1E3A5F}"
+                        <Border BackgroundColor="{StaticResource PrimaryLight}"
                                 StrokeShape="RoundRectangle 12"
                                 Stroke="Transparent"
                                 Padding="16,12"
@@ -451,19 +448,21 @@
                                 <TapGestureRecognizer Tapped="OnCreateInvoiceClicked"/>
                             </Border.GestureRecognizers>
                             <HorizontalStackLayout Spacing="8">
-                                <Label Text="💰"
+                                <Label Text="$"
                                        FontSize="20"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource Primary}"
                                        VerticalOptions="Center"/>
                                 <Label Text="Invoice"
                                        FontSize="13"
                                        FontAttributes="Bold"
-                                       TextColor="{AppThemeBinding Light=#2196F3, Dark=#64B5F6}"
+                                       TextColor="{StaticResource Primary}"
                                        VerticalOptions="Center"/>
                             </HorizontalStackLayout>
                         </Border>
 
                         <!-- View Calendar -->
-                        <Border BackgroundColor="{AppThemeBinding Light=#E8F5E9, Dark=#1B3D1F}"
+                        <Border BackgroundColor="{StaticResource SuccessLight}"
                                 StrokeShape="RoundRectangle 12"
                                 Stroke="Transparent"
                                 Padding="16,12"
@@ -472,19 +471,21 @@
                                 <TapGestureRecognizer Tapped="OnViewCalendarClicked"/>
                             </Border.GestureRecognizers>
                             <HorizontalStackLayout Spacing="8">
-                                <Label Text="📅"
-                                       FontSize="20"
+                                <Label Text="CAL"
+                                       FontSize="16"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource Success}"
                                        VerticalOptions="Center"/>
                                 <Label Text="Calendar"
                                        FontSize="13"
                                        FontAttributes="Bold"
-                                       TextColor="{AppThemeBinding Light=#4CAF50, Dark=#81C784}"
+                                       TextColor="{StaticResource Success}"
                                        VerticalOptions="Center"/>
                             </HorizontalStackLayout>
                         </Border>
 
                         <!-- Scan Barcode -->
-                        <Border BackgroundColor="{AppThemeBinding Light=#FFF3E0, Dark=#3D2D1F}"
+                        <Border BackgroundColor="{StaticResource WarningLight}"
                                 StrokeShape="RoundRectangle 12"
                                 Stroke="Transparent"
                                 Padding="16,12"
@@ -493,10 +494,12 @@
                                 <TapGestureRecognizer Tapped="OnScanBarcodeClicked"/>
                             </Border.GestureRecognizers>
                             <HorizontalStackLayout Spacing="8">
-                                <Label Text="📷"
-                                       FontSize="20"
+                                <Label Text="SCAN"
+                                       FontSize="16"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource Warning}"
                                        VerticalOptions="Center"/>
-                                <Label Text="Scan"
+                                <Label Text="Barcode"
                                        FontSize="13"
                                        FontAttributes="Bold"
                                        TextColor="{AppThemeBinding Light=#FF9800, Dark=#FFB74D}"
@@ -507,10 +510,8 @@
                 </ScrollView>
 
                 <!-- Alerts & Notifications Section -->
-                <Label Text="Alerts &amp; Notifications" 
-                       FontSize="18" 
-                       FontAttributes="Bold"
-                       TextColor="{AppThemeBinding Light=#333, Dark=#FFF}"
+                <Label Text="Alerts" 
+                       Style="{StaticResource HeadlineStyle}"
                        Margin="0,16,0,8"/>
 
                 <VerticalStackLayout x:Name="AlertsContainer" Spacing="8">
@@ -519,25 +520,26 @@
 
                 <!-- No Alerts State -->
                 <Border x:Name="NoAlertsCard"
-                        BackgroundColor="{AppThemeBinding Light=White, Dark=#2D2D2D}"
+                        BackgroundColor="{AppThemeBinding Light={StaticResource Surface}, Dark=#2D2D2D}"
                         StrokeShape="RoundRectangle 12"
                         Stroke="Transparent"
                         Padding="24,16"
                         IsVisible="False">
                     <HorizontalStackLayout Spacing="12" HorizontalOptions="Center">
-                        <Label Text="✓"
-                               FontSize="24"
-                               TextColor="{AppThemeBinding Light=#4CAF50, Dark=#81C784}"
+                        <Label Text="OK"
+                               FontSize="18"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource Success}"
                                VerticalOptions="Center"/>
                         <Label Text="All caught up! No alerts at this time."
                                FontSize="14"
-                               TextColor="{AppThemeBinding Light=#757575, Dark=#B0B0B0}"
+                               TextColor="{StaticResource TextSecondary}"
                                VerticalOptions="Center"/>
                     </HorizontalStackLayout>
                 </Border>
 
                 <!-- Sync Status -->
-                <Border BackgroundColor="{AppThemeBinding Light=#E3F2FD, Dark=#1E3A5F}" 
+                <Border BackgroundColor="{StaticResource PrimaryLight}" 
                         StrokeShape="RoundRectangle 8"
                         Stroke="Transparent"
                         Padding="12"
@@ -545,7 +547,7 @@
                     <HorizontalStackLayout Spacing="8">
                         <Label Text="Offline Mode - Data saved locally" 
                                FontSize="12" 
-                               TextColor="{AppThemeBinding Light=#1976D2, Dark=#64B5F6}"
+                               TextColor="{StaticResource Primary}"
                                VerticalOptions="Center"/>
                     </HorizontalStackLayout>
                 </Border>
@@ -603,7 +605,7 @@
 
                 <!-- Week Summary Stats -->
                 <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
-                    <Border BackgroundColor="{AppThemeBinding Light=#E3F2FD, Dark=#1E3A5F}"
+                    <Border BackgroundColor="{StaticResource PrimaryLight}"
                             StrokeShape="RoundRectangle 8"
                             Stroke="Transparent"
                             Padding="12">
@@ -612,15 +614,15 @@
                                    Text="0"
                                    FontSize="24"
                                    FontAttributes="Bold"
-                                   TextColor="#2196F3"
+                                   TextColor="{StaticResource Primary}"
                                    HorizontalTextAlignment="Center"/>
                             <Label Text="Jobs"
-                                   FontSize="10"
-                                   TextColor="{AppThemeBinding Light=#1976D2, Dark=#64B5F6}"
+                                   Style="{StaticResource MicroStyle}"
+                                   TextColor="{StaticResource Primary}"
                                    HorizontalTextAlignment="Center"/>
                         </VerticalStackLayout>
                     </Border>
-                    <Border BackgroundColor="{AppThemeBinding Light=#E8F5E9, Dark=#1B3D1F}"
+                    <Border BackgroundColor="{StaticResource SuccessLight}"
                             StrokeShape="RoundRectangle 8"
                             Stroke="Transparent"
                             Padding="12">
@@ -629,15 +631,15 @@
                                    Text="0"
                                    FontSize="24"
                                    FontAttributes="Bold"
-                                   TextColor="#4CAF50"
+                                   TextColor="{StaticResource Success}"
                                    HorizontalTextAlignment="Center"/>
                             <Label Text="Done"
-                                   FontSize="10"
-                                   TextColor="{AppThemeBinding Light=#388E3C, Dark=#81C784}"
+                                   Style="{StaticResource MicroStyle}"
+                                   TextColor="{StaticResource Success}"
                                    HorizontalTextAlignment="Center"/>
                         </VerticalStackLayout>
                     </Border>
-                    <Border BackgroundColor="{AppThemeBinding Light=#FFF3E0, Dark=#3D2D1F}"
+                    <Border BackgroundColor="{StaticResource WarningLight}"
                             StrokeShape="RoundRectangle 8"
                             Stroke="Transparent"
                             Padding="12">
@@ -646,11 +648,11 @@
                                    Text="$0"
                                    FontSize="24"
                                    FontAttributes="Bold"
-                                   TextColor="#FF9800"
+                                   TextColor="{StaticResource Warning}"
                                    HorizontalTextAlignment="Center"/>
                             <Label Text="Revenue"
-                                   FontSize="10"
-                                   TextColor="{AppThemeBinding Light=#E65100, Dark=#FFB74D}"
+                                   Style="{StaticResource MicroStyle}"
+                                   TextColor="{StaticResource Warning}"
                                    HorizontalTextAlignment="Center"/>
                         </VerticalStackLayout>
                     </Border>
@@ -687,9 +689,8 @@
 
                 <Label x:Name="OverdueHeader"
                        Text="Overdue"
-                       FontSize="18"
-                       FontAttributes="Bold"
-                       TextColor="#F44336"
+                       Style="{StaticResource HeadlineStyle}"
+                       TextColor="{StaticResource Error}"
                        Margin="0,8,0,0"
                        IsVisible="False"/>
                 
@@ -740,19 +741,20 @@
 
                 <!-- Empty State for Selected Day -->
                 <Border x:Name="SelectedDayEmptyState"
-                        BackgroundColor="{AppThemeBinding Light=#F5F5F5, Dark=#2D2D2D}"
+                        BackgroundColor="{AppThemeBinding Light={StaticResource Background}, Dark=#2D2D2D}"
                         StrokeShape="RoundRectangle 8"
                         Stroke="Transparent"
                         Padding="24"
                         IsVisible="False">
                     <VerticalStackLayout HorizontalOptions="Center" Spacing="8">
-                        <Label Text="📅"
+                        <Label Text="-"
                                FontSize="32"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource TextTertiary}"
                                HorizontalTextAlignment="Center"/>
                         <Label Text="No jobs scheduled"
-                               FontSize="16"
-                               FontAttributes="Bold"
-                               TextColor="{AppThemeBinding Light=#757575, Dark=#B0B0B0}"
+                               Style="{StaticResource TitleStyle}"
+                               TextColor="{StaticResource TextSecondary}"
                                HorizontalTextAlignment="Center"/>
                         <Label Text="Tap + Schedule to add a job"
                                FontSize="12"

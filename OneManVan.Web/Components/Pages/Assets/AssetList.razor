@@ -114,6 +114,9 @@
                                             <button class="btn btn-outline-secondary" @onclick="@(() => EditAsset(asset.Id))">
                                                 <i class="bi bi-pencil"></i>
                                             </button>
+                                            <button class="btn btn-outline-danger" title="Delete" @onclick="@(() => ShowDeleteConfirmation(asset))">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -143,6 +146,14 @@
     </div>
 </div>
 
+<DeleteConfirmationModal 
+    IsVisible="showDeleteModal"
+    EntityType="asset"
+    EntityName="@(assetToDelete?.AssetName ?? $"{assetToDelete?.Brand} {assetToDelete?.Model}")"
+    AdditionalWarning="Related warranty claims and jobs may be affected."
+    OnConfirm="DeleteAsset"
+    OnCancel="CancelDelete" />
+
 @code {
     private bool isLoading = true;
     private List<Asset> allAssets = new();
@@ -151,6 +162,9 @@
     private string searchText = "";
     private string filterType = "";
     private string filterStatus = "";
+    
+    private bool showDeleteModal = false;
+    private Asset? assetToDelete;
 
     protected override async Task OnInitializedAsync()
     {
@@ -242,5 +256,42 @@
     private async Task OnImportComplete()
     {
         await LoadAssetsAsync();
+    }
+
+    private void ShowDeleteConfirmation(Asset asset)
+    {
+        assetToDelete = asset;
+        showDeleteModal = true;
+    }
+
+    private void CancelDelete()
+    {
+        showDeleteModal = false;
+        assetToDelete = null;
+    }
+
+    private async Task DeleteAsset()
+    {
+        if (assetToDelete == null) return;
+        
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var asset = await db.Assets.FindAsync(assetToDelete.Id);
+            if (asset != null)
+            {
+                db.Assets.Remove(asset);
+                await db.SaveChangesAsync();
+            }
+            
+            showDeleteModal = false;
+            assetToDelete = null;
+            await LoadAssetsAsync();
+        }
+        catch
+        {
+            showDeleteModal = false;
+            assetToDelete = null;
+        }
     }
 }

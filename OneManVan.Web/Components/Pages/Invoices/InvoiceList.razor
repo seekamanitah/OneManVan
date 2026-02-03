@@ -147,6 +147,9 @@
                                             <button class="btn btn-outline-secondary" @onclick="@(() => EditInvoice(invoice.Id))">
                                                 <i class="bi bi-pencil"></i>
                                             </button>
+                                            <button class="btn btn-outline-danger" title="Delete" @onclick="@(() => ShowDeleteConfirmation(invoice))">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -169,6 +172,14 @@
     </div>
 </div>
 
+<DeleteConfirmationModal 
+    IsVisible="showDeleteModal"
+    EntityType="invoice"
+    EntityName="@(invoiceToDelete?.InvoiceNumber)"
+    AdditionalWarning="Payment records may be affected."
+    OnConfirm="DeleteInvoice"
+    OnCancel="CancelDelete" />
+
 @code {
 private bool isLoading = true;
 private List<Invoice> allInvoices = new();
@@ -182,6 +193,9 @@ private decimal totalOutstanding = 0;
 private int overdueCount = 0;
 private decimal paidThisMonth = 0;
 private int draftCount = 0;
+    
+private bool showDeleteModal = false;
+private Invoice? invoiceToDelete;
 
 protected override async Task OnInitializedAsync()
 {
@@ -276,5 +290,42 @@ private async Task LoadInvoicesAsync()
     private async Task OnImportComplete()
     {
         await LoadInvoicesAsync();
+    }
+
+    private void ShowDeleteConfirmation(Invoice invoice)
+    {
+        invoiceToDelete = invoice;
+        showDeleteModal = true;
+    }
+
+    private void CancelDelete()
+    {
+        showDeleteModal = false;
+        invoiceToDelete = null;
+    }
+
+    private async Task DeleteInvoice()
+    {
+        if (invoiceToDelete == null) return;
+        
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var invoice = await db.Invoices.FindAsync(invoiceToDelete.Id);
+            if (invoice != null)
+            {
+                db.Invoices.Remove(invoice);
+                await db.SaveChangesAsync();
+            }
+            
+            showDeleteModal = false;
+            invoiceToDelete = null;
+            await LoadInvoicesAsync();
+        }
+        catch
+        {
+            showDeleteModal = false;
+            invoiceToDelete = null;
+        }
     }
 }

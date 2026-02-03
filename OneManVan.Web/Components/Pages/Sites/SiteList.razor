@@ -80,6 +80,9 @@
                                             <button class="btn btn-outline-secondary" @onclick="@(() => EditSite(site.Id))">
                                                 <i class="bi bi-pencil"></i>
                                             </button>
+                                            <button class="btn btn-outline-danger" title="Delete" @onclick="@(() => ShowDeleteConfirmation(site))">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -102,12 +105,23 @@
     </div>
 </div>
 
+<DeleteConfirmationModal 
+    IsVisible="showDeleteModal"
+    EntityType="site"
+    EntityName="@(siteToDelete?.SiteNumber ?? siteToDelete?.Address)"
+    AdditionalWarning="Related jobs and assets may be affected."
+    OnConfirm="DeleteSite"
+    OnCancel="CancelDelete" />
+
 @code {
     private bool isLoading = true;
     private List<Site> allSites = new();
     private List<Site> filteredSites = new();
     
     private string searchText = "";
+    
+    private bool showDeleteModal = false;
+    private Site? siteToDelete;
 
     protected override async Task OnInitializedAsync()
     {
@@ -162,5 +176,42 @@
     private async Task OnImportComplete()
     {
         await LoadSitesAsync();
+    }
+
+    private void ShowDeleteConfirmation(Site site)
+    {
+        siteToDelete = site;
+        showDeleteModal = true;
+    }
+
+    private void CancelDelete()
+    {
+        showDeleteModal = false;
+        siteToDelete = null;
+    }
+
+    private async Task DeleteSite()
+    {
+        if (siteToDelete == null) return;
+        
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var site = await db.Sites.FindAsync(siteToDelete.Id);
+            if (site != null)
+            {
+                db.Sites.Remove(site);
+                await db.SaveChangesAsync();
+            }
+            
+            showDeleteModal = false;
+            siteToDelete = null;
+            await LoadSitesAsync();
+        }
+        catch
+        {
+            showDeleteModal = false;
+            siteToDelete = null;
+        }
     }
 }

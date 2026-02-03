@@ -72,6 +72,9 @@
                 <button class="btn btn-primary" @onclick="EditInvoice">
                     <i class="bi bi-pencil me-2"></i>Edit
                 </button>
+                <button class="btn btn-outline-danger" @onclick="ShowDeleteConfirmation">
+                    <i class="bi bi-trash me-2"></i>Delete
+                </button>
             </div>
         </div>
 
@@ -185,6 +188,14 @@
     }
 </div>
 
+<DeleteConfirmationModal 
+    IsVisible="showDeleteModal"
+    EntityType="invoice"
+    EntityName="@(invoice?.InvoiceNumber)"
+    AdditionalWarning="Payment records may be affected."
+    OnConfirm="DeleteInvoice"
+    OnCancel="CancelDelete" />
+
 <style>
     .avatar-circle {
         border-radius: 50%;
@@ -203,6 +214,7 @@ private bool isLoading = true;
 private bool isSendingEmail = false;
 private string? emailMessage;
 private Invoice? invoice;
+private bool showDeleteModal = false;
 
 protected override async Task OnInitializedAsync()
 {
@@ -290,4 +302,26 @@ protected override async Task OnInitializedAsync()
         InvoiceStatus.Cancelled => "bg-dark",
         _ => "bg-secondary"
     };
+
+    private void ShowDeleteConfirmation() => showDeleteModal = true;
+    private void CancelDelete() => showDeleteModal = false;
+
+    private async Task DeleteInvoice()
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var invoiceToDelete = await db.Invoices.FindAsync(Id);
+            if (invoiceToDelete != null)
+            {
+                db.Invoices.Remove(invoiceToDelete);
+                await db.SaveChangesAsync();
+                Navigation.NavigateTo("/invoices");
+            }
+        }
+        catch
+        {
+            showDeleteModal = false;
+        }
+    }
 }

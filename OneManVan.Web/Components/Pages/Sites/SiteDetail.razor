@@ -49,6 +49,9 @@
                 <button class="btn btn-primary" @onclick="EditSite">
                     <i class="bi bi-pencil me-2"></i>Edit
                 </button>
+                <button class="btn btn-outline-danger" @onclick="ShowDeleteConfirmation">
+                    <i class="bi bi-trash me-2"></i>Delete
+                </button>
             </div>
         </div>
 
@@ -139,6 +142,14 @@
     }
 </div>
 
+<DeleteConfirmationModal 
+    IsVisible="showDeleteModal"
+    EntityType="site"
+    EntityName="@(site?.SiteNumber ?? site?.Address)"
+    AdditionalWarning="Related jobs and assets may be affected."
+    OnConfirm="DeleteSite"
+    OnCancel="CancelDelete" />
+
 <style>
     .avatar-circle {
         border-radius: 50%;
@@ -155,6 +166,7 @@
 
     private bool isLoading = true;
     private Site? site;
+    private bool showDeleteModal = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -182,4 +194,26 @@
 
     private void GoBack() => Navigation.NavigateTo("/sites");
     private void EditSite() => Navigation.NavigateTo($"/sites/{Id}/edit");
+
+    private void ShowDeleteConfirmation() => showDeleteModal = true;
+    private void CancelDelete() => showDeleteModal = false;
+
+    private async Task DeleteSite()
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var siteToDelete = await db.Sites.FindAsync(Id);
+            if (siteToDelete != null)
+            {
+                db.Sites.Remove(siteToDelete);
+                await db.SaveChangesAsync();
+                Navigation.NavigateTo("/sites");
+            }
+        }
+        catch
+        {
+            showDeleteModal = false;
+        }
+    }
 }

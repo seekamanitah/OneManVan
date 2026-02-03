@@ -51,6 +51,9 @@
                 <button class="btn btn-primary" @onclick="EditAsset">
                     <i class="bi bi-pencil me-2"></i>Edit
                 </button>
+                <button class="btn btn-outline-danger" @onclick="ShowDeleteConfirmation">
+                    <i class="bi bi-trash me-2"></i>Delete
+                </button>
             </div>
         </div>
 
@@ -309,6 +312,14 @@
     }
 </div>
 
+<DeleteConfirmationModal 
+    IsVisible="showDeleteModal"
+    EntityType="asset"
+    EntityName="@(asset?.AssetName ?? $"{asset?.Brand} {asset?.Model}")"
+    AdditionalWarning="Related warranty claims and jobs may be affected."
+    OnConfirm="DeleteAsset"
+    OnCancel="CancelDelete" />
+
 <style>
     .avatar-circle {
         border-radius: 50%;
@@ -327,6 +338,7 @@
     private bool isLoadingClaims = true;
     private Asset? asset;
     private List<WarrantyClaim> warrantyClaims = new();
+    private bool showDeleteModal = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -419,4 +431,26 @@
         ClaimStatus.Cancelled => "bg-dark",
         _ => "bg-secondary"
     };
+
+    private void ShowDeleteConfirmation() => showDeleteModal = true;
+    private void CancelDelete() => showDeleteModal = false;
+
+    private async Task DeleteAsset()
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var assetToDelete = await db.Assets.FindAsync(Id);
+            if (assetToDelete != null)
+            {
+                db.Assets.Remove(assetToDelete);
+                await db.SaveChangesAsync();
+                Navigation.NavigateTo("/assets");
+            }
+        }
+        catch
+        {
+            showDeleteModal = false;
+        }
+    }
 }

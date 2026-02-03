@@ -157,6 +157,9 @@
                                             <button class="btn btn-outline-secondary" @onclick="@(() => EditJob(job.Id))">
                                                 <i class="bi bi-pencil"></i>
                                             </button>
+                                            <button class="btn btn-outline-danger" title="Delete" @onclick="@(() => ShowDeleteConfirmation(job))">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -186,14 +189,25 @@
     </div>
 </div>
 
+<DeleteConfirmationModal 
+    IsVisible="showDeleteModal"
+    EntityType="job"
+    EntityName="@(jobToDelete?.Title)"
+    AdditionalWarning="Related invoices and estimates may be affected."
+    OnConfirm="DeleteJob"
+    OnCancel="CancelDelete" />
+
 @code {
-    private bool isLoading = true;
-    private List<Job> allJobs = new();
-    private List<Job> filteredJobs = new();
+private bool isLoading = true;
+private List<Job> allJobs = new();
+private List<Job> filteredJobs = new();
     
-    private string searchText = "";
-    private string filterStatus = "";
-    private string filterType = "";
+private string searchText = "";
+private string filterStatus = "";
+private string filterType = "";
+    
+private bool showDeleteModal = false;
+private Job? jobToDelete;
 
     protected override async Task OnInitializedAsync()
     {
@@ -331,6 +345,43 @@
         catch
         {
             // Silently fail - user can retry
+        }
+    }
+
+    private void ShowDeleteConfirmation(Job job)
+    {
+        jobToDelete = job;
+        showDeleteModal = true;
+    }
+
+    private void CancelDelete()
+    {
+        showDeleteModal = false;
+        jobToDelete = null;
+    }
+
+    private async Task DeleteJob()
+    {
+        if (jobToDelete == null) return;
+        
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var job = await db.Jobs.FindAsync(jobToDelete.Id);
+            if (job != null)
+            {
+                db.Jobs.Remove(job);
+                await db.SaveChangesAsync();
+            }
+            
+            showDeleteModal = false;
+            jobToDelete = null;
+            await LoadJobsAsync();
+        }
+        catch
+        {
+            showDeleteModal = false;
+            jobToDelete = null;
         }
     }
 }

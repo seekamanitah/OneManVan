@@ -69,6 +69,9 @@
                 <button class="btn btn-primary" @onclick="EditEstimate">
                     <i class="bi bi-pencil me-2"></i>Edit
                 </button>
+                <button class="btn btn-outline-danger" @onclick="ShowDeleteConfirmation">
+                    <i class="bi bi-trash me-2"></i>Delete
+                </button>
             </div>
         </div>
 
@@ -245,6 +248,13 @@
     }
 </div>
 
+<DeleteConfirmationModal 
+    IsVisible="showDeleteModal"
+    EntityType="estimate"
+    EntityName="@(estimate?.Title)"
+    OnConfirm="DeleteEstimate"
+    OnCancel="CancelDelete" />
+
 <style>
     .avatar-circle {
         border-radius: 50%;
@@ -261,6 +271,7 @@
 
     private bool isLoading = true;
     private Estimate? estimate;
+    private bool showDeleteModal = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -375,5 +386,27 @@
             EstimateStatus.Expired => "bg-warning",
             _ => "bg-secondary"
         };
+    }
+
+    private void ShowDeleteConfirmation() => showDeleteModal = true;
+    private void CancelDelete() => showDeleteModal = false;
+
+    private async Task DeleteEstimate()
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var estimateToDelete = await db.Estimates.FindAsync(Id);
+            if (estimateToDelete != null)
+            {
+                db.Estimates.Remove(estimateToDelete);
+                await db.SaveChangesAsync();
+                Navigation.NavigateTo("/estimates");
+            }
+        }
+        catch
+        {
+            showDeleteModal = false;
+        }
     }
 }

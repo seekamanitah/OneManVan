@@ -5,28 +5,52 @@
 
     <!-- Note: For Android please see also Platforms\Android\Resources\values\colors.xml -->
 
-    <!-- Primary Brand Colors - Matching Web UI (#3b82f6) -->
-    <Color x:Key="Primary">#3b82f6</Color>
-    <Color x:Key="PrimaryDark">#2563eb</Color>
+    <!-- =========================================
+         PRIMARY PALETTE (Design System v1.0)
+         ========================================= -->
+    <Color x:Key="Primary">#1976D2</Color>
+    <Color x:Key="PrimaryLight">#E3F2FD</Color>
+    <Color x:Key="PrimaryDark">#1565C0</Color>
     <Color x:Key="PrimaryDarkText">#FFFFFF</Color>
-    <Color x:Key="PrimaryDarker">#1d4ed8</Color>
-    <Color x:Key="PrimaryLight">#93c5fd</Color>
-    <Color x:Key="PrimarySurface">#dbeafe</Color>
+    
+    <!-- Legacy aliases for compatibility -->
+    <Color x:Key="PrimaryDarker">#1565C0</Color>
+    <Color x:Key="PrimarySurface">#E3F2FD</Color>
     
     <!-- Secondary / Accent -->
-    <Color x:Key="Secondary">#10b981</Color>
-    <Color x:Key="SecondaryDarkText">#065f46</Color>
-    <Color x:Key="Tertiary">#f59e0b</Color>
+    <Color x:Key="Secondary">#FF9800</Color>
+    <Color x:Key="SecondaryDarkText">#E65100</Color>
+    <Color x:Key="Tertiary">#9C27B0</Color>
 
-    <!-- Semantic Colors -->
-    <Color x:Key="Success">#10b981</Color>
-    <Color x:Key="SuccessSurface">#d1fae5</Color>
-    <Color x:Key="Warning">#f59e0b</Color>
-    <Color x:Key="WarningSurface">#fef3c7</Color>
-    <Color x:Key="Error">#ef4444</Color>
-    <Color x:Key="ErrorSurface">#fee2e2</Color>
-    <Color x:Key="Info">#06b6d4</Color>
-    <Color x:Key="InfoSurface">#cffafe</Color>
+    <!-- =========================================
+         SEMANTIC COLORS
+         ========================================= -->
+    <Color x:Key="Success">#4CAF50</Color>
+    <Color x:Key="SuccessLight">#E8F5E9</Color>
+    <Color x:Key="SuccessSurface">#E8F5E9</Color>
+    
+    <Color x:Key="Warning">#FF9800</Color>
+    <Color x:Key="WarningLight">#FFF3E0</Color>
+    <Color x:Key="WarningSurface">#FFF3E0</Color>
+    
+    <Color x:Key="Error">#F44336</Color>
+    <Color x:Key="ErrorLight">#FFEBEE</Color>
+    <Color x:Key="ErrorSurface">#FFEBEE</Color>
+    
+    <Color x:Key="Info">#2196F3</Color>
+    <Color x:Key="InfoLight">#E3F2FD</Color>
+    <Color x:Key="InfoSurface">#E3F2FD</Color>
+
+    <!-- =========================================
+         NEUTRAL COLORS
+         ========================================= -->
+    <Color x:Key="TextPrimary">#333333</Color>
+    <Color x:Key="TextSecondary">#757575</Color>
+    <Color x:Key="TextTertiary">#9E9E9E</Color>
+    <Color x:Key="Background">#F5F5F5</Color>
+    <Color x:Key="Surface">#FFFFFF</Color>
+    <Color x:Key="Border">#E0E0E0</Color>
+    <Color x:Key="Divider">#E0E0E0</Color>
 
     <!-- Basic Colors -->
     <Color x:Key="White">White</Color>
@@ -35,46 +59,45 @@
     <Color x:Key="MidnightBlue">#190649</Color>
     <Color x:Key="OffBlack">#1f1f1f</Color>
 
-    <!-- Light Mode Background/Surface Colors -->
+    <!-- =========================================
+         LIGHT MODE
+         ========================================= -->
     <Color x:Key="LightBackground">#F5F5F5</Color>
     <Color x:Key="LightSurface">#FFFFFF</Color>
     <Color x:Key="LightCardBackground">#FFFFFF</Color>
     <Color x:Key="LightInputBackground">#F5F5F5</Color>
-    
-    <!-- Dark Mode Background/Surface Colors -->
-    <Color x:Key="DarkBackground">#121212</Color>
-    <Color x:Key="DarkSurface">#1E1E1E</Color>
-    <Color x:Key="DarkCardBackground">#2D2D2D</Color>
-    <Color x:Key="DarkInputBackground">#3D3D3D</Color>
-    
-    <!-- Light Mode Text Colors -->
     <Color x:Key="LightTextPrimary">#333333</Color>
     <Color x:Key="LightTextSecondary">#757575</Color>
     <Color x:Key="LightTextTertiary">#9E9E9E</Color>
     
-    <!-- Dark Mode Text Colors -->
+    <!-- =========================================
+         DARK MODE
+         ========================================= -->
+    <Color x:Key="DarkBackground">#121212</Color>
+    <Color x:Key="DarkSurface">#1E1E1E</Color>
+    <Color x:Key="DarkCardBackground">#2D2D2D</Color>
+    <Color x:Key="DarkInputBackground">#3D3D3D</Color>
     <Color x:Key="DarkTextPrimary">#FFFFFF</Color>
     <Color x:Key="DarkTextSecondary">#B0B0B0</Color>
     <Color x:Key="DarkTextTertiary">#808080</Color>
 
-    <!-- Section Header Colors (Theme-Aware) -->
-    <!-- Use these for form section headers - readable in both light and dark modes -->
+    <!-- =========================================
+         SECTION HEADER COLORS
+         ========================================= -->
     <Color x:Key="SectionPrimary">#1976D2</Color>
     <Color x:Key="SectionPrimaryDark">#64B5F6</Color>
-    
     <Color x:Key="SectionSuccess">#388E3C</Color>
     <Color x:Key="SectionSuccessDark">#81C784</Color>
-    
     <Color x:Key="SectionWarning">#F57C00</Color>
     <Color x:Key="SectionWarningDark">#FFB74D</Color>
-    
     <Color x:Key="SectionInfo">#0097A7</Color>
     <Color x:Key="SectionInfoDark">#4DD0E1</Color>
-    
     <Color x:Key="SectionPurple">#7B1FA2</Color>
     <Color x:Key="SectionPurpleDark">#CE93D8</Color>
 
-    <!-- Gray Scale -->
+    <!-- =========================================
+         GRAY SCALE
+         ========================================= -->
     <Color x:Key="Gray100">#E1E1E1</Color>
     <Color x:Key="Gray200">#C8C8C8</Color>
     <Color x:Key="Gray300">#ACACAC</Color>
@@ -84,19 +107,41 @@
     <Color x:Key="Gray900">#212121</Color>
     <Color x:Key="Gray950">#141414</Color>
 
-    <!-- Theme-Aware Colors (use these in pages) -->
+    <!-- =========================================
+         THEME-AWARE ALIASES
+         ========================================= -->
     <Color x:Key="PageBackground">#F5F5F5</Color>
     <Color x:Key="CardBackground">#FFFFFF</Color>
-    <Color x:Key="TextPrimary">#333333</Color>
-    <Color x:Key="TextSecondary">#757575</Color>
-    <Color x:Key="Divider">#E0E0E0</Color>
 
-    <!-- Brushes -->
+    <!-- =========================================
+         STATUS COLOR MAPPING
+         Draft/New/Scheduled = Primary (#1976D2)
+         In Progress = Warning (#FF9800)
+         Completed/Paid = Success (#4CAF50)
+         Overdue/Error = Error (#F44336)
+         Cancelled = TextTertiary (#9E9E9E)
+         ========================================= -->
+    <Color x:Key="StatusDraft">#1976D2</Color>
+    <Color x:Key="StatusScheduled">#1976D2</Color>
+    <Color x:Key="StatusInProgress">#FF9800</Color>
+    <Color x:Key="StatusCompleted">#4CAF50</Color>
+    <Color x:Key="StatusPaid">#4CAF50</Color>
+    <Color x:Key="StatusOverdue">#F44336</Color>
+    <Color x:Key="StatusCancelled">#9E9E9E</Color>
+
+    <!-- =========================================
+         BRUSHES
+         ========================================= -->
     <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource Primary}"/>
+    <SolidColorBrush x:Key="PrimaryLightBrush" Color="{StaticResource PrimaryLight}"/>
     <SolidColorBrush x:Key="SecondaryBrush" Color="{StaticResource Secondary}"/>
     <SolidColorBrush x:Key="TertiaryBrush" Color="{StaticResource Tertiary}"/>
     <SolidColorBrush x:Key="WhiteBrush" Color="{StaticResource White}"/>
     <SolidColorBrush x:Key="BlackBrush" Color="{StaticResource Black}"/>
+    <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource Success}"/>
+    <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource Warning}"/>
+    <SolidColorBrush x:Key="ErrorBrush" Color="{StaticResource Error}"/>
+    <SolidColorBrush x:Key="InfoBrush" Color="{StaticResource Info}"/>
 
     <SolidColorBrush x:Key="Gray100Brush" Color="{StaticResource Gray100}"/>
     <SolidColorBrush x:Key="Gray200Brush" Color="{StaticResource Gray200}"/>

@@ -8,7 +8,7 @@
     <Grid RowDefinitions="Auto,Auto,*,Auto">
         
         <Border Grid.Row="0" 
-                BackgroundColor="#1976D2" 
+                BackgroundColor="{StaticResource Primary}" 
                 Padding="16,12"
                 StrokeShape="RoundRectangle 0"
                 Stroke="Transparent">
@@ -16,18 +16,17 @@
                 <VerticalStackLayout>
                     <Label x:Name="DateHeaderLabel" 
                            Text="Today" 
-                           FontSize="24" 
-                           FontAttributes="Bold"
+                           Style="{StaticResource HeadlineStyle}"
                            TextColor="White"/>
                     <Label x:Name="DateSubHeaderLabel" 
                            Text="December 12, 2024" 
-                           FontSize="14" 
-                           TextColor="{AppThemeBinding Light=#BBDEFB, Dark=#90CAF9}"/>
+                           Style="{StaticResource CaptionStyle}" 
+                           TextColor="{StaticResource PrimaryLight}"/>
                 </VerticalStackLayout>
                 <Button Grid.Column="1"
                         x:Name="CalendarButton"
                         Text="Calendar"
-                        BackgroundColor="#1565C0"
+                        BackgroundColor="{StaticResource PrimaryDark}"
                         TextColor="White"
                         FontSize="12"
                         HeightRequest="36"
@@ -44,26 +43,16 @@
             <HorizontalStackLayout Spacing="8">
                 <Button x:Name="TodayFilter"
                         Text="Today"
-                        BackgroundColor="#1976D2"
-                        TextColor="White"
-                        FontSize="12"
-                        HeightRequest="32"
-                        CornerRadius="16"
-                        Padding="16,0"
+                        Style="{StaticResource FilterChipActiveStyle}"
                         Clicked="OnFilterClicked"/>
                 <Button x:Name="ScheduledFilter"
                         Text="Scheduled"
-                        BackgroundColor="{AppThemeBinding Light={StaticResource PrimarySurface}, Dark=#1E3A5F}"
-                        TextColor="{AppThemeBinding Light={StaticResource SectionPrimary}, Dark={StaticResource SectionPrimaryDark}}"
-                        FontSize="12"
-                        HeightRequest="32"
-                        CornerRadius="16"
-                        Padding="16,0"
+                        Style="{StaticResource FilterChipStyle}"
                         Clicked="OnFilterClicked"/>
                 <Button x:Name="InProgressFilter"
                         Text="In Progress"
-                        BackgroundColor="{AppThemeBinding Light={StaticResource WarningSurface}, Dark=#3D2D1F}"
-                        TextColor="{AppThemeBinding Light={StaticResource SectionWarning}, Dark={StaticResource SectionWarningDark}}"
+                        BackgroundColor="{StaticResource WarningLight}"
+                        TextColor="{StaticResource Warning}"
                         FontSize="12"
                         HeightRequest="32"
                         CornerRadius="16"
@@ -71,8 +60,8 @@
                         Clicked="OnFilterClicked"/>
                 <Button x:Name="CompletedFilter"
                         Text="Completed"
-                        BackgroundColor="{AppThemeBinding Light={StaticResource SuccessSurface}, Dark=#1B3D1F}"
-                        TextColor="{AppThemeBinding Light={StaticResource SectionSuccess}, Dark={StaticResource SectionSuccessDark}}"
+                        BackgroundColor="{StaticResource SuccessLight}"
+                        TextColor="{StaticResource Success}"
                         FontSize="12"
                         HeightRequest="32"
                         CornerRadius="16"
@@ -80,8 +69,8 @@
                         Clicked="OnFilterClicked"/>
                 <Button x:Name="AllFilter"
                         Text="All"
-                        BackgroundColor="{AppThemeBinding Light=#E0E0E0, Dark={StaticResource Gray600}}"
-                        TextColor="{AppThemeBinding Light=#616161, Dark={StaticResource DarkTextSecondary}}"
+                        BackgroundColor="{StaticResource Background}"
+                        TextColor="{StaticResource TextSecondary}"
                         FontSize="12"
                         HeightRequest="32"
                         CornerRadius="16"
@@ -95,7 +84,7 @@
                            x:Name="LoadingIndicator"
                            IsRunning="False"
                            IsVisible="False"
-                           Color="{AppThemeBinding Light=#1976D2, Dark={StaticResource SectionPrimaryDark}}"
+                           Color="{StaticResource Primary}"
                            VerticalOptions="Center"
                            HorizontalOptions="Center"
                            HeightRequest="50"
@@ -135,7 +124,7 @@
                             <SwipeView.RightItems>
                                 <SwipeItems Mode="Reveal">
                                     <SwipeItem Text="Complete"
-                                               BackgroundColor="#4CAF50"
+                                               BackgroundColor="{StaticResource Success}"
                                                Invoked="OnCompleteSwipe"
                                                BindingContext="{Binding}"/>
                                 </SwipeItems>
@@ -144,7 +133,7 @@
                             <SwipeView.LeftItems>
                                 <SwipeItems Mode="Reveal">
                                     <SwipeItem Text="Start"
-                                               BackgroundColor="#1976D2"
+                                               BackgroundColor="{StaticResource Primary}"
                                                Invoked="OnStartSwipe"
                                                BindingContext="{Binding}"/>
                                 </SwipeItems>
@@ -211,8 +200,8 @@
                                                    VerticalOptions="Center"/>
                                             <Button Grid.Column="1"
                                                     Text="Navigate"
-                                                    BackgroundColor="{AppThemeBinding Light=#E8F5E9, Dark=#1B3D1F}"
-                                                    TextColor="{AppThemeBinding Light=#388E3C, Dark=#81C784}"
+                                                    BackgroundColor="{StaticResource SuccessLight}"
+                                                    TextColor="{StaticResource Success}"
                                                     FontSize="11"
                                                     HeightRequest="28"
                                                     CornerRadius="14"
@@ -226,14 +215,14 @@
                                     <Border Grid.Column="1"
                                             Grid.Row="1"
                                             IsVisible="{Binding IsEmergency}"
-                                            BackgroundColor="#FFEBEE"
+                                            BackgroundColor="{StaticResource ErrorLight}"
                                             StrokeShape="RoundRectangle 0,0,12,0"
                                             Stroke="Transparent"
                                             Padding="12,6">
                                         <Label Text="PRIORITY"
                                                FontSize="10"
                                                FontAttributes="Bold"
-                                               TextColor="#D32F2F"/>
+                                               TextColor="{StaticResource Error}"/>
                                     </Border>
                                     
                                 </Grid>
@@ -245,10 +234,7 @@
         </RefreshView>
 
         <Border Grid.Row="3"
-                BackgroundColor="#1976D2"
-                StrokeShape="RoundRectangle 0"
-                Stroke="Transparent"
-                Padding="16,12">
+                Style="{StaticResource StatsBarStyle}">
             <Grid ColumnDefinitions="*,*,*">
                 <VerticalStackLayout HorizontalOptions="Center">
                     <Label x:Name="TodayCountLabel"
@@ -258,8 +244,8 @@
                            TextColor="White"
                            HorizontalTextAlignment="Center"/>
                     <Label Text="Today"
-                           FontSize="10"
-                           TextColor="#BBDEFB"
+                           Style="{StaticResource MicroStyle}"
+                           TextColor="{StaticResource PrimaryLight}"
                            HorizontalTextAlignment="Center"/>
                 </VerticalStackLayout>
                 <VerticalStackLayout Grid.Column="1" HorizontalOptions="Center">
@@ -267,11 +253,11 @@
                            Text="0"
                            FontSize="20"
                            FontAttributes="Bold"
-                           TextColor="#FFEB3B"
+                           TextColor="{StaticResource Warning}"
                            HorizontalTextAlignment="Center"/>
                     <Label Text="Active"
-                           FontSize="10"
-                           TextColor="#BBDEFB"
+                           Style="{StaticResource MicroStyle}"
+                           TextColor="{StaticResource PrimaryLight}"
                            HorizontalTextAlignment="Center"/>
                 </VerticalStackLayout>
                 <VerticalStackLayout Grid.Column="2" HorizontalOptions="Center">
@@ -279,28 +265,18 @@
                            Text="0"
                            FontSize="20"
                            FontAttributes="Bold"
-                           TextColor="#81C784"
+                           TextColor="{StaticResource Success}"
                            HorizontalTextAlignment="Center"/>
                     <Label Text="Done"
-                           FontSize="10"
-                           TextColor="#BBDEFB"
+                           Style="{StaticResource MicroStyle}"
+                           TextColor="{StaticResource PrimaryLight}"
                            HorizontalTextAlignment="Center"/>
                 </VerticalStackLayout>
             </Grid>
         </Border>
 
         <Button Grid.Row="2"
-                Text="+"
-                FontSize="28"
-                WidthRequest="60"
-                HeightRequest="60"
-                CornerRadius="30"
-                BackgroundColor="#1976D2"
-                TextColor="White"
-                FontAttributes="Bold"
-                HorizontalOptions="End"
-                VerticalOptions="End"
-                Margin="20,0,20,20"
+                Style="{StaticResource FABStyle}"
                 Clicked="OnAddJobClicked">
             <Button.Shadow>
                 <Shadow Brush="Black" Offset="2,4" Radius="8" Opacity="0.3"/>

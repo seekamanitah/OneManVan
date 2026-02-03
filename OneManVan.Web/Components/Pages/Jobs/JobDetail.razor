@@ -55,6 +55,9 @@
                 <button class="btn btn-primary" @onclick="EditJob">
                     <i class="bi bi-pencil me-2"></i>Edit
                 </button>
+                <button class="btn btn-outline-danger" @onclick="ShowDeleteConfirmation">
+                    <i class="bi bi-trash me-2"></i>Delete
+                </button>
             </div>
         </div>
 
@@ -258,6 +261,14 @@
     }
 </div>
 
+<DeleteConfirmationModal 
+    IsVisible="showDeleteModal"
+    EntityType="job"
+    EntityName="@(job?.Title)"
+    AdditionalWarning="Related invoices and estimates may be affected."
+    OnConfirm="DeleteJob"
+    OnCancel="CancelDelete" />
+
 <style>
     .avatar-circle {
         border-radius: 50%;
@@ -275,6 +286,7 @@
     private bool isLoading = true;
     private Job? job;
     private string? errorMessage;
+    private bool showDeleteModal = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -373,6 +385,29 @@
         catch (Exception ex)
         {
             errorMessage = $"Failed to update status: {ex.Message}";
+        }
+    }
+
+    private void ShowDeleteConfirmation() => showDeleteModal = true;
+    private void CancelDelete() => showDeleteModal = false;
+
+    private async Task DeleteJob()
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var jobToDelete = await db.Jobs.FindAsync(Id);
+            if (jobToDelete != null)
+            {
+                db.Jobs.Remove(jobToDelete);
+                await db.SaveChangesAsync();
+                Navigation.NavigateTo("/jobs");
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to delete job: {ex.Message}";
+            showDeleteModal = false;
         }
     }
 }
