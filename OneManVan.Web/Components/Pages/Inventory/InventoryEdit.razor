@@ -5,6 +5,7 @@
 @using OneManVan.Shared.Data
 @using OneManVan.Shared.Models
 @using OneManVan.Shared.Models.Enums
+@using OneManVan.Web.Components.Shared
 
 @inject IDbContextFactory<OneManVanDbContext> DbFactory
 @inject NavigationManager Navigation
@@ -142,7 +143,14 @@
                                     </div>
                                     <div class="col-md-4">
                                         <label class="form-label">Supplier</label>
-                                        <InputText class="form-control" @bind-Value="model.Supplier" />
+                                        <SearchableDropdown TItem="Company"
+                                                            Items="@suppliers"
+                                                            SelectedValue="@model.Supplier"
+                                                            SelectedValueChanged="@(v => model.Supplier = v)"
+                                                            DisplayExpression="@(c => c.Name)"
+                                                            ValueExpression="@(c => c.Name)"
+                                                            Placeholder="Search suppliers..."
+                                                            AllowCustom="true" />
                                     </div>
                                 </div>
                             </div>
@@ -201,6 +209,7 @@
     private bool isSaving = false;
     private string errorMessage = "";
     private InventoryItem model = new();
+    private List<Company> suppliers = new();
 
     // Adjustment mode fields
     private string adjustmentType = "add";
@@ -209,6 +218,8 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadSuppliersAsync();
+        
         if (IsNew)
         {
             model = new InventoryItem
@@ -223,6 +234,16 @@
         {
             await LoadItemAsync();
         }
+    }
+
+    private async Task LoadSuppliersAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        suppliers = await db.Companies
+            .Where(c => c.CompanyType == CompanyType.Vendor || c.CompanyType == CompanyType.Supplier)
+            .OrderBy(c => c.Name)
+            .AsNoTracking()
+            .ToListAsync();
     }
 
     private async Task LoadItemAsync()

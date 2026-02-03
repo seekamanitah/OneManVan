@@ -91,4 +91,11 @@
     <None Include="Tools\CheckTables\CheckTables.csproj" />
   </ItemGroup>
 
+  <!-- Exclude SQLite migration files from SQL Server analyzer (they use SQLite syntax) -->
+  <ItemGroup>
+    <None Update="Migrations\*_SQLite.sql">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

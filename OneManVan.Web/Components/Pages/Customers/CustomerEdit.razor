@@ -238,7 +238,9 @@
                 CustomerType = CustomerType.Residential,
                 Status = CustomerStatus.Active,
                 PaymentTerms = PaymentTerms.Net30,
-                PreferredContact = ContactMethod.Any
+                PreferredContact = ContactMethod.Any,
+                // Default location - set in HomeAddress as "City, State ZIP"
+                HomeAddress = "Pikeville, TN 37367"
             };
             isLoading = false;
         }

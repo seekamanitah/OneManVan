@@ -1,0 +1,345 @@
+@page "/expenses"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@using OneManVan.Shared.Models.Enums
+
+@inject IDbContextFactory<OneManVanDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Expenses - OneManVan</PageTitle>
+
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-0">Expenses</h1>
+            <p class="text-muted mb-0">Track business expenses, materials, and operational costs</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-primary" @onclick="CreateExpense">
+                <i class="bi bi-plus-circle me-2"></i>Add Expense
+            </button>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row g-3 mb-3">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <small class="text-muted d-block">This Month</small>
+                    <h3 class="mb-0">@totalThisMonth.ToString("C")</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <small class="text-muted d-block">YTD Total</small>
+                    <h3 class="mb-0">@totalYTD.ToString("C")</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <small class="text-muted d-block">Pending Approval</small>
+                    <h3 class="mb-0 text-warning">@pendingCount</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <small class="text-muted d-block">Billable</small>
+                    <h3 class="mb-0 text-info">@billableTotal.ToString("C")</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control border-start-0" 
+                               placeholder="Search expenses..." 
+                               @bind="searchText" @bind:event="oninput" @onkeyup="OnSearchChanged" />
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" @bind="filterCategory" @bind:after="ApplyFilters">
+                        <option value="">All Categories</option>
+                        @foreach (var c in Enum.GetValues<ExpenseCategory>())
+                        {
+                            <option value="@((int)c)">@c</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" @bind="filterStatus" @bind:after="ApplyFilters">
+                        <option value="">All Statuses</option>
+                        @foreach (var s in Enum.GetValues<ExpenseStatus>())
+                        {
+                            <option value="@((int)s)">@s</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <input type="date" class="form-control" @bind="filterDateFrom" @bind:after="ApplyFilters" />
+                </div>
+                <div class="col-md-2">
+                    <input type="date" class="form-control" @bind="filterDateTo" @bind:after="ApplyFilters" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Expenses Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            @if (isLoading)
+            {
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary"></div>
+                </div>
+            }
+            else if (!filteredExpenses.Any())
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-cash-coin display-4 text-muted mb-3 d-block"></i>
+                    <h5 class="text-muted">No expenses found</h5>
+                    <p class="text-muted">Start tracking business expenses</p>
+                    <button class="btn btn-primary" @onclick="CreateExpense">
+                        <i class="bi bi-plus-circle me-2"></i>Add First Expense
+                    </button>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th>Category</th>
+                                <th>Vendor</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Linked To</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var expense in filteredExpenses)
+                            {
+                                <tr class="cursor-pointer" @onclick="() => ViewExpense(expense.Id)">
+                                    <td>@expense.ExpenseDate.ToString("MM/dd/yyyy")</td>
+                                    <td>
+                                        <div>@expense.Description</div>
+                                        @if (!string.IsNullOrEmpty(expense.ReceiptNumber))
+                                        {
+                                            <small class="text-muted">Receipt: @expense.ReceiptNumber</small>
+                                        }
+                                    </td>
+                                    <td><span class="badge bg-secondary">@expense.Category</span></td>
+                                    <td>@(expense.VendorName ?? "-")</td>
+                                    <td class="fw-medium">@expense.TotalAmount.ToString("C")</td>
+                                    <td><span class="badge @GetStatusBadgeClass(expense.Status)">@expense.Status</span></td>
+                                    <td>
+                                        @if (expense.Job != null)
+                                        {
+                                            <a href="/jobs/@expense.JobId">@expense.Job.Title</a>
+                                        }
+                                        else if (expense.Customer != null)
+                                        {
+                                            <a href="/customers/@expense.CustomerId">@expense.Customer.Name</a>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="dropdown" @onclick:stopPropagation="true">
+                                            <button class="btn btn-sm btn-link text-muted" data-bs-toggle="dropdown">
+                                                <i class="bi bi-three-dots-vertical"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                <li><a class="dropdown-item" href="/expenses/@expense.Id/edit"><i class="bi bi-pencil me-2"></i>Edit</a></li>
+                                                @if (expense.Status == ExpenseStatus.Pending)
+                                                {
+                                                    <li><button class="dropdown-item" @onclick="() => ApproveExpense(expense.Id)"><i class="bi bi-check-circle me-2"></i>Approve</button></li>
+                                                }
+                                                <li><hr class="dropdown-divider" /></li>
+                                                <li><button class="dropdown-item text-danger" @onclick="() => DeleteExpense(expense.Id)"><i class="bi bi-trash me-2"></i>Delete</button></li>
+                                            </ul>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool isLoading = true;
+    private List<Expense> expenses = new();
+    private List<Expense> filteredExpenses = new();
+    
+    private string searchText = "";
+    private string filterCategory = "";
+    private string filterStatus = "";
+    private DateTime? filterDateFrom;
+    private DateTime? filterDateTo;
+    
+    private decimal totalThisMonth = 0;
+    private decimal totalYTD = 0;
+    private int pendingCount = 0;
+    private decimal billableTotal = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadExpensesAsync();
+    }
+
+    private async Task LoadExpensesAsync()
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            
+            expenses = await db.Expenses
+                .Include(e => e.Job)
+                .Include(e => e.Customer)
+                .Include(e => e.Employee)
+                .OrderByDescending(e => e.ExpenseDate)
+                .AsNoTracking()
+                .ToListAsync();
+
+            // Calculate summaries
+            var now = DateTime.Today;
+            var monthStart = new DateTime(now.Year, now.Month, 1);
+            var yearStart = new DateTime(now.Year, 1, 1);
+            
+            totalThisMonth = expenses.Where(e => e.ExpenseDate >= monthStart).Sum(e => e.TotalAmount);
+            totalYTD = expenses.Where(e => e.ExpenseDate >= yearStart).Sum(e => e.TotalAmount);
+            pendingCount = expenses.Count(e => e.Status == ExpenseStatus.Pending);
+            billableTotal = expenses.Where(e => e.IsBillable && !e.IsReimbursed).Sum(e => e.TotalAmount);
+            
+            ApplyFilters();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void ApplyFilters()
+    {
+        filteredExpenses = expenses;
+
+        if (!string.IsNullOrEmpty(searchText))
+        {
+            var search = searchText.ToLower();
+            filteredExpenses = filteredExpenses.Where(e => 
+                e.Description.ToLower().Contains(search) ||
+                (e.VendorName?.ToLower().Contains(search) ?? false) ||
+                (e.ReceiptNumber?.ToLower().Contains(search) ?? false)
+            ).ToList();
+        }
+
+        if (!string.IsNullOrEmpty(filterCategory) && int.TryParse(filterCategory, out var cat))
+        {
+            filteredExpenses = filteredExpenses.Where(e => (int)e.Category == cat).ToList();
+        }
+
+        if (!string.IsNullOrEmpty(filterStatus) && int.TryParse(filterStatus, out var stat))
+        {
+            filteredExpenses = filteredExpenses.Where(e => (int)e.Status == stat).ToList();
+        }
+
+        if (filterDateFrom.HasValue)
+        {
+            filteredExpenses = filteredExpenses.Where(e => e.ExpenseDate >= filterDateFrom.Value).ToList();
+        }
+
+        if (filterDateTo.HasValue)
+        {
+            filteredExpenses = filteredExpenses.Where(e => e.ExpenseDate <= filterDateTo.Value).ToList();
+        }
+    }
+
+    private void OnSearchChanged()
+    {
+        ApplyFilters();
+    }
+
+    private void CreateExpense()
+    {
+        Navigation.NavigateTo("/expenses/new");
+    }
+
+    private void ViewExpense(int id)
+    {
+        Navigation.NavigateTo($"/expenses/{id}");
+    }
+
+    private async Task ApproveExpense(int id)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var expense = await db.Expenses.FindAsync(id);
+        if (expense != null)
+        {
+            expense.Status = ExpenseStatus.Approved;
+            expense.UpdatedAt = DateTime.UtcNow;
+            await db.SaveChangesAsync();
+            await LoadExpensesAsync();
+        }
+    }
+
+    private async Task DeleteExpense(int id)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var expense = await db.Expenses.FindAsync(id);
+        if (expense != null)
+        {
+            db.Expenses.Remove(expense);
+            await db.SaveChangesAsync();
+            await LoadExpensesAsync();
+        }
+    }
+
+    private string GetStatusBadgeClass(ExpenseStatus status)
+    {
+        return status switch
+        {
+            ExpenseStatus.Pending => "bg-warning text-dark",
+            ExpenseStatus.Approved => "bg-info",
+            ExpenseStatus.Rejected => "bg-danger",
+            ExpenseStatus.Reimbursed => "bg-success",
+            ExpenseStatus.Paid => "bg-success",
+            _ => "bg-secondary"
+        };
+    }
+
+    private async Task OnImportComplete()
+    {
+        await LoadExpensesAsync();
+    }
+}
+
+<style>
+    .cursor-pointer {
+        cursor: pointer;
+    }
+</style>

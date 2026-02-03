@@ -42,14 +42,51 @@
                             <h5 class="mb-0">Equipment Information</h5>
                         </div>
                         <div class="card-body">
+                            <!-- Populate from Product -->
+                            <div class="alert alert-info mb-3" role="alert">
+                                <div class="row align-items-center">
+                                    <div class="col-md-8">
+                                        <label class="form-label mb-1"><i class="bi bi-magic me-2"></i>Populate from Product</label>
+                                        <InputSelect class="form-select" @bind-Value="selectedProductId" @bind-Value:after="PopulateFromProduct">
+                                            <option value="">Select a product to auto-fill...</option>
+                                            @foreach (var product in products)
+                                            {
+                                            <option value="@product.Id">@product.Manufacturer @product.ModelNumber - @product.Description</option>
+                                            }
+                                        </InputSelect>
+                                        <small class="text-muted">Auto-fills brand, model, tonnage, SEER, and warranty info</small>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="row g-3">
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <label class="form-label">Customer</label>
                                     <InputSelect class="form-select" @bind-Value="model.CustomerId">
                                         <option value="">Select customer...</option>
                                         @foreach (var customer in customers)
                                         {
                                             <option value="@customer.Id">@customer.Name</option>
+                                        }
+                                    </InputSelect>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Company</label>
+                                    <InputSelect class="form-select" @bind-Value="model.CompanyId">
+                                        <option value="">Select company...</option>
+                                        @foreach (var company in companies)
+                                        {
+                                            <option value="@company.Id">@company.Name</option>
+                                        }
+                                    </InputSelect>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Site</label>
+                                    <InputSelect class="form-select" @bind-Value="model.SiteId">
+                                        <option value="">Select site...</option>
+                                        @foreach (var site in sites)
+                                        {
+                                            <option value="@site.Id">@site.SiteName</option>
                                         }
                                     </InputSelect>
                                 </div>
@@ -120,6 +157,162 @@
                                         }
                                     </InputSelect>
                                 </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Unit Config</label>
+                                    <InputSelect class="form-select" @bind-Value="model.UnitConfig">
+                                        @foreach (var uc in Enum.GetValues<UnitConfig>())
+                                        {
+                                            <option value="@uc">@uc</option>
+                                        }
+                                    </InputSelect>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Capacity & Efficiency -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0">Capacity & Efficiency</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label class="form-label">Tonnage</label>
+                                    <InputNumber class="form-control" @bind-Value="model.TonnageX10" placeholder="e.g., 25 = 2.5 ton" />
+                                    <small class="text-muted">x10 (25 = 2.5 ton)</small>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">BTU Rating</label>
+                                    <InputNumber class="form-control" @bind-Value="model.BtuRating" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">SEER</label>
+                                    <InputNumber class="form-control" @bind-Value="model.SeerRating" step="0.1" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">SEER2</label>
+                                    <InputNumber class="form-control" @bind-Value="model.Seer2Rating" step="0.1" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">AFUE %</label>
+                                    <InputNumber class="form-control" @bind-Value="model.AfueRating" step="0.01" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">HSPF</label>
+                                    <InputNumber class="form-control" @bind-Value="model.HspfRating" step="0.1" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">HSPF2</label>
+                                    <InputNumber class="form-control" @bind-Value="model.Hspf2Rating" step="0.1" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">EER</label>
+                                    <InputNumber class="form-control" @bind-Value="model.EerRating" step="0.1" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Refrigerant & Electrical -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0">Refrigerant & Electrical</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label class="form-label">Refrigerant Type</label>
+                                    <InputSelect class="form-select" @bind-Value="model.RefrigerantType">
+                                        @foreach (var rt in Enum.GetValues<RefrigerantType>())
+                                        {
+                                            <option value="@rt">@rt</option>
+                                        }
+                                    </InputSelect>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Charge (oz)</label>
+                                    <InputNumber class="form-control" @bind-Value="model.RefrigerantChargeOz" step="0.1" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Voltage</label>
+                                    <InputNumber class="form-control" @bind-Value="model.Voltage" placeholder="120, 240, 208" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Phase Type</label>
+                                    <InputText class="form-control" @bind-Value="model.PhaseType" placeholder="Single, Three" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filter Information -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0">Filter Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label class="form-label">Filter Size</label>
+                                    <InputText class="form-control" @bind-Value="model.FilterSize" placeholder="16x25x1" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Filter Type</label>
+                                    <InputSelect class="form-select" @bind-Value="model.FilterType">
+                                        @foreach (var ft in Enum.GetValues<FilterType>())
+                                        {
+                                            <option value="@ft">@ft</option>
+                                        }
+                                    </InputSelect>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Change Interval</label>
+                                    <InputNumber class="form-control" @bind-Value="model.FilterChangeMonths" />
+                                    <small class="text-muted">months</small>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Last Changed</label>
+                                    <InputDate class="form-control" @bind-Value="model.LastFilterChange" />
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Next Due</label>
+                                    <InputDate class="form-control" @bind-Value="model.NextFilterDue" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Thermostat -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0">Thermostat</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label class="form-label">Thermostat Brand</label>
+                                    <InputText class="form-control" @bind-Value="model.ThermostatBrand" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Thermostat Model</label>
+                                    <InputText class="form-control" @bind-Value="model.ThermostatModel" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Thermostat Type</label>
+                                    <InputSelect class="form-select" @bind-Value="model.ThermostatType">
+                                        @foreach (var tt in Enum.GetValues<ThermostatType>())
+                                        {
+                                            <option value="@tt">@tt</option>
+                                        }
+                                    </InputSelect>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check mt-4">
+                                        <InputCheckbox class="form-check-input" @bind-Value="model.HasWifi" />
+                                        <label class="form-check-label">WiFi Enabled</label>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -142,6 +335,20 @@
                                 <div class="col-md-4">
                                     <label class="form-label">Warranty Expiration</label>
                                     <InputDate class="form-control" @bind-Value="model.WarrantyExpiration" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Manufacture Date</label>
+                                    <InputDate class="form-control" @bind-Value="model.ManufactureDate" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Installed By</label>
+                                    <InputText class="form-control" @bind-Value="model.InstalledBy" />
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check mt-4">
+                                        <InputCheckbox class="form-check-input" @bind-Value="model.IsWarrantiedBySEHVAC" />
+                                        <label class="form-check-label">Warrantied by SE HVAC</label>
+                                    </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-check mt-4">
@@ -216,6 +423,10 @@
     private string errorMessage = "";
     private Asset model = new();
     private List<Customer> customers = new();
+    private List<Company> companies = new();
+    private List<Site> sites = new();
+    private List<Product> products = new();
+    private int? selectedProductId;
 
     protected override async Task OnInitializedAsync()
     {
@@ -245,6 +456,57 @@
             .OrderBy(c => c.Name)
             .AsNoTracking()
             .ToListAsync();
+
+        companies = await db.Companies
+            .OrderBy(c => c.Name)
+            .AsNoTracking()
+            .ToListAsync();
+
+        sites = await db.Sites
+            .OrderBy(s => s.SiteName)
+            .AsNoTracking()
+            .ToListAsync();
+
+        products = await db.Products
+            .OrderBy(p => p.Manufacturer).ThenBy(p => p.ModelNumber)
+            .AsNoTracking()
+            .ToListAsync();
+    }
+
+    private void PopulateFromProduct()
+    {
+        if (!selectedProductId.HasValue) return;
+        
+        var product = products.FirstOrDefault(p => p.Id == selectedProductId.Value);
+        if (product == null) return;
+
+        // Populate asset fields from product
+        model.Brand = product.Manufacturer;
+        model.Model = product.ModelNumber;
+        model.EquipmentType = product.EquipmentType;
+        model.FuelType = product.FuelType;
+        model.TonnageX10 = product.TonnageX10;
+        model.BtuRating = product.CoolingBtu ?? product.HeatingBtu;
+        model.SeerRating = product.SeerRating;
+        model.Seer2Rating = product.Seer2Rating;
+        model.RefrigerantType = product.RefrigerantType;
+        model.RefrigerantChargeOz = product.RefrigerantChargeOz;
+        
+        // Set warranty period if available
+        if (product.PartsWarrantyYears.HasValue && product.PartsWarrantyYears > 0)
+        {
+            model.WarrantyStartDate = DateTime.Today;
+            model.WarrantyExpiration = DateTime.Today.AddYears(product.PartsWarrantyYears.Value);
+            model.PartsWarrantyYears = product.PartsWarrantyYears.Value;
+        }
+        if (product.LaborWarrantyYears.HasValue)
+        {
+            model.LaborWarrantyYears = product.LaborWarrantyYears.Value;
+        }
+        if (product.CompressorWarrantyYears.HasValue)
+        {
+            model.CompressorWarrantyYears = product.CompressorWarrantyYears.Value;
+        }
     }
 
     private async Task LoadAssetAsync()

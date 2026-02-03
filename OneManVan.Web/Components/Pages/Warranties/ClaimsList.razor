@@ -8,20 +8,20 @@
 @inject IDbContextFactory<OneManVanDbContext> DbFactory
 @inject NavigationManager Navigation
 
-<PageTitle>Warranty Claims - OneManVan</PageTitle>
+<PageTitle>Repair History - OneManVan</PageTitle>
 
 <div class="container-fluid py-4">
     <!-- Page Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h1 class="h2 mb-0">Warranty Claims</h1>
-            <p class="text-muted mb-0">Track equipment warranty repairs and manufacturer claims</p>
+            <h1 class="h2 mb-0">Repair History</h1>
+            <p class="text-muted mb-0">Track equipment repairs and warranty claims</p>
         </div>
         <div class="d-flex gap-2">
-            <ImportButton EntityType="warranties" EntityDisplayName="Warranty Claims" DuplicateField="ClaimNumber" OnImportComplete="OnImportComplete" />
+            <ImportButton EntityType="warranties" EntityDisplayName="Repairs" DuplicateField="ClaimNumber" OnImportComplete="OnImportComplete" />
             <ExportButton EntityType="warrantyclaims" />
             <button class="btn btn-primary" @onclick="CreateClaim">
-                <i class="bi bi-plus-circle me-2"></i>File New Claim
+                <i class="bi bi-plus-circle me-2"></i>Add Repair Record
             </button>
         </div>
     </div>
@@ -126,6 +126,13 @@
                     </select>
                 </div>
                 <div class="col-md-2">
+                    <select class="form-select" @bind="filterType" @bind:after="ApplyFilters">
+                        <option value="">All Types</option>
+                        <option value="warranty">Warranty Claims</option>
+                        <option value="repair">General Repairs</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
                     <select class="form-select" @bind="sortBy" @bind:after="ApplyFilters">
                         <option value="recent">Most Recent</option>
                         <option value="oldest">Oldest First</option>
@@ -158,6 +165,7 @@
                         <thead class="table-light">
                             <tr>
                                 <th>Claim #</th>
+                                <th>Type</th>
                                 <th>Asset</th>
                                 <th>Customer</th>
                                 <th>Issue</th>
@@ -174,6 +182,16 @@
                                 <tr style="cursor: pointer;" @onclick="@(() => ViewClaim(claim.Id))">
                                     <td>
                                         <span class="fw-semibold">@(claim.ClaimNumber ?? $"CLM-{claim.Id:D4}")</span>
+                                    </td>
+                                    <td>
+                                        @if (claim.IsWarrantyClaim)
+                                        {
+                                            <span class="badge bg-primary">Warranty</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">Repair</span>
+                                        }
                                     </td>
                                     <td>
                                         @(claim.Asset?.AssetTag ?? "-")
@@ -266,6 +284,7 @@
     private string searchText = "";
     private string filterStatus = "";
     private string filterCoverage = "";
+    private string filterType = "";
     private string sortBy = "recent";
 
     private int pendingCount = 0;
@@ -334,6 +353,15 @@
                 query = query.Where(c => !c.IsCoveredByWarranty);
         }
 
+        // Type filter (warranty claim vs general repair)
+        if (!string.IsNullOrWhiteSpace(filterType))
+        {
+            if (filterType == "warranty")
+                query = query.Where(c => c.IsWarrantyClaim);
+            else if (filterType == "repair")
+                query = query.Where(c => !c.IsWarrantyClaim);
+        }
+
         // Sort
         query = sortBy switch
         {
@@ -351,6 +379,7 @@
         searchText = "";
         filterStatus = "";
         filterCoverage = "";
+        filterType = "";
         sortBy = "recent";
         ApplyFilters();
     }

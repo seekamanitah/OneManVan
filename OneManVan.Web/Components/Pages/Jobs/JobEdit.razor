@@ -73,6 +73,17 @@
                                     </InputSelect>
                                 </div>
                                 <div class="col-md-6">
+                                    <label class="form-label">Link to Material List</label>
+                                    <InputSelect class="form-select" @bind-Value="selectedMaterialListId">
+                                        <option value="">No material list</option>
+                                        @foreach (var ml in materialLists.Where(m => m.CustomerId == model.CustomerId || model.CustomerId == 0))
+                                        {
+                                            <option value="@ml.Id">@ml.ListNumber - @ml.Title</option>
+                                        }
+                                    </InputSelect>
+                                    <small class="text-muted">Link an existing material list to this job</small>
+                                </div>
+                                <div class="col-md-6">
                                     <label class="form-label">Job Type</label>
                                     <InputSelect class="form-select" @bind-Value="model.JobType">
                                         @foreach (var jt in Enum.GetValues<JobType>())
@@ -294,6 +305,8 @@
     private List<Customer> customers = new();
     private List<Site> sites = new();
     private List<Asset> assets = new();
+    private List<MaterialList> materialLists = new();
+    private int? selectedMaterialListId;
 
     protected override async Task OnInitializedAsync()
     {
@@ -309,7 +322,10 @@
                 Status = JobStatus.Draft,
                 Priority = JobPriority.Normal,
                 JobType = JobType.ServiceCall,
-                TaxRate = defaultTaxRate
+                TaxRate = defaultTaxRate,
+                ScheduledDate = DateTime.Today,
+                ArrivalWindowStart = new TimeSpan(9, 0, 0),  // Default to 9:00 AM
+                ArrivalWindowEnd = new TimeSpan(12, 0, 0)    // Default to 12:00 PM
             };
             isLoading = false;
         }
@@ -337,6 +353,13 @@
         assets = await db.Assets
             .Where(a => a.Status == AssetStatus.Active)
             .OrderBy(a => a.AssetName)
+            .AsNoTracking()
+            .ToListAsync();
+
+        // Load material lists that aren't already linked to a job
+        materialLists = await db.MaterialLists
+            .Where(m => m.JobId == null)
+            .OrderByDescending(m => m.CreatedAt)
             .AsNoTracking()
             .ToListAsync();
     }
@@ -471,6 +494,17 @@
             }
 
             await db.SaveChangesAsync();
+
+            // Link selected material list to this job
+            if (selectedMaterialListId.HasValue)
+            {
+                var materialList = await db.MaterialLists.FindAsync(selectedMaterialListId.Value);
+                if (materialList != null && materialList.JobId != model.Id)
+                {
+                    materialList.JobId = model.Id;
+                    await db.SaveChangesAsync();
+                }
+            }
 
             // Send notification for scheduled jobs
             if (IsNew && model.Status == JobStatus.Scheduled && model.ScheduledDate.HasValue)

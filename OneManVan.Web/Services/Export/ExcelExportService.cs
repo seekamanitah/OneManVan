@@ -17,6 +17,7 @@ public interface IExcelExportService
     Task<byte[]> ExportSitesToExcelAsync();
     Task<byte[]> ExportServiceAgreementsToExcelAsync();
     Task<byte[]> ExportWarrantyClaimsToExcelAsync();
+    Task<byte[]> ExportExpensesToExcelAsync();
 }
 
 public class ExcelExportService : IExcelExportService
@@ -139,6 +140,7 @@ public class ExcelExportService : IExcelExportService
     {
         var assets = await _context.Assets
             .Include(a => a.Customer)
+            .Include(a => a.Site)
             .OrderBy(a => a.Customer!.Name)
             .ToListAsync();
 
@@ -147,22 +149,38 @@ public class ExcelExportService : IExcelExportService
 
         // Headers
         worksheet.Cell(1, 1).Value = "ID";
-        worksheet.Cell(1, 2).Value = "Customer";
-        worksheet.Cell(1, 3).Value = "Asset Tag";
-        worksheet.Cell(1, 4).Value = "Description";
-        worksheet.Cell(1, 5).Value = "Status";
-        worksheet.Cell(1, 6).Value = "Install Date";
+        worksheet.Cell(1, 2).Value = "Asset #";
+        worksheet.Cell(1, 3).Value = "Asset Name";
+        worksheet.Cell(1, 4).Value = "Customer";
+        worksheet.Cell(1, 5).Value = "Site";
+        worksheet.Cell(1, 6).Value = "Serial";
+        worksheet.Cell(1, 7).Value = "Brand";
+        worksheet.Cell(1, 8).Value = "Model";
+        worksheet.Cell(1, 9).Value = "Equipment Type";
+        worksheet.Cell(1, 10).Value = "Fuel Type";
+        worksheet.Cell(1, 11).Value = "Tonnage";
+        worksheet.Cell(1, 12).Value = "SEER2";
+        worksheet.Cell(1, 13).Value = "Install Date";
+        worksheet.Cell(1, 14).Value = "Status";
 
         // Data
         for (int i = 0; i < assets.Count; i++)
         {
             var row = i + 2;
             worksheet.Cell(row, 1).Value = assets[i].Id;
-            worksheet.Cell(row, 2).Value = assets[i].Customer?.Name;
-            worksheet.Cell(row, 3).Value = assets[i].AssetTag;
-            worksheet.Cell(row, 4).Value = assets[i].Description;
-            worksheet.Cell(row, 5).Value = assets[i].Status.ToString();
-            worksheet.Cell(row, 6).Value = assets[i].InstallDate;
+            worksheet.Cell(row, 2).Value = assets[i].AssetNumber;
+            worksheet.Cell(row, 3).Value = assets[i].AssetName;
+            worksheet.Cell(row, 4).Value = assets[i].Customer?.Name;
+            worksheet.Cell(row, 5).Value = assets[i].Site?.SiteName;
+            worksheet.Cell(row, 6).Value = assets[i].Serial;
+            worksheet.Cell(row, 7).Value = assets[i].Brand;
+            worksheet.Cell(row, 8).Value = assets[i].Model;
+            worksheet.Cell(row, 9).Value = assets[i].EquipmentType.ToString();
+            worksheet.Cell(row, 10).Value = assets[i].FuelType.ToString();
+            worksheet.Cell(row, 11).Value = assets[i].TonnageX10.HasValue ? (assets[i].TonnageX10.Value / 10.0) : (double?)null;
+            worksheet.Cell(row, 12).Value = assets[i].Seer2Rating.HasValue ? (double)assets[i].Seer2Rating.Value : (double?)null;
+            worksheet.Cell(row, 13).Value = assets[i].InstallDate;
+            worksheet.Cell(row, 14).Value = assets[i].Status.ToString();
         }
 
         StyleWorksheet(worksheet);
@@ -426,6 +444,60 @@ public class ExcelExportService : IExcelExportService
             worksheet.Cell(row, 8).Value = claims[i].RepairCost;
             worksheet.Cell(row, 9).Value = claims[i].CustomerCharge;
             worksheet.Cell(row, 10).Value = claims[i].Resolution;
+        }
+
+        StyleWorksheet(worksheet);
+        return WorkbookToBytes(workbook);
+    }
+
+    public async Task<byte[]> ExportExpensesToExcelAsync()
+    {
+        var expenses = await _context.Expenses
+            .Include(e => e.Employee)
+            .Include(e => e.Job)
+            .Include(e => e.Customer)
+            .OrderByDescending(e => e.ExpenseDate)
+            .ToListAsync();
+
+        using var workbook = new XLWorkbook();
+        var worksheet = workbook.Worksheets.Add("Expenses");
+
+        // Headers
+        worksheet.Cell(1, 1).Value = "ID";
+        worksheet.Cell(1, 2).Value = "Expense #";
+        worksheet.Cell(1, 3).Value = "Date";
+        worksheet.Cell(1, 4).Value = "Category";
+        worksheet.Cell(1, 5).Value = "Description";
+        worksheet.Cell(1, 6).Value = "Amount";
+        worksheet.Cell(1, 7).Value = "Tax";
+        worksheet.Cell(1, 8).Value = "Total";
+        worksheet.Cell(1, 9).Value = "Employee";
+        worksheet.Cell(1, 10).Value = "Job #";
+        worksheet.Cell(1, 11).Value = "Customer";
+        worksheet.Cell(1, 12).Value = "Vendor";
+        worksheet.Cell(1, 13).Value = "Status";
+        worksheet.Cell(1, 14).Value = "Billable";
+        worksheet.Cell(1, 15).Value = "Reimbursed";
+
+        // Data
+        for (int i = 0; i < expenses.Count; i++)
+        {
+            var row = i + 2;
+            worksheet.Cell(row, 1).Value = expenses[i].Id;
+            worksheet.Cell(row, 2).Value = expenses[i].ExpenseNumber;
+            worksheet.Cell(row, 3).Value = expenses[i].ExpenseDate;
+            worksheet.Cell(row, 4).Value = expenses[i].Category.ToString();
+            worksheet.Cell(row, 5).Value = expenses[i].Description;
+            worksheet.Cell(row, 6).Value = (double)expenses[i].Amount;
+            worksheet.Cell(row, 7).Value = (double)expenses[i].TaxAmount;
+            worksheet.Cell(row, 8).Value = (double)(expenses[i].Amount + expenses[i].TaxAmount);
+            worksheet.Cell(row, 9).Value = expenses[i].Employee?.FullName;
+            worksheet.Cell(row, 10).Value = expenses[i].Job?.JobNumber;
+            worksheet.Cell(row, 11).Value = expenses[i].Customer?.Name;
+            worksheet.Cell(row, 12).Value = expenses[i].VendorName;
+            worksheet.Cell(row, 13).Value = expenses[i].Status.ToString();
+            worksheet.Cell(row, 14).Value = expenses[i].IsBillable;
+            worksheet.Cell(row, 15).Value = expenses[i].IsReimbursed;
         }
 
         StyleWorksheet(worksheet);

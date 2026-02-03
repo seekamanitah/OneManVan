@@ -56,7 +56,68 @@ public class QuickNote
     /// </summary>
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
+    // === Entity Linking (Optional) ===
+
+    /// <summary>
+    /// Optional link to a customer for customer-specific notes.
+    /// </summary>
+    public int? CustomerId { get; set; }
+
+    /// <summary>
+    /// Optional link to a site for site-specific notes.
+    /// </summary>
+    public int? SiteId { get; set; }
+
+    /// <summary>
+    /// Optional link to a job for job-specific notes.
+    /// </summary>
+    public int? JobId { get; set; }
+
+    /// <summary>
+    /// Optional link to an asset for asset-specific notes.
+    /// </summary>
+    public int? AssetId { get; set; }
+
+    // Navigation properties
+    [ForeignKey("CustomerId")]
+    public virtual Customer? Customer { get; set; }
+
+    [ForeignKey("SiteId")]
+    public virtual Site? Site { get; set; }
+
+    [ForeignKey("JobId")]
+    public virtual Job? Job { get; set; }
+
+    [ForeignKey("AssetId")]
+    public virtual Asset? Asset { get; set; }
+
     // === Computed Properties ===
+
+    /// <summary>
+    /// Whether this note is linked to any entity.
+    /// </summary>
+    [NotMapped]
+    public bool IsLinked => CustomerId.HasValue || SiteId.HasValue || JobId.HasValue || AssetId.HasValue;
+
+    /// <summary>
+    /// Display name for what this note is linked to.
+    /// </summary>
+    [NotMapped]
+    public string? LinkedToDisplay
+    {
+        get
+        {
+            if (Customer != null) return $"Customer: {Customer.Name}";
+            if (Site != null) return $"Site: {Site.SiteName}";
+            if (Job != null) return $"Job: {Job.Title}";
+            if (Asset != null) return $"Asset: {Asset.AssetName ?? Asset.Serial}";
+            if (CustomerId.HasValue) return "Customer";
+            if (SiteId.HasValue) return "Site";
+            if (JobId.HasValue) return "Job";
+            if (AssetId.HasValue) return "Asset";
+            return null;
+        }
+    }
 
     /// <summary>
     /// Gets a preview of the content (first 100 chars).

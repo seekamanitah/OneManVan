@@ -19,6 +19,7 @@ public interface ICsvExportService
     Task<byte[]> ExportSitesToCsvAsync();
     Task<byte[]> ExportServiceAgreementsToCsvAsync();
     Task<byte[]> ExportWarrantyClaimsToCsvAsync();
+    Task<byte[]> ExportExpensesToCsvAsync();
 }
 
 public class CsvExportService : ICsvExportService
@@ -96,15 +97,30 @@ public class CsvExportService : ICsvExportService
     {
         var assets = await _context.Assets
             .Include(a => a.Customer)
+            .Include(a => a.Site)
             .OrderBy(a => a.Customer!.Name)
             .Select(a => new
             {
                 a.Id,
-                CustomerName = a.Customer!.Name,
+                a.AssetNumber,
+                a.AssetName,
+                CustomerName = a.Customer != null ? a.Customer.Name : "",
+                SiteName = a.Site != null ? a.Site.SiteName : "",
                 a.AssetTag,
-                a.Description,
-                Status = a.Status.ToString(),
+                a.Serial,
+                a.Brand,
+                a.Model,
+                a.Nickname,
+                EquipmentType = a.EquipmentType.ToString(),
+                FuelType = a.FuelType.ToString(),
+                UnitConfig = a.UnitConfig.ToString(),
+                a.BtuRating,
+                Tonnage = a.TonnageX10.HasValue ? (a.TonnageX10.Value / 10.0).ToString("F1") : "",
+                a.SeerRating,
+                a.Seer2Rating,
+                a.AfueRating,
                 a.InstallDate,
+                Status = a.Status.ToString(),
                 a.Notes
             })
             .ToListAsync();
@@ -258,6 +274,37 @@ public class CsvExportService : ICsvExportService
             .ToListAsync();
 
         return ToCsv(claims);
+    }
+
+    public async Task<byte[]> ExportExpensesToCsvAsync()
+    {
+        var expenses = await _context.Expenses
+            .Include(e => e.Employee)
+            .Include(e => e.Job)
+            .Include(e => e.Customer)
+            .OrderByDescending(e => e.ExpenseDate)
+            .Select(e => new
+            {
+                e.Id,
+                e.ExpenseNumber,
+                e.ExpenseDate,
+                Category = e.Category.ToString(),
+                e.Description,
+                e.Amount,
+                e.TaxAmount,
+                TotalAmount = e.Amount + e.TaxAmount,
+                EmployeeName = e.Employee != null ? e.Employee.FullName : "",
+                JobNumber = e.Job != null ? e.Job.JobNumber : "",
+                CustomerName = e.Customer != null ? e.Customer.Name : "",
+                e.VendorName,
+                Status = e.Status.ToString(),
+                e.IsBillable,
+                e.IsReimbursed,
+                e.Notes
+            })
+            .ToListAsync();
+
+        return ToCsv(expenses);
     }
 
     private byte[] ToCsv<T>(IEnumerable<T> records)

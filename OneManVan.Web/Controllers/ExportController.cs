@@ -331,6 +331,22 @@ public class ExportController : ControllerBase
             $"Employees_{DateTime.Now:yyyyMMdd}.xlsx");
     }
 
+    [HttpGet("expenses/csv")]
+    public async Task<IActionResult> ExportExpensesCsv()
+    {
+        var data = await _csvService.ExportExpensesToCsvAsync();
+        return File(data, "text/csv", $"Expenses_{DateTime.Now:yyyyMMdd}.csv");
+    }
+
+    [HttpGet("expenses/excel")]
+    public async Task<IActionResult> ExportExpensesExcel()
+    {
+        var data = await _excelService.ExportExpensesToExcelAsync();
+        return File(data,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"Expenses_{DateTime.Now:yyyyMMdd}.xlsx");
+    }
+
     #endregion
 
     #region PDF Exports

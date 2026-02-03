@@ -350,18 +350,25 @@
 </div>
 
 @code {
-    [Parameter] public int? Id { get; set; }
+[Parameter] public int? Id { get; set; }
 
-    private bool IsNew => !Id.HasValue;
-    private bool isLoading = true;
-    private bool isSaving = false;
-    private string errorMessage = "";
-    private Employee model = new() { StartDate = DateTime.Today };
+private bool IsNew => !Id.HasValue;
+private bool isLoading = true;
+private bool isSaving = false;
+private string errorMessage = "";
+private Employee model = new() 
+{ 
+    StartDate = DateTime.Today,
+    // Default location values for convenience
+    City = "Pikeville",
+    State = "TN",
+    ZipCode = "37367"
+};
 
-    protected override async Task OnInitializedAsync()
+protected override async Task OnInitializedAsync()
+{
+    if (!IsNew)
     {
-        if (!IsNew)
-        {
             var existing = await EmployeeService.GetByIdAsync(Id!.Value);
             if (existing != null)
             {

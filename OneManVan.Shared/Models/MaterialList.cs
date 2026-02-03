@@ -48,6 +48,11 @@ public class MaterialList
     /// </summary>
     public int? EstimateId { get; set; }
 
+    /// <summary>
+    /// Linked invoice if converted to invoice.
+    /// </summary>
+    public int? InvoiceId { get; set; }
+
     // === Property Information ===
 
     /// <summary>
@@ -208,6 +213,18 @@ public class MaterialList
     [Column(TypeName = "decimal(12,2)")]
     public decimal TotalBidPrice { get; set; }
 
+    /// <summary>
+    /// Manual price override (when set, use this instead of calculated TotalBidPrice).
+    /// Hidden from customer PDFs - for internal use only.
+    /// </summary>
+    [Column(TypeName = "decimal(12,2)")]
+    public decimal? PriceOverride { get; set; }
+
+    /// <summary>
+    /// Whether to use the price override instead of calculated total.
+    /// </summary>
+    public bool UsePriceOverride { get; set; }
+
     // === Notes ===
 
     /// <summary>
@@ -221,6 +238,12 @@ public class MaterialList
     /// </summary>
     [MaxLength(2000)]
     public string? InternalNotes { get; set; }
+
+    /// <summary>
+    /// Notes for supply house orders (separate from customer notes).
+    /// </summary>
+    [MaxLength(2000)]
+    public string? SupplyHouseNotes { get; set; }
 
     /// <summary>
     /// Labor notes.
@@ -249,6 +272,8 @@ public class MaterialList
     public Job? Job { get; set; }
 
     public Estimate? Estimate { get; set; }
+
+    public Invoice? Invoice { get; set; }
 
     /// <summary>
     /// Systems/zones within this material list (collapsible sections).

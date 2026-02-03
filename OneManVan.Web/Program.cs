@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.RateLimiting;
+using System.Globalization;
 using System.Threading.RateLimiting;
 using OneManVan.Web.Components;
 using OneManVan.Web.Components.Account;
@@ -206,11 +208,15 @@ builder.Services.AddScoped<IExcelExportService, ExcelExportService>();
 builder.Services.AddScoped<IInvoicePdfGenerator, InvoicePdfGenerator>();
 builder.Services.AddScoped<IEstimatePdfGenerator, EstimatePdfGenerator>();
 builder.Services.AddScoped<IServiceAgreementPdfGenerator, ServiceAgreementPdfGenerator>();
+builder.Services.AddScoped<IMaterialListPdfGenerator, MaterialListPdfGenerator>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 
 // Register import services
 builder.Services.AddScoped<ICsvImportService, CsvImportService>();
+
+// Register dropdown preset service for configurable dropdowns
+builder.Services.AddScoped<DropdownPresetService>();
 
 // Add HttpClient for Blazor components - configured per-request with NavigationManager
 builder.Services.AddHttpClient();
@@ -273,6 +279,15 @@ builder.Services.ConfigureApplicationCookie(options =>
         }
         return Task.CompletedTask;
     };
+});
+
+// Configure request localization for US currency ($)
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    var usCulture = new CultureInfo("en-US");
+    options.DefaultRequestCulture = new RequestCulture(usCulture);
+    options.SupportedCultures = new[] { usCulture };
+    options.SupportedUICultures = new[] { usCulture };
 });
 
 var app = builder.Build();
@@ -409,6 +424,9 @@ app.Use(async (context, next) =>
     
     await next();
 });
+
+// Apply request localization for US currency ($)
+app.UseRequestLocalization();
 
 app.UseStaticFiles(); // Serve static files
 

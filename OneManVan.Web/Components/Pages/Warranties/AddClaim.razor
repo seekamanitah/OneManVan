@@ -3,11 +3,12 @@
 @using OneManVan.Shared.Data
 @using OneManVan.Shared.Models
 @using OneManVan.Shared.Models.Enums
+@using OneManVan.Web.Components.Shared
 
 @inject IDbContextFactory<OneManVanDbContext> DbFactory
 @inject NavigationManager Navigation
 
-<PageTitle>File Warranty Claim - OneManVan</PageTitle>
+<PageTitle>Add Repair Record - OneManVan</PageTitle>
 
 <div class="container-fluid py-4">
     <div class="row justify-content-center">
@@ -15,8 +16,8 @@
             <!-- Page Header -->
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h1 class="h2 mb-0">File Warranty Claim</h1>
-                    <p class="text-muted mb-0">Submit a new warranty claim for equipment repair</p>
+                    <h1 class="h2 mb-0">Add Repair Record</h1>
+                    <p class="text-muted mb-0">Track a repair or file a warranty claim</p>
                 </div>
                 <button class="btn btn-outline-secondary" @onclick="Cancel">
                     <i class="bi bi-x-lg me-2"></i>Cancel
@@ -111,18 +112,33 @@
                                 <ValidationMessage For="@(() => claim.IssueDescription)" />
                             </div>
 
-                            <!-- Warranty Coverage -->
+                            <!-- Record Type -->
                             <div class="col-md-6">
-                                <label class="form-label">Warranty Coverage</label>
+                                <label class="form-label">Record Type</label>
                                 <div class="form-check form-switch">
-                                    <InputCheckbox @bind-Value="claim.IsCoveredByWarranty" class="form-check-input" id="coverageSwitch" />
-                                    <label class="form-check-label" for="coverageSwitch">
-                                        Covered by Warranty
+                                    <InputCheckbox @bind-Value="claim.IsWarrantyClaim" class="form-check-input" id="warrantyClaimSwitch" />
+                                    <label class="form-check-label" for="warrantyClaimSwitch">
+                                        This is a Warranty Claim
                                     </label>
                                 </div>
+                                <small class="text-muted">Uncheck for general repair tracking (no warranty involvement)</small>
                             </div>
 
-                            @if (!claim.IsCoveredByWarranty)
+                            <!-- Warranty Coverage -->
+                            @if (claim.IsWarrantyClaim)
+                            {
+                                <div class="col-md-6">
+                                    <label class="form-label">Warranty Coverage</label>
+                                    <div class="form-check form-switch">
+                                        <InputCheckbox @bind-Value="claim.IsCoveredByWarranty" class="form-check-input" id="coverageSwitch" />
+                                        <label class="form-check-label" for="coverageSwitch">
+                                            Covered by Warranty
+                                        </label>
+                                    </div>
+                                </div>
+                            }
+
+                            @if (claim.IsWarrantyClaim && !claim.IsCoveredByWarranty)
                             {
                                 <div class="col-md-6">
                                     <label class="form-label">Reason Not Covered</label>
@@ -160,8 +176,14 @@
                             <!-- Filed By -->
                             <div class="col-md-6">
                                 <label class="form-label">Filed By</label>
-                                <InputText @bind-Value="claim.FiledBy" class="form-control" 
-                                           placeholder="Your name" />
+                                <SearchableDropdown TItem="Employee"
+                                                    Items="@employees"
+                                                    SelectedValue="@claim.FiledBy"
+                                                    SelectedValueChanged="@(v => claim.FiledBy = v)"
+                                                    DisplayExpression="@(e => e.FullName)"
+                                                    ValueExpression="@(e => e.FullName)"
+                                                    Placeholder="Select employee..."
+                                                    AllowCustom="true" />
                             </div>
                         </div>
                     </div>
@@ -186,7 +208,7 @@
                         {
                             <span class="spinner-border spinner-border-sm me-2"></span>
                         }
-                        <i class="bi bi-check-circle me-2"></i>File Claim
+                        <i class="bi bi-check-circle me-2"></i>Save Record
                     </button>
                 </div>
             </EditForm>
@@ -203,14 +225,17 @@ private bool isSaving = false;
 private WarrantyClaim claim = new();
 private Asset? selectedAsset;
 private List<Asset> assets = new();
+private List<Employee> employees = new();
 private string errorMessage = "";
 
 protected override async Task OnInitializedAsync()
 {
     await LoadAssetsAsync();
+    await LoadEmployeesAsync();
         
     // Set default values
     claim.ClaimDate = DateTime.Today;
+    claim.IsWarrantyClaim = true;
     claim.IsCoveredByWarranty = true;
     claim.Status = ClaimStatus.Pending;
 
@@ -230,6 +255,17 @@ protected override async Task OnInitializedAsync()
             .Where(a => a.Status == AssetStatus.Active)
             .OrderBy(a => a.Customer!.Name)
             .ThenBy(a => a.AssetTag)
+            .AsNoTracking()
+            .ToListAsync();
+    }
+
+    private async Task LoadEmployeesAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        employees = await db.Employees
+            .Where(e => e.Status == EmployeeStatus.Active)
+            .OrderBy(e => e.FirstName)
+            .ThenBy(e => e.LastName)
             .AsNoTracking()
             .ToListAsync();
     }

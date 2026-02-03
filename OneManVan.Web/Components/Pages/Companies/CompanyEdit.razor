@@ -83,6 +83,7 @@
                         </div>
                     </div>
 
+
                     <!-- Contact Info -->
                     <div class="card border-0 shadow-sm mb-3">
                         <div class="card-header bg-white border-0 py-3">
@@ -92,33 +93,67 @@
                             <div class="row g-3">
                                 <div class="col-12">
                                     <label class="form-label">Primary Contact</label>
-                                    <div class="d-flex gap-2">
-                                        <select class="form-select" @bind="model.ContactCustomerId">
-                                            <option value="">Select a contact...</option>
-                                            @foreach (var customer in customers)
-                                            {
-                                                <option value="@customer.Id">@customer.FirstName @customer.LastName (@customer.Email)</option>
-                                            }
-                                        </select>
-                                        <button type="button" class="btn btn-outline-primary" @onclick="ShowQuickAddCustomer">
-                                            <i class="bi bi-plus-circle me-1"></i>New
-                                        </button>
+                                    <div class="position-relative">
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                                            <input type="text" class="form-control" 
+                                                   placeholder="Search by name..." 
+                                                   @bind="contactSearchText" 
+                                                   @bind:event="oninput"
+                                                   @onfocus="() => showContactDropdown = true"
+                                                   @onblur="OnContactSearchBlur" />
+                                            <button type="button" class="btn btn-outline-primary" @onclick="ShowQuickAddCustomer">
+                                                <i class="bi bi-plus-circle me-1"></i>New
+                                            </button>
+                                        </div>
+                                        @if (showContactDropdown && filteredContacts.Any())
+                                        {
+                                            <div class="dropdown-menu show w-100 mt-1" style="max-height: 250px; overflow-y: auto;">
+                                                @foreach (var customer in filteredContacts.Take(10))
+                                                {
+                                                    <button type="button" class="dropdown-item" @onmousedown="() => SelectContact(customer)">
+                                                        <div><strong>@customer.FirstName @customer.LastName</strong></div>
+                                                        @if (!string.IsNullOrEmpty(customer.Phone))
+                                                        {
+                                                            <small class="text-muted">@customer.Phone</small>
+                                                        }
+                                                        @if (!string.IsNullOrEmpty(customer.Email))
+                                                        {
+                                                            <small class="text-muted ms-2">@customer.Email</small>
+                                                        }
+                                                    </button>
+                                                }
+                                                @if (!filteredContacts.Any(c => 
+                                                    $"{c.FirstName} {c.LastName}".Contains(contactSearchText, StringComparison.OrdinalIgnoreCase)))
+                                                {
+                                                    <div class="dropdown-item text-muted">
+                                                        <i class="bi bi-info-circle me-1"></i>No exact match found. 
+                                                        <button type="button" class="btn btn-link btn-sm p-0" @onclick="ShowQuickAddCustomer">Create new contact</button>
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
                                     </div>
                                     @if (model.ContactCustomerId.HasValue && selectedContact != null)
                                     {
-                                        <div class="mt-2 p-2 bg-light rounded">
-                                            <small class="d-block"><strong>@selectedContact.FirstName @selectedContact.LastName</strong></small>
-                                            @if (!string.IsNullOrEmpty(selectedContact.Email))
-                                            {
-                                                <small class="d-block text-muted"><i class="bi bi-envelope me-1"></i>@selectedContact.Email</small>
-                                            }
-                                            @if (!string.IsNullOrEmpty(selectedContact.Phone))
-                                            {
-                                                <small class="d-block text-muted"><i class="bi bi-telephone me-1"></i>@selectedContact.Phone</small>
-                                            }
+                                        <div class="mt-2 p-2 bg-light rounded d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <small class="d-block"><strong>@selectedContact.FirstName @selectedContact.LastName</strong></small>
+                                                @if (!string.IsNullOrEmpty(selectedContact.Email))
+                                                {
+                                                    <small class="d-block text-muted"><i class="bi bi-envelope me-1"></i>@selectedContact.Email</small>
+                                                }
+                                                @if (!string.IsNullOrEmpty(selectedContact.Phone))
+                                                {
+                                                    <small class="d-block text-muted"><i class="bi bi-telephone me-1"></i>@selectedContact.Phone</small>
+                                                }
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="ClearContact">
+                                                <i class="bi bi-x"></i>
+                                            </button>
                                         </div>
                                     }
-                                    <small class="text-muted">Select or create a customer to be the primary contact for this company</small>
+                                    <small class="text-muted">Search by name to find or add a primary contact for this company</small>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Company Phone</label>
@@ -263,6 +298,18 @@ private Company model = new();
     private Customer? selectedContact = null;
     private bool showQuickAddModal = false;
     private Customer newCustomer = new();
+    
+    // Contact search fields
+    private string contactSearchText = "";
+    private bool showContactDropdown = false;
+    private List<Customer> filteredContacts => string.IsNullOrWhiteSpace(contactSearchText) 
+        ? customers.Take(10).ToList()
+        : customers.Where(c => 
+            $"{c.FirstName} {c.LastName}".Contains(contactSearchText, StringComparison.OrdinalIgnoreCase) ||
+            (c.FirstName?.Contains(contactSearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+            (c.LastName?.Contains(contactSearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+            (c.Phone?.Contains(contactSearchText) ?? false)
+        ).Take(10).ToList();
 
     private int? _previousContactCustomerId;
 
@@ -276,7 +323,11 @@ private Company model = new();
             {
                 CompanyType = CompanyType.Customer,
                 IsActive = true,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                // Default location values
+                BillingCity = "Pikeville",
+                BillingState = "TN",
+                BillingZipCode = "37367"
             };
             isLoading = false;
         }
@@ -286,6 +337,12 @@ private Company model = new();
         }
         
         _previousContactCustomerId = model.ContactCustomerId;
+        
+        // Set contact search text if contact is selected
+        if (selectedContact != null)
+        {
+            contactSearchText = $"{selectedContact.FirstName} {selectedContact.LastName}";
+        }
     }
 
     protected override void OnAfterRender(bool firstRender)
@@ -296,6 +353,28 @@ private Company model = new();
             selectedContact = customers.FirstOrDefault(c => c.Id == model.ContactCustomerId);
             StateHasChanged();
         }
+    }
+    
+    private void SelectContact(Customer customer)
+    {
+        model.ContactCustomerId = customer.Id;
+        selectedContact = customer;
+        contactSearchText = $"{customer.FirstName} {customer.LastName}";
+        showContactDropdown = false;
+    }
+    
+    private void ClearContact()
+    {
+        model.ContactCustomerId = null;
+        selectedContact = null;
+        contactSearchText = "";
+    }
+    
+    private async Task OnContactSearchBlur()
+    {
+        // Delay to allow click on dropdown item
+        await Task.Delay(200);
+        showContactDropdown = false;
     }
 
     private async Task LoadCustomersAsync()

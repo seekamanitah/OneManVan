@@ -1,0 +1,400 @@
+@page "/expenses/new"
+@page "/expenses/{Id:int}/edit"
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+@using OneManVan.Shared.Models.Enums
+
+@inject IDbContextFactory<OneManVanDbContext> DbFactory
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<PageTitle>@(IsNew ? "New Expense" : "Edit Expense") - OneManVan</PageTitle>
+
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="mb-4">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/expenses">Expenses</a></li>
+                        <li class="breadcrumb-item active">@(IsNew ? "New" : "Edit")</li>
+                    </ol>
+                </nav>
+                <h1 class="h2">@(IsNew ? "New Expense" : "Edit Expense")</h1>
+            </div>
+
+            @if (isLoading)
+            {
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary"></div>
+                </div>
+            }
+            else
+            {
+                <EditForm Model="@model" OnValidSubmit="HandleSubmit">
+                    <DataAnnotationsValidator />
+
+                    <!-- Basic Info -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0">Expense Details</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Date *</label>
+                                    <InputDate class="form-control" @bind-Value="model.ExpenseDate" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Category *</label>
+                                    <InputSelect class="form-select" @bind-Value="model.Category">
+                                        @foreach (var c in Enum.GetValues<ExpenseCategory>())
+                                        {
+                                            <option value="@c">@c</option>
+                                        }
+                                    </InputSelect>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Description *</label>
+                                    <InputText class="form-control" @bind-Value="model.Description" placeholder="What was this expense for?" />
+                                    <ValidationMessage For="@(() => model.Description)" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Vendor/Supplier</label>
+                                    <InputText class="form-control" @bind-Value="model.VendorName" placeholder="e.g., Home Depot, Johnstone Supply" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Receipt/Invoice Number</label>
+                                    <InputText class="form-control" @bind-Value="model.ReceiptNumber" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Amounts -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0">Amount</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Amount *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <InputNumber class="form-control" @bind-Value="model.Amount" @bind-Value:after="CalculateTotal" />
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Tax Amount</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <InputNumber class="form-control" @bind-Value="model.TaxAmount" @bind-Value:after="CalculateTotal" />
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Total</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="text" class="form-control bg-light" value="@model.TotalAmount.ToString("N2")" readonly />
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Payment Method</label>
+                                    <InputSelect class="form-select" @bind-Value="model.PaymentMethod">
+                                        @foreach (var p in Enum.GetValues<PaymentMethod>())
+                                        {
+                                            <option value="@p">@p</option>
+                                        }
+                                    </InputSelect>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Status</label>
+                                    <InputSelect class="form-select" @bind-Value="model.Status">
+                                        @foreach (var s in Enum.GetValues<ExpenseStatus>())
+                                        {
+                                            <option value="@s">@s</option>
+                                        }
+                                    </InputSelect>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Linking -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0">Link To (Optional)</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Job</label>
+                                    <InputSelect class="form-select" @bind-Value="model.JobId">
+                                        <option value="">Not linked to a job</option>
+                                        @foreach (var job in jobs)
+                                        {
+                                            <option value="@job.Id">@job.Title (@job.ScheduledDate?.ToString("MM/dd"))</option>
+                                        }
+                                    </InputSelect>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Customer</label>
+                                    <InputSelect class="form-select" @bind-Value="model.CustomerId">
+                                        <option value="">Not linked to a customer</option>
+                                        @foreach (var customer in customers)
+                                        {
+                                            <option value="@customer.Id">@customer.Name</option>
+                                        }
+                                    </InputSelect>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Employee</label>
+                                    <InputSelect class="form-select" @bind-Value="model.EmployeeId">
+                                        <option value="">Not linked to an employee</option>
+                                        @foreach (var emp in employees)
+                                        {
+                                            <option value="@emp.Id">@emp.DisplayName</option>
+                                        }
+                                    </InputSelect>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check mt-4">
+                                        <InputCheckbox class="form-check-input" @bind-Value="model.IsBillable" />
+                                        <label class="form-check-label">Billable to Customer</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0">Notes</h5>
+                        </div>
+                        <div class="card-body">
+                            <InputTextArea class="form-control" @bind-Value="model.Notes" rows="3" placeholder="Additional notes..." />
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <button type="button" class="btn btn-outline-secondary" @onclick="Cancel" disabled="@isSaving">
+                                    Cancel
+                                </button>
+                                <div class="d-flex gap-2">
+                                    @if (!IsNew)
+                                    {
+                                        <button type="button" class="btn btn-outline-danger" @onclick="DeleteExpense" disabled="@isSaving">
+                                            <i class="bi bi-trash me-2"></i>Delete
+                                        </button>
+                                    }
+                                    <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                                        @if (isSaving)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-2"></span>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-check-circle me-2"></i>
+                                        }
+                                        @(IsNew ? "Create Expense" : "Save Changes")
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger mt-3">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>@errorMessage
+                        </div>
+                    }
+                </EditForm>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int? Id { get; set; }
+
+    private bool IsNew => !Id.HasValue;
+    private bool isLoading = true;
+    private bool isSaving = false;
+    private string errorMessage = "";
+    private Expense model = new();
+    
+    private List<Job> jobs = new();
+    private List<Customer> customers = new();
+    private List<Employee> employees = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDropdownsAsync();
+        
+        if (IsNew)
+        {
+            model = new Expense
+            {
+                ExpenseDate = DateTime.Today,
+                Category = ExpenseCategory.Materials,
+                PaymentMethod = PaymentMethod.Cash,
+                Status = ExpenseStatus.Pending
+            };
+            isLoading = false;
+        }
+        else
+        {
+            await LoadExpenseAsync();
+        }
+    }
+
+    private async Task LoadDropdownsAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        
+        jobs = await db.Jobs
+            .Where(j => j.Status != JobStatus.Completed && j.Status != JobStatus.Cancelled)
+            .OrderByDescending(j => j.ScheduledDate)
+            .Take(50)
+            .AsNoTracking()
+            .ToListAsync();
+
+        customers = await db.Customers
+            .Where(c => c.Status == CustomerStatus.Active)
+            .OrderBy(c => c.Name)
+            .AsNoTracking()
+            .ToListAsync();
+
+        employees = await db.Employees
+            .Where(e => e.Status == EmployeeStatus.Active)
+            .OrderBy(e => e.FirstName).ThenBy(e => e.LastName)
+            .AsNoTracking()
+            .ToListAsync();
+    }
+
+    private async Task LoadExpenseAsync()
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var expense = await db.Expenses.FirstOrDefaultAsync(e => e.Id == Id!.Value);
+
+            if (expense != null)
+            {
+                model = new Expense
+                {
+                    Id = expense.Id,
+                    ExpenseNumber = expense.ExpenseNumber,
+                    ExpenseDate = expense.ExpenseDate,
+                    Category = expense.Category,
+                    Description = expense.Description,
+                    Amount = expense.Amount,
+                    TaxAmount = expense.TaxAmount,
+                    TotalAmount = expense.TotalAmount,
+                    VendorName = expense.VendorName,
+                    ReceiptNumber = expense.ReceiptNumber,
+                    PaymentMethod = expense.PaymentMethod,
+                    IsBillable = expense.IsBillable,
+                    IsReimbursed = expense.IsReimbursed,
+                    ReimbursedDate = expense.ReimbursedDate,
+                    JobId = expense.JobId,
+                    CustomerId = expense.CustomerId,
+                    InvoiceId = expense.InvoiceId,
+                    EmployeeId = expense.EmployeeId,
+                    ReceiptPath = expense.ReceiptPath,
+                    Notes = expense.Notes,
+                    Status = expense.Status,
+                    CreatedAt = expense.CreatedAt
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load expense: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void CalculateTotal()
+    {
+        model.TotalAmount = model.Amount + model.TaxAmount;
+    }
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            isSaving = true;
+            errorMessage = "";
+            CalculateTotal();
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+
+            if (IsNew)
+            {
+                model.CreatedAt = DateTime.UtcNow;
+                model.UpdatedAt = DateTime.UtcNow;
+                db.Expenses.Add(model);
+            }
+            else
+            {
+                model.UpdatedAt = DateTime.UtcNow;
+                db.Expenses.Update(model);
+            }
+
+            await db.SaveChangesAsync();
+            Navigation.NavigateTo("/expenses");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to save: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task DeleteExpense()
+    {
+        if (!await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this expense?"))
+            return;
+
+        try
+        {
+            isSaving = true;
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var expense = await db.Expenses.FindAsync(Id!.Value);
+            if (expense != null)
+            {
+                db.Expenses.Remove(expense);
+                await db.SaveChangesAsync();
+            }
+
+            Navigation.NavigateTo("/expenses");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to delete: {ex.Message}";
+            isSaving = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        Navigation.NavigateTo("/expenses");
+    }
+}

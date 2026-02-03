@@ -77,6 +77,9 @@ public class OneManVanDbContext : DbContext
     public DbSet<EmployeePerformanceNote> EmployeePerformanceNotes => Set<EmployeePerformanceNote>();
     public DbSet<EmployeePayment> EmployeePayments => Set<EmployeePayment>();
     
+    // Business Expenses
+    public DbSet<Expense> Expenses => Set<Expense>();
+    
     // Service Agreements
     public DbSet<ServiceAgreement> ServiceAgreements => Set<ServiceAgreement>();
     
@@ -92,6 +95,9 @@ public class OneManVanDbContext : DbContext
     public DbSet<MaterialListItem> MaterialListItems => Set<MaterialListItem>();
     public DbSet<MaterialListTemplate> MaterialListTemplates => Set<MaterialListTemplate>();
     public DbSet<MaterialListTemplateItem> MaterialListTemplateItems => Set<MaterialListTemplateItem>();
+
+    // Configurable Dropdown Presets (user-editable dropdown options)
+    public DbSet<DropdownPreset> DropdownPresets => Set<DropdownPreset>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -68,7 +68,14 @@ public class WarrantyClaim
     // === Warranty Coverage ===
 
     /// <summary>
+    /// Is this a warranty claim vs general repair record?
+    /// When false, this is just repair history tracking (no warranty involvement).
+    /// </summary>
+    public bool IsWarrantyClaim { get; set; } = true;
+
+    /// <summary>
     /// Is this claim covered by warranty?
+    /// Only applicable when IsWarrantyClaim is true.
     /// </summary>
     public bool IsCoveredByWarranty { get; set; } = true;
 

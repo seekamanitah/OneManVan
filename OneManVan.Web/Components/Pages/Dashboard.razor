@@ -204,6 +204,13 @@
                                 <small class="text-muted">MRR</small>
                                 <small><strong>@kpis.ServiceAgreements.MonthlyRecurringRevenue.ToString("C0")</strong></small>
                             </div>
+                            @if (kpis.ServiceAgreements.ExpiringSoonCount > 0)
+                            {
+                                <div class="d-flex justify-content-between mb-1">
+                                    <small class="text-danger">Expiring Soon (7d)</small>
+                                    <small class="text-danger fw-bold">@kpis.ServiceAgreements.ExpiringSoonCount</small>
+                                </div>
+                            }
                             <div class="d-flex justify-content-between">
                                 <small class="text-muted">Expiring (30d)</small>
                                 <small class="@(kpis.ServiceAgreements.ExpiringIn30Days > 0 ? "text-warning" : "")">
@@ -215,30 +222,82 @@
                 </div>
 
                 <!-- Inventory Alerts -->
-                <div class="col-md-6 col-lg-3">
-                    <div class="card border-0 shadow-sm h-100 dashboard-card" @onclick="@(() => Navigation.NavigateTo("/inventory"))">
-                        <div class="card-header bg-white border-0 py-3">
-                            <h6 class="mb-0"><i class="bi bi-box-seam text-info me-2"></i>Inventory</h6>
-                        </div>
-                        <div class="card-body pt-0">
-                            <h4 class="text-info mb-3">@kpis.Inventory.TotalItems Items</h4>
-                            <div class="d-flex justify-content-between mb-1">
-                                <small class="text-muted">Low Stock</small>
-                                <small class="@(kpis.Inventory.LowStockCount > 0 ? "text-warning" : "")">
-                                    <strong>@kpis.Inventory.LowStockCount</strong>
-                                </small>
-                            </div>
-                            <div class="d-flex justify-content-between">
-                                <small class="text-muted">Out of Stock</small>
-                                <small class="@(kpis.Inventory.OutOfStockCount > 0 ? "text-danger" : "")">
-                                    <strong>@kpis.Inventory.OutOfStockCount</strong>
-                                </small>
+                        <div class="col-md-6 col-lg-3">
+                            <div class="card border-0 shadow-sm h-100 dashboard-card" @onclick="@(() => Navigation.NavigateTo("/inventory"))">
+                                <div class="card-header bg-white border-0 py-3">
+                                    <h6 class="mb-0"><i class="bi bi-box-seam text-info me-2"></i>Inventory</h6>
+                                </div>
+                                <div class="card-body pt-0">
+                                    <h4 class="text-info mb-3">@kpis.Inventory.TotalItems Items</h4>
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <small class="text-muted">Low Stock</small>
+                                        <small class="@(kpis.Inventory.LowStockCount > 0 ? "text-warning" : "")">
+                                            <strong>@kpis.Inventory.LowStockCount</strong>
+                                        </small>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <small class="text-muted">Out of Stock</small>
+                                        <small class="@(kpis.Inventory.OutOfStockCount > 0 ? "text-danger" : "")">
+                                            <strong>@kpis.Inventory.OutOfStockCount</strong>
+                                        </small>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        }
+            
+                    <!-- Employee & Expenses Row -->
+                    <div class="row g-3 mb-4">
+                        <!-- Employee Timesheets Card -->
+                        <div class="col-md-6 col-lg-3">
+                            <div class="card border-0 shadow-sm h-100 dashboard-card" @onclick="@(() => Navigation.NavigateTo("/employees"))">
+                                <div class="card-header bg-white border-0 py-3">
+                                    <h6 class="mb-0"><i class="bi bi-clock text-primary me-2"></i>Timesheets</h6>
+                                </div>
+                                <div class="card-body pt-0">
+                                    <h4 class="text-primary mb-3">@kpis.Employees.HoursLoggedThisWeek.ToString("F1")h This Week</h4>
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <small class="text-muted">Active Employees</small>
+                                        <small><strong>@kpis.Employees.ActiveEmployees</strong></small>
+                                    </div>
+                                    @if (kpis.Employees.ClockedInNow > 0)
+                                    {
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <small class="text-success">Clocked In Now</small>
+                                            <small class="text-success fw-bold">@kpis.Employees.ClockedInNow</small>
+                                        </div>
+                                    }
+                                    <div class="d-flex justify-content-between">
+                                        <small class="text-muted">Labor Cost</small>
+                                        <small><strong>@kpis.Employees.LaborCostThisWeek.ToString("C0")</strong></small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                
+                        <!-- Expenses Card (placeholder for future) -->
+                        <div class="col-md-6 col-lg-3">
+                            <div class="card border-0 shadow-sm h-100 dashboard-card" @onclick="@(() => Navigation.NavigateTo("/expenses"))">
+                                <div class="card-header bg-white border-0 py-3">
+                                    <h6 class="mb-0"><i class="bi bi-receipt-cutoff text-danger me-2"></i>Expenses</h6>
+                                </div>
+                                <div class="card-body pt-0">
+                                    <h4 class="text-danger mb-3">@expenseMetrics.MonthTotal.ToString("C0") This Month</h4>
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <small class="text-muted">Pending</small>
+                                        <small class="@(expenseMetrics.PendingCount > 0 ? "text-warning" : "")">
+                                            <strong>@expenseMetrics.PendingCount</strong>
+                                        </small>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <small class="text-muted">Billable</small>
+                                        <small><strong>@expenseMetrics.BillableTotal.ToString("C0")</strong></small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
 
         <!-- New Cards Row -->
         <div class="row g-3 mb-4">
@@ -530,6 +589,15 @@ private List<Job> recentJobs = new();
 private List<Job> scheduledJobs = new();
 private List<Job> unscheduledJobs = new();
 private List<QuickNote> recentNotes = new();
+private ExpenseMetricsSimple expenseMetrics = new();
+
+// Simple expense metrics for dashboard
+private class ExpenseMetricsSimple
+{
+    public decimal MonthTotal { get; set; }
+    public int PendingCount { get; set; }
+    public decimal BillableTotal { get; set; }
+}
 
 protected override async Task OnInitializedAsync()
     {
@@ -598,14 +666,27 @@ protected override async Task OnInitializedAsync()
             .ToListAsync();
 
         // Load recent notes (pinned first, then recent)
-        recentNotes = await db.QuickNotes
-            .Where(n => !n.IsArchived)
-            .OrderByDescending(n => n.IsPinned)
-            .ThenByDescending(n => n.CreatedAt)
-            .Take(5)
-            .AsNoTracking()
-            .ToListAsync();
-    }
+            recentNotes = await db.QuickNotes
+                .Where(n => !n.IsArchived)
+                .OrderByDescending(n => n.IsPinned)
+                .ThenByDescending(n => n.CreatedAt)
+                .Take(5)
+                .AsNoTracking()
+                .ToListAsync();
+        
+        // Load expense metrics (reuse startOfMonth from above)
+            expenseMetrics.MonthTotal = await db.Expenses
+                .Where(e => e.ExpenseDate >= startOfMonth)
+                .SumAsync(e => (decimal?)e.TotalAmount) ?? 0;
+        
+            expenseMetrics.PendingCount = await db.Expenses
+                .Where(e => e.Status == ExpenseStatus.Pending)
+                .CountAsync();
+        
+            expenseMetrics.BillableTotal = await db.Expenses
+                .Where(e => e.IsBillable && e.InvoiceId == null && e.ExpenseDate >= startOfMonth)
+                .SumAsync(e => (decimal?)e.TotalAmount) ?? 0;
+        }
 
     private string GetStatusBadgeClass(JobStatus status)
     {

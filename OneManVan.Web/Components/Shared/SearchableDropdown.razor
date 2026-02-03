@@ -1,0 +1,241 @@
+@typeparam TItem
+@using System.Timers
+
+<div class="searchable-dropdown position-relative" @onfocusout="HandleFocusOut">
+    <div class="input-group @(Size == "sm" ? "input-group-sm" : "")">
+        <input type="text" 
+               class="form-control @(Size == "sm" ? "form-control-sm" : "")" 
+               placeholder="@Placeholder"
+               value="@searchText"
+               @oninput="HandleInput"
+               @onfocus="HandleFocus"
+               @onkeydown="HandleKeyDown" />
+        @if (!string.IsNullOrEmpty(searchText))
+        {
+            <button type="button" class="btn btn-outline-secondary @(Size == "sm" ? "btn-sm" : "")" 
+                    @onclick="ClearSelection" tabindex="-1">
+                <i class="bi bi-x"></i>
+            </button>
+        }
+        <button type="button" class="btn btn-outline-secondary @(Size == "sm" ? "btn-sm" : "")" 
+                @onclick="ToggleDropdown" tabindex="-1">
+            <i class="bi @(isOpen ? "bi-chevron-up" : "bi-chevron-down")"></i>
+        </button>
+    </div>
+    
+    @if (isOpen && filteredItems.Any())
+    {
+        <div class="dropdown-menu show w-100 shadow-sm" style="max-height: 250px; overflow-y: auto; z-index: 1050;">
+            @foreach (var item in filteredItems.Take(MaxResults))
+            {
+                var index = filteredItems.ToList().IndexOf(item);
+                <button type="button" 
+                        class="dropdown-item @(index == highlightedIndex ? "active" : "")"
+                        @onclick="() => SelectItem(item)"
+                        @onmouseenter="() => highlightedIndex = index">
+                    @if (ItemTemplate != null)
+                    {
+                        @ItemTemplate(item)
+                    }
+                    else
+                    {
+                        @GetDisplayText(item)
+                    }
+                </button>
+            }
+            @if (filteredItems.Count() > MaxResults)
+            {
+                <div class="dropdown-item text-muted small disabled">
+                    @(filteredItems.Count() - MaxResults) more results...
+                </div>
+            }
+        </div>
+    }
+    else if (isOpen && !string.IsNullOrEmpty(searchText) && !filteredItems.Any())
+    {
+        <div class="dropdown-menu show w-100 shadow-sm">
+            <div class="dropdown-item text-muted disabled">
+                <i class="bi bi-search me-2"></i>No results found
+            </div>
+            @if (AllowCustom)
+            {
+                <button type="button" class="dropdown-item text-primary" @onclick="UseCustomValue">
+                    <i class="bi bi-plus-circle me-2"></i>Use "@searchText"
+                </button>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public IEnumerable<TItem> Items { get; set; } = Enumerable.Empty<TItem>();
+    [Parameter] public TItem? SelectedItem { get; set; }
+    [Parameter] public EventCallback<TItem?> SelectedItemChanged { get; set; }
+    [Parameter] public string? SelectedValue { get; set; }
+    [Parameter] public EventCallback<string?> SelectedValueChanged { get; set; }
+    [Parameter] public Func<TItem, string> DisplayExpression { get; set; } = item => item?.ToString() ?? "";
+    [Parameter] public Func<TItem, string>? ValueExpression { get; set; }
+    [Parameter] public Func<TItem, string, bool>? FilterExpression { get; set; }
+    [Parameter] public string Placeholder { get; set; } = "Search...";
+    [Parameter] public string Size { get; set; } = "";
+    [Parameter] public int MaxResults { get; set; } = 20;
+    [Parameter] public bool AllowCustom { get; set; } = false;
+    [Parameter] public RenderFragment<TItem>? ItemTemplate { get; set; }
+    [Parameter] public int DebounceMs { get; set; } = 150;
+
+    private string searchText = "";
+    private bool isOpen = false;
+    private int highlightedIndex = -1;
+    private IEnumerable<TItem> filteredItems = Enumerable.Empty<TItem>();
+    private Timer? debounceTimer;
+    private bool suppressClose = false;
+
+    protected override void OnParametersSet()
+    {
+        if (SelectedItem != null)
+        {
+            searchText = GetDisplayText(SelectedItem);
+        }
+        else if (!string.IsNullOrEmpty(SelectedValue))
+        {
+            searchText = SelectedValue;
+        }
+    }
+
+    private string GetDisplayText(TItem item) => DisplayExpression(item);
+
+    private string GetValue(TItem item) => ValueExpression?.Invoke(item) ?? GetDisplayText(item);
+
+    private void HandleInput(ChangeEventArgs e)
+    {
+        searchText = e.Value?.ToString() ?? "";
+        highlightedIndex = 0;
+        
+        debounceTimer?.Stop();
+        debounceTimer?.Dispose();
+        debounceTimer = new Timer(DebounceMs);
+        debounceTimer.Elapsed += async (s, ev) =>
+        {
+            await InvokeAsync(() =>
+            {
+                FilterItems();
+                isOpen = true;
+                StateHasChanged();
+            });
+        };
+        debounceTimer.AutoReset = false;
+        debounceTimer.Start();
+    }
+
+    private void FilterItems()
+    {
+        if (string.IsNullOrWhiteSpace(searchText))
+        {
+            filteredItems = Items;
+        }
+        else if (FilterExpression != null)
+        {
+            filteredItems = Items.Where(item => FilterExpression(item, searchText));
+        }
+        else
+        {
+            filteredItems = Items.Where(item => 
+                GetDisplayText(item).Contains(searchText, StringComparison.OrdinalIgnoreCase));
+        }
+    }
+
+    private void HandleFocus()
+    {
+        FilterItems();
+        isOpen = true;
+    }
+
+    private async Task HandleFocusOut()
+    {
+        if (suppressClose)
+        {
+            suppressClose = false;
+            return;
+        }
+        
+        await Task.Delay(150);
+        isOpen = false;
+    }
+
+    private void ToggleDropdown()
+    {
+        suppressClose = true;
+        if (!isOpen)
+        {
+            FilterItems();
+        }
+        isOpen = !isOpen;
+    }
+
+    private async Task SelectItem(TItem item)
+    {
+        searchText = GetDisplayText(item);
+        isOpen = false;
+        highlightedIndex = -1;
+        
+        await SelectedItemChanged.InvokeAsync(item);
+        await SelectedValueChanged.InvokeAsync(GetValue(item));
+    }
+
+    private async Task ClearSelection()
+    {
+        searchText = "";
+        isOpen = false;
+        highlightedIndex = -1;
+        
+        await SelectedItemChanged.InvokeAsync(default);
+        await SelectedValueChanged.InvokeAsync(null);
+    }
+
+    private async Task UseCustomValue()
+    {
+        isOpen = false;
+        await SelectedValueChanged.InvokeAsync(searchText);
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        var itemList = filteredItems.Take(MaxResults).ToList();
+        
+        switch (e.Key)
+        {
+            case "ArrowDown":
+                if (!isOpen)
+                {
+                    FilterItems();
+                    isOpen = true;
+                }
+                else
+                {
+                    highlightedIndex = Math.Min(highlightedIndex + 1, itemList.Count - 1);
+                }
+                break;
+                
+            case "ArrowUp":
+                highlightedIndex = Math.Max(highlightedIndex - 1, 0);
+                break;
+                
+            case "Enter":
+                if (isOpen && highlightedIndex >= 0 && highlightedIndex < itemList.Count)
+                {
+                    await SelectItem(itemList[highlightedIndex]);
+                }
+                break;
+                
+            case "Escape":
+                isOpen = false;
+                highlightedIndex = -1;
+                break;
+        }
+    }
+
+    public void Dispose()
+    {
+        debounceTimer?.Dispose();
+    }
+}

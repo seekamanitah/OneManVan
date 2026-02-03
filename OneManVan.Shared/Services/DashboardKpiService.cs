@@ -52,12 +52,15 @@ public class DashboardKpiService
         kpis.ServiceAgreements = await CalculateServiceAgreementMetricsAsync(context, today);
         
         // === Inventory Alerts ===
-        kpis.Inventory = await CalculateInventoryMetricsAsync(context);
+            kpis.Inventory = await CalculateInventoryMetricsAsync(context);
         
-        kpis.GeneratedAt = DateTime.UtcNow;
+            // === Employee Timesheets ===
+            kpis.Employees = await CalculateEmployeeMetricsAsync(context, today, weekStart);
         
-        return kpis;
-    }
+            kpis.GeneratedAt = DateTime.UtcNow;
+        
+            return kpis;
+        }
 
     private async Task<RevenueMetrics> CalculateRevenueMetricsAsync(
         OneManVanDbContext context, DateTime today, DateTime yesterday, 
@@ -293,17 +296,29 @@ public class DashboardKpiService
     {
         var metrics = new ServiceAgreementMetrics();
         
+        // Use Date-only comparison to avoid time component issues
+        var todayDate = today.Date;
+        var in7Days = todayDate.AddDays(7);
+        var in30Days = todayDate.AddDays(30);
+        
         metrics.ActiveCount = await context.ServiceAgreements
             .Where(sa => sa.Status == AgreementStatus.Active)
             .CountAsync();
         
+        // Expiring within 7 days (urgent)
+        metrics.ExpiringSoonCount = await context.ServiceAgreements
+            .Where(sa => sa.Status == AgreementStatus.Active)
+            .Where(sa => sa.EndDate.Date >= todayDate && sa.EndDate.Date < in7Days)
+            .CountAsync();
+        
+        // Expiring within 30 days (includes the 7-day urgent ones)
         metrics.ExpiringIn30Days = await context.ServiceAgreements
             .Where(sa => sa.Status == AgreementStatus.Active)
-            .Where(sa => sa.EndDate >= today && sa.EndDate < today.AddDays(30))
+            .Where(sa => sa.EndDate.Date >= todayDate && sa.EndDate.Date < in30Days)
             .CountAsync();
         
         metrics.ExpiredCount = await context.ServiceAgreements
-            .Where(sa => sa.EndDate < today)
+            .Where(sa => sa.EndDate.Date < todayDate)
             .CountAsync();
         
         // Monthly Recurring Revenue (MRR) from active agreements
@@ -334,23 +349,69 @@ public class DashboardKpiService
             .CountAsync();
         
         metrics.TotalInventoryValue = await context.InventoryItems
-            .SumAsync(i => i.QuantityOnHand * i.Cost);
+                    .SumAsync(i => i.QuantityOnHand * i.Cost);
         
-        return metrics;
-    }
-}
+                return metrics;
+            }
 
-#region KPI Data Models
+            private async Task<EmployeeMetrics> CalculateEmployeeMetricsAsync(
+                OneManVanDbContext context, DateTime today, DateTime weekStart)
+            {
+                var metrics = new EmployeeMetrics();
+                var todayDate = today.Date;
+                var weekStartDate = weekStart.Date;
+        
+                // Active employees
+                metrics.ActiveEmployees = await context.Employees
+                            .Where(e => e.Status == EmployeeStatus.Active)
+                            .CountAsync();
+        
+                        // Hours logged today
+                        metrics.HoursLoggedToday = await context.EmployeeTimeLogs
+                            .Where(t => t.Date >= todayDate && t.Date < todayDate.AddDays(1))
+                            .SumAsync(t => (decimal?)t.HoursWorked) ?? 0m;
+        
+                        // Hours logged this week
+                        metrics.HoursLoggedThisWeek = await context.EmployeeTimeLogs
+                            .Where(t => t.Date >= weekStartDate && t.Date <= todayDate)
+                            .SumAsync(t => (decimal?)t.HoursWorked) ?? 0m;
+        
+                        // Currently clocked in (no ClockOut time)
+                        metrics.ClockedInNow = await context.EmployeeTimeLogs
+                            .Where(t => t.ClockIn.HasValue && t.ClockOut == null)
+                            .CountAsync();
+        
+                        // Pending timesheets (unapproved entries from past week)
+                        metrics.PendingTimesheets = await context.EmployeeTimeLogs
+                            .Where(t => t.Date >= weekStartDate.AddDays(-7))
+                            .Where(t => !t.IsApproved && t.ClockOut != null)
+                            .CountAsync();
+        
+                        // Labor cost this week (hours * pay rate)
+                        var weeklyLogs = await context.EmployeeTimeLogs
+                            .Include(t => t.Employee)
+                            .Where(t => t.Date >= weekStartDate && t.Date <= todayDate)
+                            .ToListAsync();
+        
+                        metrics.LaborCostThisWeek = weeklyLogs
+                            .Sum(t => t.HoursWorked * (t.Employee?.PayRate ?? 0m));
+        
+                        return metrics;
+                    }
+                }
 
-public class DashboardKpis
-{
-    public RevenueMetrics Revenue { get; set; } = new();
-    public JobMetrics Jobs { get; set; } = new();
-    public CustomerMetrics Customers { get; set; } = new();
-    public ReceivablesMetrics Receivables { get; set; } = new();
+                #region KPI Data Models
+
+                public class DashboardKpis
+                {
+                    public RevenueMetrics Revenue { get; set; } = new();
+                    public JobMetrics Jobs { get; set; } = new();
+                    public CustomerMetrics Customers { get; set; } = new();
+                    public ReceivablesMetrics Receivables { get; set; } = new();
     public EstimateMetrics Estimates { get; set; } = new();
     public ServiceAgreementMetrics ServiceAgreements { get; set; } = new();
     public InventoryMetrics Inventory { get; set; } = new();
+    public EmployeeMetrics Employees { get; set; } = new();
     public DateTime GeneratedAt { get; set; }
 }
 
@@ -413,6 +474,7 @@ public class EstimateMetrics
 public class ServiceAgreementMetrics
 {
     public int ActiveCount { get; set; }
+    public int ExpiringSoonCount { get; set; }  // Within 7 days
     public int ExpiringIn30Days { get; set; }
     public int ExpiredCount { get; set; }
     public decimal MonthlyRecurringRevenue { get; set; }
@@ -425,6 +487,16 @@ public class InventoryMetrics
     public int LowStockCount { get; set; }
     public int OutOfStockCount { get; set; }
     public decimal TotalInventoryValue { get; set; }
+}
+
+public class EmployeeMetrics
+{
+    public int ActiveEmployees { get; set; }
+    public decimal HoursLoggedToday { get; set; }
+    public decimal HoursLoggedThisWeek { get; set; }
+    public int ClockedInNow { get; set; }
+    public int PendingTimesheets { get; set; }
+    public decimal LaborCostThisWeek { get; set; }
 }
 
 #endregion

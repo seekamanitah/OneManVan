@@ -85,6 +85,7 @@
                                 <th>Type</th>
                                 <th>Priority</th>
                                 <th>Status</th>
+                                <th class="text-center">Quick Actions</th>
                                 <th class="text-end">Actions</th>
                             </tr>
                         </thead>
@@ -120,6 +121,33 @@
                                     </td>
                                     <td>
                                         <span class="badge @GetStatusBadge(job.Status)">@job.Status</span>
+                                    </td>
+                                    <td class="text-center" @onclick:stopPropagation="true">
+                                        <div class="btn-group btn-group-sm">
+                                            @if (job.Status == JobStatus.Draft || job.Status == JobStatus.Scheduled || job.Status == JobStatus.OnHold)
+                                            {
+                                                <button class="btn btn-outline-success" title="Start Job" @onclick="@(() => QuickStatusChange(job, JobStatus.InProgress))">
+                                                    <i class="bi bi-play-fill"></i>
+                                                </button>
+                                            }
+                                            @if (job.Status == JobStatus.InProgress)
+                                            {
+                                                <button class="btn btn-outline-warning" title="Pause Job" @onclick="@(() => QuickStatusChange(job, JobStatus.OnHold))">
+                                                    <i class="bi bi-pause-fill"></i>
+                                                </button>
+                                                <button class="btn btn-outline-success" title="Complete Job" @onclick="@(() => QuickStatusChange(job, JobStatus.Completed))">
+                                                    <i class="bi bi-check-lg"></i>
+                                                </button>
+                                            }
+                                            @if (job.Status == JobStatus.Completed)
+                                            {
+                                                <span class="badge bg-success"><i class="bi bi-check-circle"></i> Done</span>
+                                            }
+                                            @if (job.Status == JobStatus.Cancelled)
+                                            {
+                                                <span class="badge bg-secondary">Cancelled</span>
+                                            }
+                                        </div>
                                     </td>
                                     <td class="text-end">
                                         <div class="btn-group btn-group-sm" @onclick:stopPropagation="true">
@@ -271,5 +299,38 @@
     private async Task OnImportComplete()
     {
         await LoadJobsAsync();
+    }
+
+    private async Task QuickStatusChange(Job job, JobStatus newStatus)
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            
+            var dbJob = await db.Jobs.FindAsync(job.Id);
+            if (dbJob != null)
+            {
+                dbJob.Status = newStatus;
+                
+                // Set timestamps based on status
+                if (newStatus == JobStatus.InProgress && !dbJob.StartedAt.HasValue)
+                {
+                    dbJob.StartedAt = DateTime.UtcNow;
+                }
+                else if (newStatus == JobStatus.Completed && !dbJob.CompletedAt.HasValue)
+                {
+                    dbJob.CompletedAt = DateTime.UtcNow;
+                }
+                
+                await db.SaveChangesAsync();
+            }
+            
+            // Reload jobs to reflect changes
+            await LoadJobsAsync();
+        }
+        catch
+        {
+            // Silently fail - user can retry
+        }
     }
 }

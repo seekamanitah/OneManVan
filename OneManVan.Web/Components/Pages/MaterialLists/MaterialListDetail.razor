@@ -7,6 +7,7 @@
 @inject MaterialListService MaterialListService
 @inject IDbContextFactory<OneManVanDbContext> DbFactory
 @inject NavigationManager Navigation
+@inject IJSRuntime JS
 
 <PageTitle>Material List - OneManVan</PageTitle>
 
@@ -330,12 +331,33 @@ else
                             <small class="text-muted d-block">Show line items vs total only</small>
                         </div>
                         <div class="d-grid gap-2">
+                            @if (materialList.JobId.HasValue)
+                            {
+                                <a href="/jobs/@materialList.JobId" class="btn btn-primary">
+                                    <i class="bi bi-briefcase me-2"></i>View Linked Job
+                                </a>
+                            }
+                            else
+                            {
+                                <button class="btn btn-outline-primary" @onclick="CreateJob">
+                                    <i class="bi bi-briefcase me-2"></i>Create Job
+                                </button>
+                            }
                             <button class="btn btn-outline-primary" @onclick="ConvertToEstimate">
                                 <i class="bi bi-file-earmark-text me-2"></i>Create Estimate
                             </button>
-                            <button class="btn btn-outline-success" @onclick="ConvertToInvoice">
-                                <i class="bi bi-receipt me-2"></i>Create Invoice
-                            </button>
+                            @if (materialList.InvoiceId.HasValue)
+                            {
+                                <a href="/invoices/@materialList.InvoiceId" class="btn btn-success">
+                                    <i class="bi bi-receipt me-2"></i>View Linked Invoice
+                                </a>
+                            }
+                            else
+                            {
+                                <button class="btn btn-outline-success" @onclick="ConvertToInvoice">
+                                    <i class="bi bi-receipt me-2"></i>Create Invoice
+                                </button>
+                            }
                         </div>
                     </div>
                 </div>
@@ -423,10 +445,10 @@ private List<MaterialListItem> GetItemsForSystemAndCategory(int systemId, Materi
         Navigation.NavigateTo($"/material-lists/{newList.Id}/edit");
     }
 
-    private void Print()
+    private async Task Print()
     {
-        // Trigger browser print
-        // In a real implementation, could generate PDF
+        // Trigger browser print dialog
+        await JS.InvokeVoidAsync("window.print");
     }
 
     private async Task Delete()
@@ -542,6 +564,14 @@ private List<MaterialListItem> GetItemsForSystemAndCategory(int systemId, Materi
     {
         if (materialList == null) return;
 
+        // Check if an invoice already exists for this material list
+        if (materialList.InvoiceId.HasValue)
+        {
+            // Navigate to the existing invoice instead of creating a duplicate
+            Navigation.NavigateTo($"/invoices/{materialList.InvoiceId}");
+            return;
+        }
+
         await using var context = await DbFactory.CreateDbContextAsync();
 
 
@@ -633,7 +663,59 @@ private List<MaterialListItem> GetItemsForSystemAndCategory(int systemId, Materi
         context.Invoices.Add(invoice);
         await context.SaveChangesAsync();
 
+        // Link material list to invoice to prevent duplicates
+        materialList.InvoiceId = invoice.Id;
+        await MaterialListService.UpdateAsync(materialList);
+
         // Navigate to the new invoice
         Navigation.NavigateTo($"/invoices/{invoice.Id}");
+    }
+
+    private async Task CreateJob()
+    {
+        if (materialList == null) return;
+
+        // Check if a job already exists for this material list
+        if (materialList.JobId.HasValue)
+        {
+            // Navigate to the existing job instead of creating a duplicate
+            Navigation.NavigateTo($"/jobs/{materialList.JobId}");
+            return;
+        }
+
+        await using var context = await DbFactory.CreateDbContextAsync();
+
+        // Generate job number
+        var count = await context.Jobs.CountAsync() + 1;
+        var jobNumber = $"J-{DateTime.Now:yyyy}-{count:D4}";
+
+        // Create new job from material list
+        var job = new Job
+        {
+            JobNumber = jobNumber,
+            Title = materialList.Title,
+            Description = $"Generated from Material List {materialList.ListNumber}",
+            CustomerId = materialList.CustomerId,
+            SiteId = materialList.SiteId,
+            JobType = JobType.Installation,
+            Priority = JobPriority.Normal,
+            Status = JobStatus.Scheduled,
+            ScheduledDate = DateTime.Today,
+            ArrivalWindowStart = new TimeSpan(9, 0, 0),
+            ArrivalWindowEnd = new TimeSpan(12, 0, 0),
+            EstimatedHours = materialList.LaborHours ?? 1,
+            Notes = materialList.Notes,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        context.Jobs.Add(job);
+        await context.SaveChangesAsync();
+
+        // Link material list to job
+        materialList.JobId = job.Id;
+        await MaterialListService.UpdateAsync(materialList);
+
+        // Navigate to the new job
+        Navigation.NavigateTo($"/jobs/{job.Id}");
     }
 }

@@ -180,7 +180,14 @@
         
         if (IsNew)
         {
-            model = new Site { Country = "USA" };
+            model = new Site 
+            { 
+                Country = "USA",
+                // Default location values for convenience
+                City = "Pikeville",
+                State = "TN",
+                ZipCode = "37367"
+            };
             isLoading = false;
         }
         else

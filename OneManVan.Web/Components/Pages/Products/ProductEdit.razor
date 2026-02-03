@@ -4,6 +4,7 @@
 @using OneManVan.Shared.Data
 @using OneManVan.Shared.Models
 @using OneManVan.Shared.Models.Enums
+@using OneManVan.Web.Components.Shared
 
 @inject IDbContextFactory<OneManVanDbContext> DbFactory
 @inject NavigationManager Navigation
@@ -45,7 +46,13 @@
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label class="form-label">Manufacturer *</label>
-                                    <InputText class="form-control" @bind-Value="model.Manufacturer" />
+                                    <SearchableDropdown TItem="string"
+                                                        Items="@manufacturers"
+                                                        SelectedValue="@model.Manufacturer"
+                                                        SelectedValueChanged="@(v => model.Manufacturer = v)"
+                                                        DisplayExpression="@(m => m)"
+                                                        Placeholder="Search or enter manufacturer..."
+                                                        AllowCustom="true" />
                                     <ValidationMessage For="@(() => model.Manufacturer)" />
                                 </div>
                                 <div class="col-md-6">
@@ -104,8 +111,34 @@
                         <div class="card-body">
                             <div class="row g-3">
                                 <div class="col-md-3">
-                                    <label class="form-label">Tonnage (x10)</label>
-                                    <InputNumber class="form-control" @bind-Value="model.TonnageX10" placeholder="25 = 2.5 ton" />
+                                    <label class="form-label">Tonnage</label>
+                                    <InputSelect class="form-select" @bind-Value="model.TonnageX10">
+                                        <option value="">Select...</option>
+                                        <option value="5">0.5 Ton</option>
+                                        <option value="10">1 Ton</option>
+                                        <option value="15">1.5 Ton</option>
+                                        <option value="20">2 Ton</option>
+                                        <option value="25">2.5 Ton</option>
+                                        <option value="30">3 Ton</option>
+                                        <option value="35">3.5 Ton</option>
+                                        <option value="40">4 Ton</option>
+                                        <option value="45">4.5 Ton</option>
+                                        <option value="50">5 Ton</option>
+                                        <option value="60">6 Ton</option>
+                                        <option value="75">7.5 Ton</option>
+                                        <option value="80">8 Ton</option>
+                                        <option value="100">10 Ton</option>
+                                        <option value="120">12 Ton</option>
+                                    </InputSelect>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Refrigerant Type</label>
+                                    <InputSelect class="form-control form-control-sm" @bind-Value="model.RefrigerantType">
+                                        @foreach (var rt in Enum.GetValues<RefrigerantType>())
+                                        {
+                                            <option value="@rt">@rt.ToString().Replace("R", "R-")</option>
+                                        }
+                                    </InputSelect>
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label">SEER Rating</label>
@@ -155,15 +188,40 @@
                             <div class="row g-3">
                                 <div class="col-md-3">
                                     <label class="form-label">Parts Warranty (years)</label>
-                                    <InputNumber class="form-control" @bind-Value="model.PartsWarrantyYears" />
+                                    <InputSelect class="form-select" @bind-Value="model.PartsWarrantyYears">
+                                        <option value="">N/A</option>
+                                        <option value="1">1 Year</option>
+                                        <option value="2">2 Years</option>
+                                        <option value="3">3 Years</option>
+                                        <option value="5">5 Years</option>
+                                        <option value="7">7 Years</option>
+                                        <option value="10">10 Years</option>
+                                        <option value="12">12 Years</option>
+                                        <option value="15">15 Years</option>
+                                    </InputSelect>
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label">Labor Warranty (years)</label>
-                                    <InputNumber class="form-control" @bind-Value="model.LaborWarrantyYears" />
+                                    <InputSelect class="form-select" @bind-Value="model.LaborWarrantyYears">
+                                        <option value="">N/A</option>
+                                        <option value="1">1 Year</option>
+                                        <option value="2">2 Years</option>
+                                        <option value="3">3 Years</option>
+                                        <option value="5">5 Years</option>
+                                        <option value="10">10 Years</option>
+                                    </InputSelect>
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label">Compressor Warranty (years)</label>
-                                    <InputNumber class="form-control" @bind-Value="model.CompressorWarrantyYears" />
+                                    <InputSelect class="form-select" @bind-Value="model.CompressorWarrantyYears">
+                                        <option value="">N/A</option>
+                                        <option value="5">5 Years</option>
+                                        <option value="7">7 Years</option>
+                                        <option value="10">10 Years</option>
+                                        <option value="12">12 Years</option>
+                                        <option value="15">15 Years</option>
+                                        <option value="20">Lifetime</option>
+                                    </InputSelect>
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label">Registration Required</label>
@@ -250,9 +308,12 @@
     private bool isSaving = false;
     private string errorMessage = "";
     private Product model = new();
+    private List<string> manufacturers = new();
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadManufacturersAsync();
+        
         if (IsNew)
         {
             model = new Product
@@ -268,6 +329,18 @@
         {
             await LoadProductAsync();
         }
+    }
+
+    private async Task LoadManufacturersAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        manufacturers = await db.Products
+            .Where(p => !string.IsNullOrEmpty(p.Manufacturer))
+            .Select(p => p.Manufacturer!)
+            .Distinct()
+            .OrderBy(m => m)
+            .AsNoTracking()
+            .ToListAsync();
     }
 
     private async Task LoadProductAsync()

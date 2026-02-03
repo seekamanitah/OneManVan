@@ -14,6 +14,7 @@
 @inject IDbContextFactory<OneManVanDbContext> DbFactory
 @inject CompanySettingsService CompanyService
 @inject IEmailService EmailService
+@inject DropdownPresetService PresetService
 @inject IJSRuntime JS
 
 <PageTitle>Settings - OneManVan</PageTitle>
@@ -532,6 +533,142 @@
                 </div>
             </div>
 
+            <!-- Dropdown Presets Configuration -->
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i>Dropdown Presets</h5>
+                    <small class="text-muted">Customize dropdown options for manufacturers, warranty lengths, payment terms, and more</small>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <!-- Category Selector -->
+                        <div class="col-12">
+                            <label class="form-label">Select Category to Edit</label>
+                            <select class="form-select" style="max-width: 300px;" @bind="selectedPresetCategory" @bind:after="LoadPresetsForCategory">
+                                <option value="">-- Select Category --</option>
+                                <option value="@PresetCategories.Manufacturer">Manufacturers</option>
+                                <option value="@PresetCategories.RefrigerantType">Refrigerant Types</option>
+                                <option value="@PresetCategories.WarrantyLength">Warranty Lengths</option>
+                                <option value="@PresetCategories.PaymentTerms">Payment Terms</option>
+                                <option value="@PresetCategories.FuelType">Fuel Types</option>
+                            </select>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(selectedPresetCategory))
+                        {
+                            <!-- Add New Preset -->
+                            <div class="col-12">
+                                <div class="input-group" style="max-width: 500px;">
+                                    <input type="text" class="form-control" @bind="newPresetValue" 
+                                           placeholder="Enter new value..." />
+                                    <button class="btn btn-primary" @onclick="AddNewPreset" 
+                                            disabled="@string.IsNullOrWhiteSpace(newPresetValue)">
+                                        <i class="bi bi-plus-lg me-1"></i>Add
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Preset List -->
+                            <div class="col-12">
+                                @if (categoryPresets.Any())
+                                {
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-hover">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th style="width: 50px;">Order</th>
+                                                    <th>Display Value</th>
+                                                    <th style="width: 100px;">Active</th>
+                                                    <th style="width: 100px;">System</th>
+                                                    <th style="width: 120px;">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var presetItem in categoryPresets.OrderBy(p => p.SortOrder))
+                                                {
+                                                    <tr class="@(!presetItem.IsActive ? "text-muted" : "")">
+                                                        <td>@presetItem.SortOrder</td>
+                                                        <td>
+                                                            @if (editingPresetId == presetItem.Id)
+                                                            {
+                                                                <input type="text" class="form-control form-control-sm" 
+                                                                       @bind="editingPresetValue" />
+                                                            }
+                                                            else
+                                                            {
+                                                                @presetItem.DisplayValue
+                                                            }
+                                                        </td>
+                                                        <td>
+                                                            <span class="badge @(presetItem.IsActive ? "bg-success" : "bg-secondary")">
+                                                                @(presetItem.IsActive ? "Yes" : "No")
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            @if (presetItem.IsSystemDefault)
+                                                            {
+                                                                <span class="badge bg-info">System</span>
+                                                            }
+                                                        </td>
+                                                        <td>
+                                                            @if (editingPresetId == presetItem.Id)
+                                                            {
+                                                                <button class="btn btn-sm btn-success me-1" @onclick="SaveEditingPreset">
+                                                                    <i class="bi bi-check"></i>
+                                                                </button>
+                                                                <button class="btn btn-sm btn-secondary" @onclick="CancelEditingPreset">
+                                                                    <i class="bi bi-x"></i>
+                                                                </button>
+                                                            }
+                                                            else
+                                                            {
+                                                                <button class="btn btn-sm btn-outline-primary me-1" 
+                                                                        @onclick="@(() => StartEditingPreset(presetItem))">
+                                                                    <i class="bi bi-pencil"></i>
+                                                                </button>
+                                                                <button class="btn btn-sm btn-outline-secondary me-1" 
+                                                                        @onclick="@(() => TogglePresetActive(presetItem.Id))">
+                                                                    <i class="bi @(presetItem.IsActive ? "bi-eye-slash" : "bi-eye")"></i>
+                                                                </button>
+                                                                @if (!presetItem.IsSystemDefault)
+                                                                {
+                                                                    <button class="btn btn-sm btn-outline-danger" 
+                                                                            @onclick="@(() => DeletePreset(presetItem.Id))">
+                                                                        <i class="bi bi-trash"></i>
+                                                                    </button>
+                                                                }
+                                                            }
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="alert alert-secondary">
+                                        <i class="bi bi-info-circle me-2"></i>
+                                        No presets found for this category. Add some above!
+                                    </div>
+                                }
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(presetMessage))
+                            {
+                                <div class="col-12">
+                                    <div class="alert @(presetSuccess ? "alert-success" : "alert-danger") alert-dismissible">
+                                        <i class="bi @(presetSuccess ? "bi-check-circle" : "bi-exclamation-triangle") me-2"></i>
+                                        @presetMessage
+                                        <button type="button" class="btn-close" @onclick="@(() => presetMessage = "")"></button>
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+
             <!-- Company Details -->
             <div class="card border-0 shadow-sm mb-3">
                 <div class="card-header bg-white border-0 py-3">
@@ -566,7 +703,7 @@
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Phone</label>
-                            <input type="tel" class="form-control" @bind="companySettings.Phone" />
+                            <PhoneNumberInput @bind-Value="companySettings.Phone" />
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Email</label>
@@ -908,6 +1045,15 @@ private IBrowserFile? importFile;
 private bool updateExistingOnImport = false;
 private string importResultMessage = "";
 private bool importSuccess = false;
+
+// Dropdown Presets
+private string selectedPresetCategory = "";
+private string newPresetValue = "";
+private List<DropdownPreset> categoryPresets = new();
+private int? editingPresetId = null;
+private string editingPresetValue = "";
+private string presetMessage = "";
+private bool presetSuccess = false;
 
 private Dictionary<string, ExportEntityInfo> exportEntities = new()
 {
@@ -1388,6 +1534,133 @@ protected override async Task OnInitializedAsync()
         public int SkippedCount { get; set; }
         public int ErrorCount { get; set; }
         public string Message { get; set; } = "";
+    }
+
+    #endregion
+
+    #region Dropdown Presets
+
+    private async Task LoadPresetsForCategory()
+    {
+        if (string.IsNullOrEmpty(selectedPresetCategory))
+        {
+            categoryPresets = new();
+            return;
+        }
+
+        try
+        {
+            categoryPresets = await PresetService.GetAllPresetsAsync(selectedPresetCategory);
+        }
+        catch (Exception ex)
+        {
+            presetMessage = $"Error loading presets: {ex.Message}";
+            presetSuccess = false;
+        }
+    }
+
+    private async Task AddNewPreset()
+    {
+        if (string.IsNullOrWhiteSpace(newPresetValue) || string.IsNullOrEmpty(selectedPresetCategory))
+            return;
+
+        try
+        {
+            await PresetService.AddPresetAsync(selectedPresetCategory, newPresetValue.Trim());
+            newPresetValue = "";
+            await LoadPresetsForCategory();
+            presetMessage = "Preset added successfully!";
+            presetSuccess = true;
+        }
+        catch (Exception ex)
+        {
+            presetMessage = $"Error adding preset: {ex.Message}";
+            presetSuccess = false;
+        }
+    }
+
+    private void StartEditingPreset(DropdownPreset preset)
+    {
+        editingPresetId = preset.Id;
+        editingPresetValue = preset.DisplayValue;
+    }
+
+    private void CancelEditingPreset()
+    {
+        editingPresetId = null;
+        editingPresetValue = "";
+    }
+
+    private async Task SaveEditingPreset()
+    {
+        if (editingPresetId == null || string.IsNullOrWhiteSpace(editingPresetValue))
+            return;
+
+        try
+        {
+            var preset = categoryPresets.FirstOrDefault(p => p.Id == editingPresetId);
+            if (preset != null)
+            {
+                await PresetService.UpdatePresetAsync(
+                    editingPresetId.Value, 
+                    editingPresetValue.Trim(), 
+                    preset.StoredValue, 
+                    preset.SortOrder, 
+                    preset.IsActive);
+                
+                await LoadPresetsForCategory();
+                presetMessage = "Preset updated successfully!";
+                presetSuccess = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            presetMessage = $"Error updating preset: {ex.Message}";
+            presetSuccess = false;
+        }
+        finally
+        {
+            editingPresetId = null;
+            editingPresetValue = "";
+        }
+    }
+
+    private async Task TogglePresetActive(int id)
+    {
+        try
+        {
+            await PresetService.ToggleActiveAsync(id);
+            await LoadPresetsForCategory();
+        }
+        catch (Exception ex)
+        {
+            presetMessage = $"Error toggling preset: {ex.Message}";
+            presetSuccess = false;
+        }
+    }
+
+    private async Task DeletePreset(int id)
+    {
+        try
+        {
+            var result = await PresetService.DeletePresetAsync(id);
+            if (result)
+            {
+                await LoadPresetsForCategory();
+                presetMessage = "Preset deleted successfully!";
+                presetSuccess = true;
+            }
+            else
+            {
+                presetMessage = "Cannot delete system default presets.";
+                presetSuccess = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            presetMessage = $"Error deleting preset: {ex.Message}";
+            presetSuccess = false;
+        }
     }
 
     #endregion

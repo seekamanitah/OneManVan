@@ -67,6 +67,51 @@
                                 </select>
                             </div>
                         </div>
+                        
+                        <!-- Entity Linking Row -->
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <label class="form-label">Link To (optional)</label>
+                                <p class="text-muted small mb-2">Attach this note to a customer, site, job, or asset for easy reference</p>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <select class="form-select form-select-sm" @bind="newNote.CustomerId">
+                                    <option value="">-- Customer --</option>
+                                    @foreach (var customer in customers)
+                                    {
+                                        <option value="@customer.Id">@customer.FullName</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <select class="form-select form-select-sm" @bind="newNote.SiteId">
+                                    <option value="">-- Site --</option>
+                                    @foreach (var site in sites)
+                                    {
+                                        <option value="@site.Id">@site.SiteName</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <select class="form-select form-select-sm" @bind="newNote.JobId">
+                                    <option value="">-- Job --</option>
+                                    @foreach (var job in jobs)
+                                    {
+                                        <option value="@job.Id">@(job.JobNumber ?? $"Job #{job.Id}") - @(TruncateText(job.Title, 30) ?? "Untitled")</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <select class="form-select form-select-sm" @bind="newNote.AssetId">
+                                    <option value="">-- Asset --</option>
+                                    @foreach (var asset in assets)
+                                    {
+                                        <option value="@asset.Id">@(asset.AssetNumber ?? asset.AssetName)</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        
                         <div class="mb-3">
                             <label class="form-label">Note Content</label>
                             <textarea class="form-control" rows="5" @bind="newNote.Content" 
@@ -107,12 +152,22 @@
                             </select>
                         </div>
                         <div class="col-md-2">
+                            <select class="form-select" @bind="filterLinkedTo">
+                                <option value="">All Links</option>
+                                <option value="Customer">Linked to Customer</option>
+                                <option value="Site">Linked to Site</option>
+                                <option value="Job">Linked to Job</option>
+                                <option value="Asset">Linked to Asset</option>
+                                <option value="None">Not Linked</option>
+                            </select>
+                        </div>
+                        <div class="col-md-1">
                             <div class="form-check">
                                 <input type="checkbox" class="form-check-input" id="showArchived" @bind="showArchived"/>
-                                <label class="form-check-label" for="showArchived">Show Archived</label>
+                                <label class="form-check-label" for="showArchived">Archived</label>
                             </div>
                         </div>
-                        <div class="col-md-4 text-end">
+                        <div class="col-md-3 text-end">
                             <span class="text-muted">@FilteredNotes.Count() notes</span>
                         </div>
                     </div>
@@ -187,8 +242,39 @@
                                     }
 
                                     <!-- Content Preview -->
-                                    <p class="card-text small" style="white-space: pre-wrap;">@note.ContentPreview</p>
-                                </div>
+                                        <p class="card-text small" style="white-space: pre-wrap;">@note.ContentPreview</p>
+                                    
+                                        <!-- Linked Entity Badges -->
+                                        @if (note.IsLinked)
+                                        {
+                                            <div class="mt-2">
+                                                @if (note.CustomerId.HasValue)
+                                                {
+                                                    <a href="/customers/@note.CustomerId" class="badge bg-info text-decoration-none me-1" @onclick:stopPropagation="true">
+                                                        <i class="bi bi-person me-1"></i>@GetCustomerName(note.CustomerId.Value)
+                                                    </a>
+                                                }
+                                                @if (note.SiteId.HasValue)
+                                                {
+                                                    <a href="/sites/@note.SiteId" class="badge bg-success text-decoration-none me-1" @onclick:stopPropagation="true">
+                                                        <i class="bi bi-building me-1"></i>@GetSiteName(note.SiteId.Value)
+                                                    </a>
+                                                }
+                                                @if (note.JobId.HasValue)
+                                                {
+                                                    <a href="/jobs/@note.JobId" class="badge bg-warning text-dark text-decoration-none me-1" @onclick:stopPropagation="true">
+                                                        <i class="bi bi-briefcase me-1"></i>@GetJobName(note.JobId.Value)
+                                                    </a>
+                                                }
+                                                @if (note.AssetId.HasValue)
+                                                {
+                                                    <a href="/assets/@note.AssetId" class="badge bg-secondary text-decoration-none me-1" @onclick:stopPropagation="true">
+                                                        <i class="bi bi-box me-1"></i>@GetAssetName(note.AssetId.Value)
+                                                    </a>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
                                 <div class="card-footer bg-transparent border-0 py-2">
                                     <small class="text-muted">
                                         @note.CreatedAt.ToString("MMM dd, yyyy h:mm tt")
@@ -248,6 +334,50 @@
                             </select>
                         </div>
                     </div>
+                    
+                    <!-- Entity Linking Row -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <label class="form-label">Link To</label>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select form-select-sm" @bind="editingNote.CustomerId">
+                                <option value="">-- Customer --</option>
+                                @foreach (var customer in customers)
+                                {
+                                    <option value="@customer.Id">@customer.FullName</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select form-select-sm" @bind="editingNote.SiteId">
+                                <option value="">-- Site --</option>
+                                @foreach (var site in sites)
+                                {
+                                    <option value="@site.Id">@site.SiteName</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select form-select-sm" @bind="editingNote.JobId">
+                                <option value="">-- Job --</option>
+                                @foreach (var job in jobs)
+                                {
+                                    <option value="@job.Id">@(job.JobNumber ?? $"Job #{job.Id}") - @(TruncateText(job.Title, 30) ?? "Untitled")</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select form-select-sm" @bind="editingNote.AssetId">
+                                <option value="">-- Asset --</option>
+                                @foreach (var asset in assets)
+                                {
+                                    <option value="@asset.Id">@(asset.AssetNumber ?? asset.AssetName)</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    
                     <div class="mb-3">
                         <label class="form-label">Content</label>
                         <textarea class="form-control" rows="10" @bind="editingNote.Content"></textarea>
@@ -283,13 +413,26 @@ private bool isLoading = true;
 private bool showNewNoteForm = false;
 private string searchText = "";
 private string filterCategory = "";
+private string filterLinkedTo = "";
 private bool showArchived = false;
 private string statusMessage = "";
 private bool isError = false;
 
+// Entity linking lists
+private List<Customer> customers = new();
+private List<Site> sites = new();
+private List<Job> jobs = new();
+private List<Asset> assets = new();
+
     private IEnumerable<QuickNote> FilteredNotes => notes
         .Where(n => showArchived || !n.IsArchived)
         .Where(n => string.IsNullOrEmpty(filterCategory) || n.Category == filterCategory)
+        .Where(n => string.IsNullOrEmpty(filterLinkedTo) || 
+                    (filterLinkedTo == "Customer" && n.CustomerId.HasValue) ||
+                    (filterLinkedTo == "Site" && n.SiteId.HasValue) ||
+                    (filterLinkedTo == "Job" && n.JobId.HasValue) ||
+                    (filterLinkedTo == "Asset" && n.AssetId.HasValue) ||
+                    (filterLinkedTo == "None" && !n.IsLinked))
         .Where(n => string.IsNullOrEmpty(searchText) || 
                     (n.Title?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
                     n.Content.Contains(searchText, StringComparison.OrdinalIgnoreCase))
@@ -299,6 +442,23 @@ private bool isError = false;
     protected override async Task OnInitializedAsync()
     {
         await LoadNotes();
+        await LoadEntityLists();
+    }
+
+    private async Task LoadEntityLists()
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            customers = await db.Customers.OrderBy(c => c.FirstName).ThenBy(c => c.LastName).ToListAsync();
+        sites = await db.Sites.OrderBy(s => s.SiteName).ToListAsync();
+            jobs = await db.Jobs.OrderByDescending(j => j.CreatedAt).Take(100).ToListAsync();
+            assets = await db.Assets.OrderBy(a => a.AssetName).ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading entity lists: {ex.Message}");
+        }
     }
 
     protected override async Task OnParametersSetAsync()
@@ -389,7 +549,11 @@ private bool isError = false;
             Color = note.Color,
             IsPinned = note.IsPinned,
             IsArchived = note.IsArchived,
-            CreatedAt = note.CreatedAt
+            CreatedAt = note.CreatedAt,
+            CustomerId = note.CustomerId,
+            SiteId = note.SiteId,
+            JobId = note.JobId,
+            AssetId = note.AssetId
         };
     }
 
@@ -417,6 +581,10 @@ private bool isError = false;
                 note.Content = editingNote.Content;
                 note.Category = editingNote.Category;
                 note.Color = editingNote.Color;
+                note.CustomerId = editingNote.CustomerId;
+                note.SiteId = editingNote.SiteId;
+                note.JobId = editingNote.JobId;
+                note.AssetId = editingNote.AssetId;
                 note.UpdatedAt = DateTime.UtcNow;
                 await db.SaveChangesAsync();
             }
@@ -477,21 +645,51 @@ private bool isError = false;
     }
 
     private async Task DeleteNote(QuickNote note)
-    {
-        try
         {
-            await using var db = await DbFactory.CreateDbContextAsync();
-            var dbNote = await db.QuickNotes.FindAsync(note.Id);
-            if (dbNote != null)
+            try
             {
-                db.QuickNotes.Remove(dbNote);
-                await db.SaveChangesAsync();
+                await using var db = await DbFactory.CreateDbContextAsync();
+                var dbNote = await db.QuickNotes.FindAsync(note.Id);
+                if (dbNote != null)
+                {
+                    db.QuickNotes.Remove(dbNote);
+                    await db.SaveChangesAsync();
+                }
+                await LoadNotes();
             }
-            await LoadNotes();
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error deleting note: {ex.Message}");
+            }
         }
-        catch (Exception ex)
+
+        private string GetCustomerName(int customerId)
         {
-            Console.WriteLine($"Error deleting note: {ex.Message}");
+            var customer = customers.FirstOrDefault(c => c.Id == customerId);
+            return customer?.FullName ?? $"Customer #{customerId}";
         }
-    }
+
+        private string GetSiteName(int siteId)
+        {
+            var site = sites.FirstOrDefault(s => s.Id == siteId);
+            return site?.SiteName ?? $"Site #{siteId}";
+        }
+
+        private string GetJobName(int jobId)
+        {
+            var job = jobs.FirstOrDefault(j => j.Id == jobId);
+            return job?.JobNumber ?? job?.Title ?? $"Job #{jobId}";
+        }
+
+        private string GetAssetName(int assetId)
+        {
+            var asset = assets.FirstOrDefault(a => a.Id == assetId);
+            return asset?.AssetNumber ?? asset?.AssetName ?? $"Asset #{assetId}";
+        }
+
+        private string? TruncateText(string? text, int maxLength)
+        {
+            if (string.IsNullOrEmpty(text)) return null;
+            return text.Length <= maxLength ? text : text.Substring(0, maxLength) + "...";
+        }
 }

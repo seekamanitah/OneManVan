@@ -58,6 +58,49 @@
             </div>
         </div>
 
+        <!-- Quick Action Bar -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body py-2">
+                <div class="d-flex flex-wrap gap-2 align-items-center">
+                    <span class="text-muted me-2">Quick Actions:</span>
+                    @if (job.Status == JobStatus.Draft || job.Status == JobStatus.Scheduled || job.Status == JobStatus.OnHold)
+                    {
+                        <button class="btn btn-success btn-sm" @onclick="@(() => QuickStatusChange(JobStatus.InProgress))">
+                            <i class="bi bi-play-fill me-1"></i>Start Job
+                        </button>
+                    }
+                    @if (job.Status == JobStatus.InProgress)
+                    {
+                        <button class="btn btn-warning btn-sm" @onclick="@(() => QuickStatusChange(JobStatus.OnHold))">
+                            <i class="bi bi-pause-fill me-1"></i>Pause
+                        </button>
+                        <button class="btn btn-success btn-sm" @onclick="@(() => QuickStatusChange(JobStatus.Completed))">
+                            <i class="bi bi-check-lg me-1"></i>Complete
+                        </button>
+                    }
+                    @if (job.Status != JobStatus.Cancelled && job.Status != JobStatus.Completed)
+                    {
+                        <button class="btn btn-outline-danger btn-sm" @onclick="@(() => QuickStatusChange(JobStatus.Cancelled))">
+                            <i class="bi bi-x-circle me-1"></i>Cancel
+                        </button>
+                    }
+                    <div class="vr mx-2"></div>
+                    @if (job.Status == JobStatus.Completed && !job.Invoices.Any())
+                    {
+                        <button class="btn btn-outline-primary btn-sm" @onclick="CreateInvoice">
+                            <i class="bi bi-receipt me-1"></i>Create Invoice
+                        </button>
+                    }
+                    @if (job.Invoices.Any())
+                    {
+                        <a href="/invoices/@job.Invoices.First().Id" class="btn btn-outline-success btn-sm">
+                            <i class="bi bi-receipt me-1"></i>View Invoice
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+
         <div class="row g-3">
             <!-- Main Info -->
             <div class="col-md-8">
@@ -231,6 +274,7 @@
 
     private bool isLoading = true;
     private Job? job;
+    private string? errorMessage;
 
     protected override async Task OnInitializedAsync()
     {
@@ -246,11 +290,12 @@
             await using var db = await DbFactory.CreateDbContextAsync();
             
             job = await db.Jobs
-                .Include(j => j.Customer)
-                .Include(j => j.Site)
-                .Include(j => j.Asset)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(j => j.Id == Id);
+            .Include(j => j.Customer)
+            .Include(j => j.Site)
+            .Include(j => j.Asset)
+            .Include(j => j.Invoices)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(j => j.Id == Id);
         }
         finally
         {
@@ -297,5 +342,37 @@
             JobPriority.Urgent => "bg-danger",
             _ => "bg-secondary"
         };
+    }
+
+    private async Task QuickStatusChange(JobStatus newStatus)
+    {
+        if (job == null) return;
+        
+        try
+        {
+            await using var context = await DbFactory.CreateDbContextAsync();
+            var jobToUpdate = await context.Jobs.FindAsync(job.Id);
+            if (jobToUpdate != null)
+            {
+                jobToUpdate.Status = newStatus;
+                
+                // Set timestamps based on status
+                if (newStatus == JobStatus.InProgress && jobToUpdate.StartedAt == null)
+                {
+                    jobToUpdate.StartedAt = DateTime.Now;
+                }
+                else if (newStatus == JobStatus.Completed)
+                {
+                    jobToUpdate.CompletedAt = DateTime.Now;
+                }
+                
+                await context.SaveChangesAsync();
+                await LoadJobAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to update status: {ex.Message}";
+        }
     }
 }
