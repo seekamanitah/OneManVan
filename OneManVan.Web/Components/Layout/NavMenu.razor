@@ -1,11 +1,70 @@
 @implements IDisposable
 
+@using Microsoft.EntityFrameworkCore
+@using OneManVan.Shared.Data
+@using OneManVan.Shared.Models
+
 @inject NavigationManager NavigationManager
+@inject IDbContextFactory<OneManVanDbContext> DbFactory
 
 <div class="top-row ps-3 navbar navbar-dark" style="background-color: #3b82f6;">
     <div class="container-fluid">
         <a class="navbar-brand" href="">OneManVan</a>
     </div>
+</div>
+
+<!-- Global Search -->
+<div class="px-3 py-2" style="background-color: #f8f9fa;">
+    <div class="position-relative">
+        <input type="text" 
+               class="form-control form-control-sm" 
+               placeholder="Search customers, jobs, invoices..."
+               @bind="searchQuery"
+               @bind:event="oninput"
+               @onkeyup="OnSearchKeyUp"
+               @onfocus="@(() => showResults = searchResults.Any())"
+               style="padding-left: 32px;" />
+        <i class="bi bi-search position-absolute" style="left: 10px; top: 50%; transform: translateY(-50%); color: #6c757d;"></i>
+        @if (!string.IsNullOrEmpty(searchQuery))
+        {
+            <button type="button" class="btn btn-link btn-sm position-absolute p-0" 
+                    style="right: 8px; top: 50%; transform: translateY(-50%);"
+                    @onclick="ClearSearch">
+                <i class="bi bi-x-circle text-muted"></i>
+            </button>
+        }
+    </div>
+    
+    @if (showResults && searchResults.Any())
+    {
+        <div class="search-results-dropdown bg-white border rounded shadow-sm mt-1" style="max-height: 300px; overflow-y: auto;">
+            @foreach (var result in searchResults.Take(10))
+            {
+                <a href="@result.Url" class="d-block px-3 py-2 text-decoration-none border-bottom search-result-item" @onclick="ClearSearch">
+                    <div class="d-flex align-items-center">
+                        <span class="badge @result.TypeBadgeClass me-2" style="font-size: 0.65rem;">@result.Type</span>
+                        <span class="text-dark">@result.Title</span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(result.Subtitle))
+                    {
+                        <small class="text-muted d-block" style="margin-left: 45px;">@result.Subtitle</small>
+                    }
+                </a>
+            }
+            @if (searchResults.Count > 10)
+            {
+                <div class="px-3 py-2 text-muted small text-center">
+                    Showing 10 of @searchResults.Count results
+                </div>
+            }
+        </div>
+    }
+    else if (showResults && !string.IsNullOrEmpty(searchQuery) && searchQuery.Length >= 2)
+    {
+        <div class="bg-white border rounded shadow-sm mt-1 px-3 py-2 text-muted small">
+            No results found
+        </div>
+    }
 </div>
 
 <input type="checkbox" title="Navigation menu" class="navbar-toggler" />
@@ -199,22 +258,178 @@
 
 @code {
     private string? currentUrl;
+    private string searchQuery = "";
+    private bool showResults = false;
+    private List<SearchResult> searchResults = new();
+    private System.Timers.Timer? debounceTimer;
 
     protected override void OnInitialized()
     {
         currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
         NavigationManager.LocationChanged += OnLocationChanged;
+        
+        // Setup debounce timer for search
+        debounceTimer = new System.Timers.Timer(300);
+        debounceTimer.AutoReset = false;
+        debounceTimer.Elapsed += async (s, e) => await InvokeAsync(PerformSearch);
     }
 
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
         currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
+        ClearSearch();
         StateHasChanged();
+    }
+    
+    private void OnSearchKeyUp(KeyboardEventArgs e)
+    {
+        debounceTimer?.Stop();
+        if (searchQuery.Length >= 2)
+        {
+            debounceTimer?.Start();
+        }
+        else
+        {
+            searchResults.Clear();
+            showResults = false;
+        }
+    }
+    
+    private async Task PerformSearch()
+    {
+        if (string.IsNullOrWhiteSpace(searchQuery) || searchQuery.Length < 2)
+        {
+            searchResults.Clear();
+            showResults = false;
+            return;
+        }
+        
+        var results = new List<SearchResult>();
+        var query = searchQuery.ToLower();
+        
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            
+            // Search Customers
+            var customers = await db.Customers
+                .Where(c => !c.IsDeleted && (
+                    c.Name.ToLower().Contains(query) ||
+                    (c.Email != null && c.Email.ToLower().Contains(query)) ||
+                    (c.Phone != null && c.Phone.Contains(query))))
+                .Take(5)
+                .Select(c => new { c.Id, c.Name, c.Email })
+                .ToListAsync();
+            
+            results.AddRange(customers.Select(c => new SearchResult
+            {
+                Type = "Customer",
+                TypeBadgeClass = "bg-primary",
+                Title = c.Name,
+                Subtitle = c.Email,
+                Url = $"/customers/{c.Id}"
+            }));
+            
+            // Search Jobs
+            var jobs = await db.Jobs
+                .Where(j => !j.IsDeleted && (
+                    (j.JobNumber != null && j.JobNumber.ToLower().Contains(query)) ||
+                    j.Title.ToLower().Contains(query)))
+                .Take(5)
+                .Select(j => new { j.Id, j.JobNumber, j.Title, j.Status })
+                .ToListAsync();
+            
+            results.AddRange(jobs.Select(j => new SearchResult
+            {
+                Type = "Job",
+                TypeBadgeClass = "bg-info",
+                Title = j.JobNumber ?? j.Title,
+                Subtitle = j.Title,
+                Url = $"/jobs/{j.Id}"
+            }));
+            
+            // Search Invoices
+            var invoices = await db.Invoices
+                .Where(i => !i.IsDeleted && i.InvoiceNumber.ToLower().Contains(query))
+                .Take(5)
+                .Select(i => new { i.Id, i.InvoiceNumber, i.Total, i.Status })
+                .ToListAsync();
+            
+            results.AddRange(invoices.Select(i => new SearchResult
+            {
+                Type = "Invoice",
+                TypeBadgeClass = "bg-success",
+                Title = i.InvoiceNumber,
+                Subtitle = $"{i.Total:C} - {i.Status}",
+                Url = $"/invoices/{i.Id}"
+            }));
+            
+            // Search Estimates
+            var estimates = await db.Estimates
+                .Where(e => !e.IsDeleted && (e.Title != null && e.Title.ToLower().Contains(query)))
+                .Take(5)
+                .Select(e => new { e.Id, e.Title, e.Total, e.Status })
+                .ToListAsync();
+            
+            results.AddRange(estimates.Select(e => new SearchResult
+            {
+                Type = "Estimate",
+                TypeBadgeClass = "bg-warning text-dark",
+                Title = e.Title ?? $"EST-{e.Id}",
+                Subtitle = $"{e.Total:C} - {e.Status}",
+                Url = $"/estimates/{e.Id}"
+            }));
+            
+            // Search Assets
+            var assets = await db.Assets
+                .Where(a => 
+                    (a.Serial != null && a.Serial.ToLower().Contains(query)) ||
+                    (a.Model != null && a.Model.ToLower().Contains(query)) ||
+                    (a.Brand != null && a.Brand.ToLower().Contains(query)))
+                .Take(5)
+                .Select(a => new { a.Id, a.Serial, a.Model, a.Brand })
+                .ToListAsync();
+            
+            results.AddRange(assets.Select(a => new SearchResult
+            {
+                Type = "Asset",
+                TypeBadgeClass = "bg-secondary",
+                Title = a.Serial ?? a.Model ?? "Asset",
+                Subtitle = $"{a.Brand} {a.Model}",
+                Url = $"/assets/{a.Id}"
+            }));
+            
+            searchResults = results;
+            showResults = true;
+        }
+        catch
+        {
+            searchResults.Clear();
+        }
+        
+        await InvokeAsync(StateHasChanged);
+    }
+    
+    private void ClearSearch()
+    {
+        searchQuery = "";
+        searchResults.Clear();
+        showResults = false;
     }
 
     public void Dispose()
     {
         NavigationManager.LocationChanged -= OnLocationChanged;
+        debounceTimer?.Dispose();
+    }
+    
+    private class SearchResult
+    {
+        public string Type { get; set; } = "";
+        public string TypeBadgeClass { get; set; } = "bg-secondary";
+        public string Title { get; set; } = "";
+        public string? Subtitle { get; set; }
+        public string Url { get; set; } = "";
     }
 }
 

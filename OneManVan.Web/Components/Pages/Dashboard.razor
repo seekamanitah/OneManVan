@@ -297,6 +297,72 @@
                             </div>
                         </div>
                     </div>
+
+            <!-- Clocked-In Workers on Jobs -->
+            @if (clockedInWorkers.Any())
+            {
+                <div class="row g-3 mb-4">
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-white border-0 py-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">
+                                        <i class="bi bi-person-workspace text-success me-2"></i>
+                                        Workers Currently On Jobs
+                                    </h6>
+                                    <span class="badge bg-success">@clockedInWorkers.Count Active</span>
+                                </div>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Worker</th>
+                                                <th>Job</th>
+                                                <th>Role</th>
+                                                <th>Started</th>
+                                                <th>Duration</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var worker in clockedInWorkers)
+                                            {
+                                                <tr>
+                                                    <td>
+                                                        <div class="d-flex align-items-center">
+                                                            <div class="avatar-circle bg-success bg-opacity-10 text-success me-2" style="width: 32px; height: 32px; font-size: 12px;">
+                                                                @(worker.Employee?.FirstName?.Substring(0, 1))@(worker.Employee?.LastName?.Substring(0, 1))
+                                                            </div>
+                                                            <span class="fw-semibold">@worker.Employee?.DisplayName</span>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <a href="/jobs/@worker.JobId" class="text-decoration-none">
+                                                            @worker.Job?.Title
+                                                        </a>
+                                                    </td>
+                                                    <td>@(worker.Role ?? "Worker")</td>
+                                                    <td>@worker.ActiveTimeEntry?.StartTime.ToString("h:mm tt")</td>
+                                                    <td>
+                                                        <span class="badge bg-success">
+                                                            @worker.ActiveTimeEntry?.DurationDisplay
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <a href="/jobs/@worker.JobId" class="btn btn-sm btn-outline-primary">View Job</a>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
                 }
 
         <!-- New Cards Row -->
@@ -590,6 +656,7 @@ private List<Job> scheduledJobs = new();
 private List<Job> unscheduledJobs = new();
 private List<QuickNote> recentNotes = new();
 private ExpenseMetricsSimple expenseMetrics = new();
+private List<JobWorker> clockedInWorkers = new();
 
 // Simple expense metrics for dashboard
 private class ExpenseMetricsSimple
@@ -686,6 +753,16 @@ protected override async Task OnInitializedAsync()
             expenseMetrics.BillableTotal = await db.Expenses
                 .Where(e => e.IsBillable && e.InvoiceId == null && e.ExpenseDate >= startOfMonth)
                 .SumAsync(e => (decimal?)e.TotalAmount) ?? 0;
+        
+        // Load currently clocked-in workers on jobs
+            clockedInWorkers = await db.JobWorkers
+                .Include(jw => jw.Employee)
+                .Include(jw => jw.Job)
+                .Include(jw => jw.ActiveTimeEntry)
+                .Where(jw => jw.IsClockedIn)
+                .OrderByDescending(jw => jw.ActiveTimeEntry!.StartTime)
+                .AsNoTracking()
+                .ToListAsync();
         }
 
     private string GetStatusBadgeClass(JobStatus status)
@@ -732,3 +809,13 @@ protected override async Task OnInitializedAsync()
         public decimal RevenueThisMonth { get; set; }
     }
 }
+
+<style>
+    .avatar-circle {
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+    }
+</style>

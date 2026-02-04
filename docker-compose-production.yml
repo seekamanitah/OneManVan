@@ -7,26 +7,27 @@ services:
   # SQL Server Database
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: tradeflow-db
-    hostname: tradeflow-sql
+    container_name: onemanvan-db
+    hostname: onemanvan-sql
     ports:
       - "1433:1433"
     environment:
       - ACCEPT_EULA=Y
       # SECURITY: Change this password before deploying!
-      - MSSQL_SA_PASSWORD=${SA_PASSWORD:-TradeFlow2025!}
+      - MSSQL_SA_PASSWORD=${SA_PASSWORD:-OneManVan2025!}
       - MSSQL_PID=Express
       - MSSQL_TCP_PORT=1433
+    user: "0:0"  # Run as root for Proxmox mount compatibility
     volumes:
-      - tradeflow-data:/var/opt/mssql/data
-      - tradeflow-log:/var/opt/mssql/log
-      - tradeflow-backup:/var/opt/mssql/backup
+      - /media/onemanvanDB/sqldata:/var/opt/mssql/data
+      - /media/onemanvanDB/sqllogs:/var/opt/mssql/log
+      - /media/onemanvanDB/backups:/var/opt/mssql/backup
       - ./docker/init:/docker-entrypoint-initdb.d
     networks:
-      - tradeflow-network
+      - onemanvan-network
     restart: unless-stopped
     healthcheck:
-      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "${SA_PASSWORD:-TradeFlow2025!}" -Q "SELECT 1" || exit 1
+      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "${SA_PASSWORD:-OneManVan2025!}" -Q "SELECT 1" || exit 1
       interval: 10s
       timeout: 5s
       retries: 5
@@ -44,8 +45,8 @@ services:
     build:
       context: .
       dockerfile: OneManVan.Web/Dockerfile
-    container_name: tradeflow-webui
-    hostname: tradeflow-web
+    container_name: onemanvan-webui
+    hostname: onemanvan-web
     ports:
       - "5000:8080"     # HTTP
       - "5001:8081"     # HTTPS (if configured)
@@ -54,18 +55,18 @@ services:
       - ASPNETCORE_ENVIRONMENT=${ASPNET_ENVIRONMENT:-Production}
       - ASPNETCORE_URLS=http://+:8080
       # Database connection with environment variable support
-      - ConnectionStrings__BusinessConnection=Server=sqlserver,1433;Database=${DB_NAME:-TradeFlowFSM};User Id=sa;Password=${SA_PASSWORD:-TradeFlow2025!};TrustServerCertificate=True;Encrypt=False;
+      - ConnectionStrings__BusinessConnection=Server=sqlserver,1433;Database=${DB_NAME:-OneManVanDB};User Id=sa;Password=${SA_PASSWORD:-OneManVan2025!};TrustServerCertificate=True;Encrypt=False;
       # Logging
       - Logging__LogLevel__Default=Information
       - Logging__LogLevel__Microsoft.AspNetCore=Warning
     volumes:
-      - webui-data:/app/AppData
-      - webui-logs:/app/logs
+      - /media/onemanvanDB/webui-data:/app/AppData
+      - /media/onemanvanDB/webui-logs:/app/logs
     depends_on:
       sqlserver:
         condition: service_healthy
     networks:
-      - tradeflow-network
+      - onemanvan-network
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
@@ -82,18 +83,18 @@ services:
           memory: 512M
 
 volumes:
-  tradeflow-data:
-    name: tradeflow-sqldata
-  tradeflow-log:
-    name: tradeflow-sqllogs
-  tradeflow-backup:
-    name: tradeflow-backups
+  onemanvan-data:
+    name: onemanvan-sqldata
+  onemanvan-log:
+    name: onemanvan-sqllogs
+  onemanvan-backup:
+    name: onemanvan-backups
   webui-data:
-    name: tradeflow-webui-data
+    name: onemanvan-webui-data
   webui-logs:
-    name: tradeflow-webui-logs
+    name: onemanvan-webui-logs
 
 networks:
-  tradeflow-network:
-    name: tradeflow-net
+  onemanvan-network:
+    name: onemanvan-net
     driver: bridge

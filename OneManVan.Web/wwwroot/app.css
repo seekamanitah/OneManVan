@@ -73,3 +73,50 @@ h1:focus {
 .dashboard-card:active {
     transform: translateY(-2px);
 }
+
+/* SearchableDropdown mobile touch improvements */
+.searchable-dropdown-menu {
+    max-height: 300px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+}
+
+.searchable-dropdown-item {
+    min-height: 44px; /* WCAG 2.1 touch target minimum */
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    touch-action: manipulation; /* Prevent double-tap zoom delay */
+}
+
+.searchable-dropdown-item:active {
+    background-color: var(--bs-primary);
+    color: white;
+}
+
+@media (pointer: coarse) {
+    /* Touch devices - larger tap targets */
+    .searchable-dropdown-item {
+        min-height: 48px;
+        padding: 0.875rem 1rem;
+    }
+}
+
+/* Fix dropdown menus being clipped inside cards and tables */
+.card .table-responsive {
+    overflow: visible;
+}
+
+.card .dropdown {
+    position: static;
+}
+
+.card .dropdown-menu {
+    position: absolute;
+    z-index: 1050;
+}
+
+/* Ensure dropdown menus appear above modals when needed */
+.dropdown-menu.show {
+    z-index: 1055;
+}

@@ -46,8 +46,8 @@
                             </div>
                             <div class="card-body">
                                 <div class="mb-3">
-                                    <InputFile class="form-control" OnChange="HandleFileSelected" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.png,.jpg,.jpeg,.gif,.zip" />
-                                    <div class="form-text">Supported formats: PDF, Word, Excel, PowerPoint, Images, Text, ZIP (Max 50MB)</div>
+                                <InputFile class="form-control" OnChange="HandleFileSelected" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.png,.jpg,.jpeg,.gif,.zip" />
+                                    <div class="form-text">Supported formats: PDF, Word, Excel, PowerPoint, Images, Text, ZIP (Max 10MB)</div>
                                 </div>
                                 
                                 @if (selectedFile != null)
@@ -240,7 +240,7 @@
     private List<string> existingManufacturers = new();
     private List<string> existingEquipmentTypes = new();
 
-    private const long MaxFileSize = 50 * 1024 * 1024; // 50MB
+    private const long MaxFileSize = 10 * 1024 * 1024; // 10MB
 
     protected override async Task OnInitializedAsync()
     {
@@ -279,7 +279,7 @@
         
         if (selectedFile.Size > MaxFileSize)
         {
-            errorMessage = $"File is too large. Maximum size is 50MB.";
+            errorMessage = $"File is too large ({FormatFileSize(selectedFile.Size)}). Maximum size is 10MB.";
             selectedFile = null;
             return;
         }

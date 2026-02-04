@@ -196,6 +196,79 @@
     OnConfirm="DeleteInvoice"
     OnCancel="CancelDelete" />
 
+@* Record Payment Modal *@
+@if (showPaymentModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title"><i class="bi bi-cash me-2"></i>Record Payment</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="ClosePaymentModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label text-muted small">Invoice Balance Due</label>
+                        <div class="h4 text-warning">@invoice?.BalanceDue.ToString("C")</div>
+                    </div>
+                    <hr />
+                    <div class="mb-3">
+                        <label class="form-label">Payment Amount *</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" @bind="paymentAmount" step="0.01" min="0.01" />
+                        </div>
+                        <button type="button" class="btn btn-link btn-sm p-0 mt-1" @onclick="SetFullBalance">
+                            Pay Full Balance (@invoice?.BalanceDue.ToString("C"))
+                        </button>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Payment Method *</label>
+                        <select class="form-select" @bind="paymentMethod">
+                            <option value="@PaymentMethod.Cash">Cash</option>
+                            <option value="@PaymentMethod.Check">Check</option>
+                            <option value="@PaymentMethod.CreditCard">Credit Card</option>
+                            <option value="@PaymentMethod.DebitCard">Debit Card</option>
+                            <option value="@PaymentMethod.BankTransfer">Bank Transfer</option>
+                            <option value="@PaymentMethod.Digital">Digital Payment (Venmo, Zelle, etc.)</option>
+                            <option value="@PaymentMethod.Financing">Financing</option>
+                            <option value="@PaymentMethod.Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Payment Date</label>
+                        <input type="date" class="form-control" @bind="paymentDate" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Reference Number</label>
+                        <input type="text" class="form-control" @bind="paymentReference" placeholder="Check #, confirmation code, etc." />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-control" @bind="paymentNotes" rows="2" placeholder="Optional payment notes..."></textarea>
+                    </div>
+                    @if (!string.IsNullOrEmpty(paymentError))
+                    {
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle me-2"></i>@paymentError
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="ClosePaymentModal">Cancel</button>
+                    <button class="btn btn-success" @onclick="SavePayment" disabled="@isSavingPayment">
+                        @if (isSavingPayment)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                        }
+                        <i class="bi bi-check-circle me-2"></i>Record Payment
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 <style>
     .avatar-circle {
         border-radius: 50%;
@@ -215,6 +288,16 @@ private bool isSendingEmail = false;
 private string? emailMessage;
 private Invoice? invoice;
 private bool showDeleteModal = false;
+
+// Payment modal state
+private bool showPaymentModal = false;
+private bool isSavingPayment = false;
+private decimal paymentAmount = 0;
+private PaymentMethod paymentMethod = PaymentMethod.Cash;
+private DateTime paymentDate = DateTime.Today;
+private string? paymentReference;
+private string? paymentNotes;
+private string? paymentError;
 
 protected override async Task OnInitializedAsync()
 {
@@ -242,7 +325,99 @@ protected override async Task OnInitializedAsync()
 
     private void GoBack() => Navigation.NavigateTo("/invoices");
     private void EditInvoice() => Navigation.NavigateTo($"/invoices/{Id}/edit");
-    private void RecordPayment() => Navigation.NavigateTo($"/invoices/{Id}/payment");
+    
+    private void RecordPayment()
+    {
+        // Reset payment form
+        paymentAmount = invoice?.BalanceDue ?? 0;
+        paymentMethod = PaymentMethod.Cash;
+        paymentDate = DateTime.Today;
+        paymentReference = null;
+        paymentNotes = null;
+        paymentError = null;
+        showPaymentModal = true;
+    }
+    
+    private void ClosePaymentModal()
+    {
+        showPaymentModal = false;
+        paymentError = null;
+    }
+    
+    private void SetFullBalance()
+    {
+        paymentAmount = invoice?.BalanceDue ?? 0;
+    }
+    
+    private async Task SavePayment()
+    {
+        paymentError = null;
+        
+        if (paymentAmount <= 0)
+        {
+            paymentError = "Payment amount must be greater than zero.";
+            return;
+        }
+        
+        if (invoice != null && paymentAmount > invoice.BalanceDue)
+        {
+            paymentError = $"Payment amount cannot exceed balance due ({invoice.BalanceDue:C}).";
+            return;
+        }
+        
+        isSavingPayment = true;
+        
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            
+            // Create the payment record
+            var payment = new Payment
+            {
+                InvoiceId = Id,
+                Amount = paymentAmount,
+                Method = paymentMethod,
+                PaymentDate = paymentDate,
+                ReferenceNumber = paymentReference,
+                Notes = paymentNotes,
+                CreatedAt = DateTime.UtcNow
+            };
+            payment.CalculateNetAmount();
+            
+            db.Payments.Add(payment);
+            
+            // Update invoice
+            var inv = await db.Invoices.FindAsync(Id);
+            if (inv != null)
+            {
+                inv.AmountPaid += paymentAmount;
+                
+                // Update status based on payment
+                if (inv.AmountPaid >= inv.Total)
+                {
+                    inv.Status = InvoiceStatus.Paid;
+                    inv.PaidAt = DateTime.UtcNow;
+                }
+                else if (inv.AmountPaid > 0)
+                {
+                    inv.Status = InvoiceStatus.PartiallyPaid;
+                }
+            }
+            
+            await db.SaveChangesAsync();
+            
+            showPaymentModal = false;
+            await LoadInvoiceAsync();
+        }
+        catch (Exception ex)
+        {
+            paymentError = $"Failed to save payment: {ex.Message}";
+        }
+        finally
+        {
+            isSavingPayment = false;
+        }
+    }
     
     private async Task PrintInvoice()
     {
@@ -314,7 +489,9 @@ protected override async Task OnInitializedAsync()
             var invoiceToDelete = await db.Invoices.FindAsync(Id);
             if (invoiceToDelete != null)
             {
-                db.Invoices.Remove(invoiceToDelete);
+                // Soft delete - mark as deleted instead of removing
+                invoiceToDelete.IsDeleted = true;
+                invoiceToDelete.DeletedAt = DateTime.UtcNow;
                 await db.SaveChangesAsync();
                 Navigation.NavigateTo("/invoices");
             }

@@ -1,10 +1,12 @@
 @page "/estimates/new"
 @page "/estimates/{Id:int}/edit"
+@using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.EntityFrameworkCore
 @using OneManVan.Shared.Data
 @using OneManVan.Shared.Models
 @using OneManVan.Shared.Models.Enums
 @using OneManVan.Shared.Services
+@implements IDisposable
 
 @inject IDbContextFactory<OneManVanDbContext> DbFactory
 @inject NavigationManager Navigation
@@ -36,7 +38,11 @@
             }
             else
             {
-                <EditForm Model="@model" OnSubmit="HandleSubmit">
+                <Microsoft.AspNetCore.Components.Routing.NavigationLock 
+                    ConfirmExternalNavigation="@isDirty" 
+                    OnBeforeInternalNavigation="OnBeforeInternalNavigation" />
+                
+                <EditForm EditContext="@editContext" OnSubmit="HandleSubmit">
                     <DataAnnotationsValidator />
 
                     <!-- Customer & Dates -->
@@ -62,7 +68,11 @@
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label">Valid Until</label>
-                                    <InputDate class="form-control" @bind-Value="model.ExpiresAt" />
+                                    <InputDate class="form-control" @bind-Value="model.ExpiresAt" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                                    @if (model.ExpiresAt.HasValue && model.ExpiresAt.Value.Date < DateTime.Today)
+                                    {
+                                        <small class="text-danger">Expiry date is in the past</small>
+                                    }
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label">Status</label>
@@ -246,17 +256,34 @@
 </div>
 
 @code {
-    [Parameter]
-    public int? Id { get; set; }
+[Parameter]
+public int? Id { get; set; }
 
-    private bool IsNew => !Id.HasValue;
-    private bool isLoading = true;
-    private bool isSaving = false;
-    private string errorMessage = "";
-    private Estimate model = new();
-    private List<Customer> customers = new();
-    private List<EstimateLine> lineItems = new();
-    private decimal defaultTaxRate = 7.0m; // Store global default for reference
+private bool IsNew => !Id.HasValue;
+private bool isLoading = true;
+private bool isSaving = false;
+private bool isDirty = false;
+private string errorMessage = "";
+private Estimate model = new();
+private EditContext? editContext;
+private List<Customer> customers = new();
+private List<EstimateLine> lineItems = new();
+private decimal defaultTaxRate = 7.0m; // Store global default for reference
+
+private async Task OnBeforeInternalNavigation(Microsoft.AspNetCore.Components.Routing.LocationChangingContext context)
+{
+    if (isDirty && !isSaving)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            "You have unsaved changes. Are you sure you want to leave this page?");
+        if (!confirmed)
+        {
+            context.PreventNavigation();
+        }
+    }
+}
+
+private void OnFieldChanged(object? sender, FieldChangedEventArgs e) => isDirty = true;
 
     protected override async Task OnInitializedAsync()
     {
@@ -284,6 +311,10 @@
         {
             await LoadEstimateAsync();
         }
+
+        // Initialize EditContext for dirty tracking
+        editContext = new EditContext(model);
+        editContext.OnFieldChanged += OnFieldChanged;
     }
 
     private async Task LoadCustomersAsync()
@@ -411,6 +442,14 @@
                 return;
             }
 
+            // Validate expiry date is not in the past (for new estimates or drafts)
+            if (model.ExpiresAt.HasValue && model.ExpiresAt.Value.Date < DateTime.Today 
+                && (IsNew || model.Status == EstimateStatus.Draft))
+            {
+                errorMessage = "Expiry date cannot be in the past. Please select a future date.";
+                return;
+            }
+
             await using var db = await DbFactory.CreateDbContextAsync();
 
             if (IsNew)
@@ -460,6 +499,9 @@
                 _ = NotificationService.SendEstimateCreatedAsync(model);
             }
 
+            // Reset dirty flag before navigation
+            isDirty = false;
+
             Navigation.NavigateTo(IsNew ? "/estimates" : $"/estimates/{model.Id}");
         }
         catch (Exception ex)
@@ -503,6 +545,14 @@
         else
         {
             Navigation.NavigateTo($"/estimates/{Id}");
+        }
+    }
+
+    public void Dispose()
+    {
+        if (editContext != null)
+        {
+            editContext.OnFieldChanged -= OnFieldChanged;
         }
     }
 }

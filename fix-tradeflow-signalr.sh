@@ -1,8 +1,8 @@
 #!/bin/bash
-# OneManVan/TradeFlow Specific - Fix Blazor SignalR Connection Issues
+# OneManVan - Fix Blazor SignalR Connection Issues
 
 echo "========================================="
-echo "TradeFlow Blazor Connection Fix"
+echo "OneManVan Blazor Connection Fix"
 echo "========================================="
 echo ""
 
@@ -21,9 +21,9 @@ echo ""
 
 # Test 1: Check if container is running
 echo "=== Test 1: Container Status ==="
-if docker ps | grep -q tradeflow-webui; then
-    echo "? tradeflow-webui container is running"
-    docker ps | grep tradeflow-webui
+if docker ps | grep -q onemanvan-webui; then
+    echo "? onemanvan-webui container is running"
+    docker ps | grep onemanvan-webui
 else
     echo "? Container not running!"
     echo ""
@@ -43,7 +43,7 @@ else
     echo "? App not responding on port $ACTUAL_PORT"
     echo ""
     echo "Check container logs:"
-    echo "  docker logs tradeflow-webui"
+    echo "  docker logs onemanvan-webui"
     exit 1
 fi
 
@@ -117,12 +117,12 @@ EOF
     read -r response
     if [[ "$response" =~ ^[Yy]$ ]]; then
         # Backup existing config
-        if [ -f /etc/nginx/sites-available/tradeflow ]; then
-            sudo cp /etc/nginx/sites-available/tradeflow /etc/nginx/sites-available/tradeflow.backup.$(date +%Y%m%d_%H%M%S)
+        if [ -f /etc/nginx/sites-available/onemanvan ]; then
+            sudo cp /etc/nginx/sites-available/onemanvan /etc/nginx/sites-available/onemanvan.backup.$(date +%Y%m%d_%H%M%S)
         fi
         
         # Create new config
-        sudo tee /etc/nginx/sites-available/tradeflow > /dev/null << EOF
+        sudo tee /etc/nginx/sites-available/onemanvan > /dev/null << EOF
 map \$http_upgrade \$connection_upgrade {
     default upgrade;
     '' close;
@@ -151,7 +151,7 @@ server {
 EOF
         
         # Enable and reload
-        sudo ln -sf /etc/nginx/sites-available/tradeflow /etc/nginx/sites-enabled/
+        sudo ln -sf /etc/nginx/sites-available/onemanvan /etc/nginx/sites-enabled/
         sudo nginx -t && sudo systemctl reload nginx
         echo "? Nginx configuration updated!"
     fi
@@ -169,12 +169,12 @@ echo ""
 # Test 6: Container logs check
 echo "=== Test 6: Recent Container Logs ==="
 echo "Last 20 lines:"
-docker logs --tail 20 tradeflow-webui
+docker logs --tail 20 onemanvan-webui
 echo ""
 
 # Test 7: Network connectivity
 echo "=== Test 7: Network Connectivity ==="
-if docker network inspect tradeflow-network &> /dev/null; then
+if docker network inspect onemanvan-network &> /dev/null; then
     echo "? Docker network exists"
 else
     echo "? Docker network issue"
@@ -204,7 +204,7 @@ else
     echo "?? LIKELY ISSUE: Application not running correctly"
     echo ""
     echo "? FIX: Check container logs and restart:"
-    echo "  docker logs tradeflow-webui"
+    echo "  docker logs onemanvan-webui"
     echo "  docker-compose restart webui"
 fi
 
@@ -237,7 +237,7 @@ cat > /tmp/blazor-test.html << 'TESTEOF'
     </style>
 </head>
 <body>
-    <h1>TradeFlow/OneManVan - Blazor Connection Test</h1>
+    <h1>OneManVan - Blazor Connection Test</h1>
     <div id="results"></div>
     
     <script>

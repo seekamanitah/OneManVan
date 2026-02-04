@@ -1,4 +1,5 @@
 @page "/employees/{EmployeeId:int}/log-time"
+@page "/employees/{EmployeeId:int}/time-logs/{TimeLogId:int}/edit"
 @using Microsoft.EntityFrameworkCore
 @using OneManVan.Shared.Data
 @using OneManVan.Shared.Models
@@ -7,8 +8,9 @@
 @inject EmployeeService EmployeeService
 @inject IDbContextFactory<OneManVanDbContext> DbFactory
 @inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
 
-<PageTitle>Log Time - OneManVan</PageTitle>
+<PageTitle>@(IsEdit ? "Edit Time Entry" : "Log Time") - OneManVan</PageTitle>
 
 <div class="container-fluid py-4">
     <div class="row justify-content-center">
@@ -19,13 +21,13 @@
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="/employees">Employees</a></li>
                         <li class="breadcrumb-item"><a href="/employees/@EmployeeId">@(employee?.DisplayName ?? "Employee")</a></li>
-                        <li class="breadcrumb-item active">Log Time</li>
+                        <li class="breadcrumb-item active">@(IsEdit ? "Edit Time Entry" : "Log Time")</li>
                     </ol>
                 </nav>
-                <h1 class="h2">Log Time Entry</h1>
+                <h1 class="h2">@(IsEdit ? "Edit Time Entry" : "Log Time Entry")</h1>
                 @if (employee != null)
                 {
-                    <p class="text-muted">Recording hours for @employee.DisplayName</p>
+                    <p class="text-muted">@(IsEdit ? "Editing" : "Recording") hours for @employee.DisplayName</p>
                 }
             </div>
 
@@ -121,12 +123,18 @@
                             <div class="d-flex justify-content-between">
                                 <button type="button" class="btn btn-outline-secondary" @onclick="Cancel">Cancel</button>
                                 <div class="d-flex gap-2">
+                                    @if (IsEdit)
+                                    {
+                                        <button type="button" class="btn btn-outline-danger" @onclick="DeleteEntry" disabled="@isSaving">
+                                            <i class="bi bi-trash me-2"></i>Delete
+                                        </button>
+                                    }
                                     <button type="submit" class="btn btn-primary" disabled="@isSaving">
                                         @if (isSaving)
                                         {
                                             <span class="spinner-border spinner-border-sm me-2"></span>
                                         }
-                                        <i class="bi bi-check-circle me-2"></i>Save Entry
+                                        <i class="bi bi-check-circle me-2"></i>@(IsEdit ? "Update Entry" : "Save Entry")
                                     </button>
                                 </div>
                             </div>
@@ -145,7 +153,9 @@
 
 @code {
     [Parameter] public int EmployeeId { get; set; }
+    [Parameter] public int? TimeLogId { get; set; }
 
+    private bool IsEdit => TimeLogId.HasValue;
     private Employee? employee;
     private List<Job> jobs = new();
     private EmployeeTimeLog model = new() { Date = DateTime.Today };
@@ -171,6 +181,37 @@
             .Take(50)
             .ToListAsync();
 
+        // If editing, load existing time entry
+        if (IsEdit)
+        {
+            var existingLog = await context.EmployeeTimeLogs
+                .FirstOrDefaultAsync(t => t.Id == TimeLogId!.Value && t.EmployeeId == EmployeeId);
+
+            if (existingLog != null)
+            {
+                model = new EmployeeTimeLog
+                {
+                    Id = existingLog.Id,
+                    EmployeeId = existingLog.EmployeeId,
+                    JobId = existingLog.JobId,
+                    Date = existingLog.Date,
+                    HoursWorked = existingLog.HoursWorked,
+                    StartTime = existingLog.StartTime,
+                    EndTime = existingLog.EndTime,
+                    BreakMinutes = existingLog.BreakMinutes,
+                    IsOvertime = existingLog.IsOvertime,
+                    Notes = existingLog.Notes,
+                    Source = existingLog.Source
+                };
+
+                // Convert times for display
+                if (model.StartTime.HasValue)
+                    startTimeStr = model.StartTime.Value.ToString(@"hh\:mm");
+                if (model.EndTime.HasValue)
+                    endTimeStr = model.EndTime.Value.ToString(@"hh\:mm");
+            }
+        }
+
         isLoading = false;
     }
 
@@ -187,7 +228,14 @@
             if (TimeSpan.TryParse(endTimeStr, out var end))
                 model.EndTime = end;
 
-            await EmployeeService.LogTimeAsync(model);
+            if (IsEdit)
+            {
+                await EmployeeService.UpdateTimeLogAsync(model);
+            }
+            else
+            {
+                await EmployeeService.LogTimeAsync(model);
+            }
             Navigation.NavigateTo($"/employees/{EmployeeId}");
         }
         catch (Exception ex)
@@ -196,6 +244,26 @@
         }
         finally
         {
+            isSaving = false;
+        }
+    }
+
+    private async Task DeleteEntry()
+    {
+        if (!await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this time entry?"))
+            return;
+
+        try
+        {
+            isSaving = true;
+            errorMessage = "";
+
+            await EmployeeService.DeleteTimeLogAsync(TimeLogId!.Value);
+            Navigation.NavigateTo($"/employees/{EmployeeId}");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to delete: {ex.Message}";
             isSaving = false;
         }
     }

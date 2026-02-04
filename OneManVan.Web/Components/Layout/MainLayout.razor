@@ -16,18 +16,18 @@
                 <ChildContent>
                     @Body
                 </ChildContent>
-                <ErrorContent Context="ex">
+                <ErrorContent>
                     <div class="alert alert-danger m-3">
-                        <h5><i class="bi bi-exclamation-triangle-fill me-2"></i>Something went wrong</h5>
+                        <h5>Something went wrong</h5>
                         <p>An error occurred while rendering this page.</p>
                         <button class="btn btn-outline-danger btn-sm" @onclick="RecoverFromError">
-                            <i class="bi bi-arrow-clockwise me-1"></i>Try Again
+                            Try Again
                         </button>
                         @if (ShowErrorDetails)
                         {
                             <details class="mt-2">
                                 <summary class="text-muted small">Technical Details</summary>
-                                <pre class="small bg-light p-2 mt-1 rounded">@ex.Message</pre>
+                                <pre class="small bg-light p-2 mt-1 rounded">@context.Message</pre>
                             </details>
                         }
                     </div>

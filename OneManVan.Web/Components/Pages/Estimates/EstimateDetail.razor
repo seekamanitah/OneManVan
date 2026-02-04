@@ -233,6 +233,9 @@
                             }
                             @if (estimate.Status == EstimateStatus.Accepted)
                             {
+                                <button class="btn btn-primary" @onclick="CreateJob">
+                                    <i class="bi bi-briefcase me-2"></i>Create Job
+                                </button>
                                 <button class="btn btn-success" @onclick="ConvertToInvoice">
                                     <i class="bi bi-receipt me-2"></i>Convert to Invoice
                                 </button>
@@ -370,9 +373,99 @@
         catch (Exception) { }
     }
 
-    private void ConvertToInvoice()
+    private async Task ConvertToInvoice()
     {
-        Navigation.NavigateTo($"/invoices/new?estimateId={Id}");
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            
+            // Load estimate with lines
+            var est = await db.Estimates
+                .Include(e => e.Lines)
+                .FirstOrDefaultAsync(e => e.Id == Id);
+            
+            if (est == null) return;
+
+            // Create invoice from estimate
+            var invoice = new Invoice
+            {
+                InvoiceNumber = $"INV-{DateTime.Now:yyyyMMddHHmmss}",
+                CustomerId = est.CustomerId,
+                EstimateId = est.Id,
+                Status = InvoiceStatus.Draft,
+                InvoiceDate = DateTime.Today,
+                DueDate = DateTime.Today.AddDays(30),
+                SubTotal = est.SubTotal,
+                TaxRate = est.TaxRate,
+                TaxAmount = est.TaxAmount,
+                TaxIncluded = est.TaxIncluded,
+                Total = est.Total,
+                Notes = $"Invoice from Estimate: {est.Title}\n\n{est.Notes}"
+            };
+
+            db.Invoices.Add(invoice);
+            await db.SaveChangesAsync();
+
+            // Copy estimate line items to invoice line items
+            if (est.Lines != null && est.Lines.Any())
+            {
+                foreach (var estimateLine in est.Lines)
+                {
+                    var invoiceLine = new InvoiceLineItem
+                    {
+                        InvoiceId = invoice.Id,
+                        Description = estimateLine.Description,
+                        Quantity = estimateLine.Quantity,
+                        UnitPrice = estimateLine.UnitPrice,
+                        Notes = estimateLine.Notes,
+                        Source = estimateLine.Type == LineItemType.Labor 
+                            ? LineItemSource.Labor 
+                            : LineItemSource.Custom,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    db.InvoiceLineItems.Add(invoiceLine);
+                }
+                await db.SaveChangesAsync();
+            }
+
+            Navigation.NavigateTo($"/invoices/{invoice.Id}/edit");
+        }
+        catch (Exception)
+        {
+            // Could show error toast
+        }
+    }
+
+    private async Task CreateJob()
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            
+            // Load estimate with lines
+            var est = await db.Estimates
+                .Include(e => e.Lines)
+                .FirstOrDefaultAsync(e => e.Id == Id);
+            
+            if (est == null) return;
+            
+            // Create job from estimate using helper method
+            var job = Job.FromEstimate(est);
+            
+            // Generate job number
+            var count = await db.Jobs.CountAsync() + 1;
+            job.JobNumber = $"J-{DateTime.Now:yyyy}-{count:D4}";
+            
+            db.Jobs.Add(job);
+            await db.SaveChangesAsync();
+            
+            // Navigate to the new job
+            Navigation.NavigateTo($"/jobs/{job.Id}/edit");
+        }
+        catch (Exception) 
+        { 
+            // Could show error toast
+        }
     }
 
     private string GetStatusBadgeClass(EstimateStatus status)

@@ -16,7 +16,7 @@ namespace OneManVan.Pages;
 public partial class SettingsPage : UserControl
 {
     private readonly SquareService _squareService = new();
-    private readonly GoogleCalendarService _googleCalendarService = new();
+    private readonly OneManVan.Services.GoogleCalendarService _googleCalendarService = new();
     private readonly CsvExportImportService _csvService;
     private readonly InvoicePdfService _pdfService;
     private readonly DatabaseConfigService _databaseConfigService;

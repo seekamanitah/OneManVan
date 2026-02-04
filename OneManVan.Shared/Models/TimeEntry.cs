@@ -13,6 +13,11 @@ public class TimeEntry
     [Required]
     public int JobId { get; set; }
 
+    /// <summary>
+    /// Employee who logged this time entry. Optional for backward compatibility.
+    /// </summary>
+    public int? EmployeeId { get; set; }
+
     [Required]
     public DateTime StartTime { get; set; }
 
@@ -44,6 +49,9 @@ public class TimeEntry
 
     // Navigation properties
     public Job Job { get; set; } = null!;
+
+    [ForeignKey("EmployeeId")]
+    public virtual Employee? Employee { get; set; }
 
     public TimeSpan? Duration => EndTime.HasValue 
         ? EndTime.Value - StartTime 

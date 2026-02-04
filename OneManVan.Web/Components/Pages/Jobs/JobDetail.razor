@@ -3,9 +3,11 @@
 @using OneManVan.Shared.Data
 @using OneManVan.Shared.Models
 @using OneManVan.Shared.Models.Enums
+@using OneManVan.Shared.Services
 
 @inject IDbContextFactory<OneManVanDbContext> DbFactory
 @inject NavigationManager Navigation
+@inject IJobTimeClockService TimeClockService
 
 <PageTitle>@(job?.Title ?? "Job") - OneManVan</PageTitle>
 
@@ -167,12 +169,160 @@
                 <!-- Notes -->
                 @if (!string.IsNullOrEmpty(job.Notes))
                 {
-                    <div class="card border-0 shadow-sm">
+                    <div class="card border-0 shadow-sm mb-3">
                         <div class="card-header bg-white border-0 py-3">
                             <h5 class="mb-0">Notes</h5>
                         </div>
                         <div class="card-body">
                             <p class="mb-0">@job.Notes</p>
+                        </div>
+                    </div>
+                }
+
+                <!-- Workers & Time Tracking -->
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Workers & Time Tracking</h5>
+                        <button class="btn btn-sm btn-outline-primary" @onclick="ShowAddWorkerModal">
+                            <i class="bi bi-person-plus me-1"></i>Add Worker
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        @if (jobWorkers.Count == 0)
+                        {
+                            <div class="text-center text-muted py-3">
+                                <i class="bi bi-people" style="font-size: 2rem;"></i>
+                                <p class="mt-2 mb-0">No workers assigned. Add workers to track time.</p>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Worker</th>
+                                            <th>Role</th>
+                                            <th>Status</th>
+                                            <th class="text-end">Hours</th>
+                                            <th class="text-center">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var worker in jobWorkers)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="avatar-circle bg-primary bg-opacity-10 text-primary me-2" style="width: 32px; height: 32px; font-size: 12px;">
+                                                            @(worker.Employee?.FirstName?.Substring(0, 1))@(worker.Employee?.LastName?.Substring(0, 1))
+                                                        </div>
+                                                        <div>
+                                                            <span class="fw-semibold">@worker.Employee?.DisplayName</span>
+                                                            @if (worker.HourlyRateOverride.HasValue)
+                                                            {
+                                                                <br /><small class="text-muted">@worker.HourlyRateOverride.Value.ToString("C")/hr</small>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>@(worker.Role ?? "Worker")</td>
+                                                <td>
+                                                    @if (worker.IsClockedIn)
+                                                    {
+                                                        <span class="badge bg-success">
+                                                            <i class="bi bi-clock me-1"></i>Clocked In
+                                                            @if (worker.ActiveTimeEntry != null)
+                                                            {
+                                                                <span class="ms-1">(@worker.ActiveTimeEntry.DurationDisplay)</span>
+                                                            }
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-secondary">Not Clocked In</span>
+                                                    }
+                                                </td>
+                                                <td class="text-end">@worker.TotalHoursWorked.ToString("N2") hrs</td>
+                                                <td class="text-center">
+                                                    @if (worker.IsClockedIn)
+                                                    {
+                                                        <button class="btn btn-sm btn-warning me-1" @onclick="@(() => StartBreak(worker))" title="Take Break">
+                                                            <i class="bi bi-cup-hot"></i>
+                                                        </button>
+                                                        <button class="btn btn-sm btn-danger" @onclick="@(() => ClockOut(worker))" title="Clock Out">
+                                                            <i class="bi bi-box-arrow-right"></i>
+                                                        </button>
+                                                    }
+                                                    else
+                                                    {
+                                                        <button class="btn btn-sm btn-success me-1" @onclick="@(() => ClockIn(worker))" title="Clock In">
+                                                            <i class="bi bi-box-arrow-in-right"></i>
+                                                        </button>
+                                                        <button class="btn btn-sm btn-outline-danger" @onclick="@(() => RemoveWorker(worker))" title="Remove">
+                                                            <i class="bi bi-person-x"></i>
+                                                        </button>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                    <tfoot class="table-light">
+                                        <tr>
+                                            <td colspan="3" class="text-end"><strong>Total Hours:</strong></td>
+                                            <td class="text-end"><strong>@jobWorkers.Sum(w => w.TotalHoursWorked).ToString("N2") hrs</strong></td>
+                                            <td></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Time Entry History -->
+                @if (timeEntries.Any())
+                {
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white border-0 py-3">
+                            <h5 class="mb-0">Time Entry History</h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-sm mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Worker</th>
+                                            <th>Type</th>
+                                            <th>Start</th>
+                                            <th>End</th>
+                                            <th class="text-end">Duration</th>
+                                            <th class="text-center">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var entry in timeEntries.Take(10))
+                                        {
+                                            <tr>
+                                                <td>@(entry.Employee?.DisplayName ?? "Unknown")</td>
+                                                <td>
+                                                    <span class="badge @(entry.EntryType == TimeEntryType.Break ? "bg-warning" : "bg-primary")">
+                                                        @entry.TypeDisplay
+                                                    </span>
+                                                </td>
+                                                <td>@entry.StartTime.ToString("MMM dd, HH:mm")</td>
+                                                <td>@(entry.EndTime?.ToString("HH:mm") ?? "-")</td>
+                                                <td class="text-end">@entry.DurationDisplay</td>
+                                                <td class="text-center">
+                                                    <button class="btn btn-sm btn-outline-primary" @onclick="@(() => ShowEditTimeEntryModal(entry))" title="Edit Time Entry">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 }
@@ -269,6 +419,115 @@
     OnConfirm="DeleteJob"
     OnCancel="CancelDelete" />
 
+@* Add Worker Modal *@
+@if (showAddWorkerModal)
+{
+    <div class="modal fade show d-block" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Worker to Job</h5>
+                    <button type="button" class="btn-close" @onclick="CloseAddWorkerModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Search Employee</label>
+                        <input type="text" class="form-control mb-2" 
+                               placeholder="Type to filter employees..."
+                               @bind="employeeSearchText" 
+                               @bind:event="oninput" />
+                        <select class="form-select" size="6" @bind="selectedEmployeeId">
+                            <option value="0">Select an employee...</option>
+                            @foreach (var emp in FilteredEmployees)
+                            {
+                                <option value="@emp.Id">@emp.DisplayName</option>
+                            }
+                        </select>
+                        <small class="text-muted">@FilteredEmployees.Count() of @availableEmployees.Count employees</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Role (Optional)</label>
+                        <input type="text" class="form-control" @bind="newWorkerRole" placeholder="e.g., Lead, Helper, Apprentice" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Hourly Rate Override (Optional)</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" step="0.01" class="form-control" @bind="newWorkerHourlyRate" placeholder="Leave blank for employee default" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseAddWorkerModal">Cancel</button>
+                    <button type="button" class="btn btn-primary" @onclick="AddWorker" disabled="@(selectedEmployeeId == 0)">
+                        <i class="bi bi-person-plus me-1"></i>Add Worker
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@* Edit Time Entry Modal *@
+@if (showEditTimeEntryModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Time Entry</h5>
+                    <button type="button" class="btn-close" @onclick="CloseEditTimeEntryModal"></button>
+                </div>
+                <div class="modal-body">
+                    @if (editingTimeEntry != null)
+                    {
+                        <div class="mb-3">
+                            <label class="form-label">Worker</label>
+                            <input type="text" class="form-control" value="@(editingTimeEntry.Employee?.DisplayName ?? "Unknown")" disabled />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Type</label>
+                            <select class="form-select" @bind="editEntryType">
+                                <option value="@TimeEntryType.Labor">Labor</option>
+                                <option value="@TimeEntryType.Travel">Travel</option>
+                                <option value="@TimeEntryType.Break">Break</option>
+                            </select>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Start Date</label>
+                                <input type="date" class="form-control" @bind="editStartDate" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Start Time</label>
+                                <input type="text" class="form-control" @bind="editStartTimeString" placeholder="HH:mm (e.g., 09:30)" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">End Date</label>
+                                <input type="date" class="form-control" @bind="editEndDate" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">End Time</label>
+                                <input type="text" class="form-control" @bind="editEndTimeString" placeholder="HH:mm (e.g., 17:00)" />
+                            </div>
+                        </div>
+                        @if (!string.IsNullOrEmpty(editTimeEntryError))
+                        {
+                            <div class="alert alert-danger mt-3">@editTimeEntryError</div>
+                        }
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseEditTimeEntryModal">Cancel</button>
+                    <button type="button" class="btn btn-primary" @onclick="SaveTimeEntry">
+                        <i class="bi bi-check-lg me-1"></i>Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 <style>
     .avatar-circle {
         border-radius: 50%;
@@ -280,40 +539,71 @@
 </style>
 
 @code {
-    [Parameter]
-    public int Id { get; set; }
+[Parameter]
+public int Id { get; set; }
 
-    private bool isLoading = true;
-    private Job? job;
-    private string? errorMessage;
-    private bool showDeleteModal = false;
+private bool isLoading = true;
+private Job? job;
+private string? errorMessage;
+private bool showDeleteModal = false;
 
-    protected override async Task OnInitializedAsync()
+// Worker management
+private List<JobWorker> jobWorkers = new();
+private List<TimeEntry> timeEntries = new();
+private List<Employee> availableEmployees = new();
+private bool showAddWorkerModal = false;
+private int selectedEmployeeId = 0;
+private string? newWorkerRole;
+private decimal? newWorkerHourlyRate;
+private string employeeSearchText = "";
+
+private IEnumerable<Employee> FilteredEmployees => string.IsNullOrWhiteSpace(employeeSearchText)
+    ? availableEmployees
+    : availableEmployees.Where(e => 
+        (e.DisplayName?.Contains(employeeSearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+        (e.FirstName?.Contains(employeeSearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+        (e.LastName?.Contains(employeeSearchText, StringComparison.OrdinalIgnoreCase) ?? false));
+
+protected override async Task OnInitializedAsync()
+{
+    await LoadJobAsync();
+    await LoadWorkersAndTimeEntriesAsync();
+}
+
+private async Task LoadJobAsync()
+{
+    try
     {
-        await LoadJobAsync();
-    }
+        isLoading = true;
 
-    private async Task LoadJobAsync()
-    {
-        try
-        {
-            isLoading = true;
-
-            await using var db = await DbFactory.CreateDbContextAsync();
+        await using var db = await DbFactory.CreateDbContextAsync();
             
-            job = await db.Jobs
-            .Include(j => j.Customer)
-            .Include(j => j.Site)
-            .Include(j => j.Asset)
-            .Include(j => j.Invoices)
-            .AsNoTracking()
-            .FirstOrDefaultAsync(j => j.Id == Id);
-        }
-        finally
-        {
-            isLoading = false;
-        }
+        job = await db.Jobs
+        .Include(j => j.Customer)
+        .Include(j => j.Site)
+        .Include(j => j.Asset)
+        .Include(j => j.Invoices)
+        .AsNoTracking()
+        .FirstOrDefaultAsync(j => j.Id == Id);
     }
+    finally
+    {
+        isLoading = false;
+    }
+}
+
+private async Task LoadWorkersAndTimeEntriesAsync()
+{
+    jobWorkers = await TimeClockService.GetJobWorkersAsync(Id);
+        
+    await using var db = await DbFactory.CreateDbContextAsync();
+    timeEntries = await db.TimeEntries
+        .Include(te => te.Employee)
+        .Where(te => te.JobId == Id)
+        .OrderByDescending(te => te.StartTime)
+        .AsNoTracking()
+        .ToListAsync();
+}
 
     private void GoBack()
     {
@@ -408,6 +698,181 @@
         {
             errorMessage = $"Failed to delete job: {ex.Message}";
             showDeleteModal = false;
+        }
+    }
+
+    // Worker management methods
+    private async Task ShowAddWorkerModal()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var assignedIds = jobWorkers.Select(w => w.EmployeeId).ToList();
+        availableEmployees = await db.Employees
+            .Where(e => e.Status == EmployeeStatus.Active && !assignedIds.Contains(e.Id))
+            .OrderBy(e => e.FirstName)
+            .AsNoTracking()
+            .ToListAsync();
+        
+        selectedEmployeeId = 0;
+        newWorkerRole = null;
+        newWorkerHourlyRate = null;
+        showAddWorkerModal = true;
+    }
+
+    private void CloseAddWorkerModal()
+    {
+        showAddWorkerModal = false;
+        selectedEmployeeId = 0;
+        newWorkerRole = null;
+        newWorkerHourlyRate = null;
+    }
+
+    private async Task AddWorker()
+    {
+        if (selectedEmployeeId == 0) return;
+
+        try
+        {
+            await TimeClockService.AssignWorkerToJobAsync(Id, selectedEmployeeId, newWorkerRole, newWorkerHourlyRate);
+            CloseAddWorkerModal();
+            await LoadWorkersAndTimeEntriesAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to add worker: {ex.Message}";
+        }
+    }
+
+    private async Task RemoveWorker(JobWorker worker)
+    {
+        try
+        {
+            await TimeClockService.RemoveWorkerFromJobAsync(Id, worker.EmployeeId);
+            await LoadWorkersAndTimeEntriesAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to remove worker: {ex.Message}";
+        }
+    }
+
+    private async Task ClockIn(JobWorker worker)
+    {
+        try
+        {
+            await TimeClockService.ClockInAsync(Id, worker.EmployeeId);
+            await LoadWorkersAndTimeEntriesAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to clock in: {ex.Message}";
+        }
+    }
+
+    private async Task ClockOut(JobWorker worker)
+    {
+        try
+        {
+            await TimeClockService.ClockOutAsync(Id, worker.EmployeeId);
+            await LoadWorkersAndTimeEntriesAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to clock out: {ex.Message}";
+        }
+    }
+
+    private async Task StartBreak(JobWorker worker)
+    {
+        try
+        {
+            await TimeClockService.StartBreakAsync(Id, worker.EmployeeId);
+            await LoadWorkersAndTimeEntriesAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to start break: {ex.Message}";
+        }
+    }
+
+    // Time Entry Edit
+    private bool showEditTimeEntryModal = false;
+    private TimeEntry? editingTimeEntry;
+    private TimeEntryType editEntryType;
+    private DateTime editStartDate;
+    private string editStartTimeString = "09:00";
+    private DateTime? editEndDate;
+    private string editEndTimeString = "";
+    private string? editTimeEntryError;
+
+    private void ShowEditTimeEntryModal(TimeEntry entry)
+    {
+        editingTimeEntry = entry;
+        editEntryType = entry.EntryType;
+        editStartDate = entry.StartTime.Date;
+        editStartTimeString = entry.StartTime.ToString("HH:mm");
+        editEndDate = entry.EndTime?.Date;
+        editEndTimeString = entry.EndTime?.ToString("HH:mm") ?? "";
+        editTimeEntryError = null;
+        showEditTimeEntryModal = true;
+    }
+
+    private void CloseEditTimeEntryModal()
+    {
+        showEditTimeEntryModal = false;
+        editingTimeEntry = null;
+        editTimeEntryError = null;
+    }
+
+    private async Task SaveTimeEntry()
+    {
+        if (editingTimeEntry == null) return;
+
+        try
+        {
+            if (!TimeSpan.TryParse(editStartTimeString, out var startTimeSpan))
+            {
+                editTimeEntryError = "Invalid start time format.";
+                return;
+            }
+
+            var newStartTime = editStartDate.Add(startTimeSpan);
+            DateTime? newEndTime = null;
+            
+            if (editEndDate.HasValue && !string.IsNullOrWhiteSpace(editEndTimeString))
+            {
+                if (!TimeSpan.TryParse(editEndTimeString, out var endTimeSpan))
+                {
+                    editTimeEntryError = "Invalid end time format.";
+                    return;
+                }
+                
+                newEndTime = editEndDate.Value.Add(endTimeSpan);
+                
+                if (newEndTime <= newStartTime)
+                {
+                    editTimeEntryError = "End time must be after start time.";
+                    return;
+                }
+            }
+
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var entry = await db.TimeEntries.FindAsync(editingTimeEntry.Id);
+            
+            if (entry != null)
+            {
+                entry.EntryType = editEntryType;
+                entry.StartTime = newStartTime;
+                entry.EndTime = newEndTime;
+                
+                await db.SaveChangesAsync();
+            }
+
+            CloseEditTimeEntryModal();
+            await LoadWorkersAndTimeEntriesAsync();
+        }
+        catch (Exception ex)
+        {
+            editTimeEntryError = $"Failed to save: {ex.Message}";
         }
     }
 }

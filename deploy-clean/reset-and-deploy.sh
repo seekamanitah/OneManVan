@@ -30,13 +30,13 @@ echo "Stopping containers..."
 docker compose --env-file .env down --remove-orphans || true
 
 echo "Removing containers (if any remain)..."
-docker rm -f tradeflow-webui tradeflow-db >/dev/null 2>&1 || true
+docker rm -f onemanvan-webui onemanvan-db >/dev/null 2>&1 || true
 
 echo "Removing volumes (FULL RESET: deletes DB data)..."
-docker volume rm -f tradeflow-sqldata >/dev/null 2>&1 || true
+docker volume rm -f onemanvan-sqldata >/dev/null 2>&1 || true
 
 echo "Removing network (if exists)..."
-docker network rm tradeflow-net >/dev/null 2>&1 || true
+docker network rm onemanvan-network >/dev/null 2>&1 || true
 
 echo "Building and starting fresh..."
 docker compose --env-file .env up -d --build

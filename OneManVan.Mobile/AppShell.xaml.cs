@@ -54,6 +54,10 @@ public partial class AppShell : Shell
 		Routing.RegisterRoute("CalendarPage", typeof(CalendarPage));
 		Routing.RegisterRoute("WarrantyClaimDetail", typeof(WarrantyClaimsListPage));
 		Routing.RegisterRoute("AddWarrantyClaim", typeof(WarrantyClaimsListPage));
+		
+		// Quick field technician pages
+		Routing.RegisterRoute("QuickNotes", typeof(QuickNotesPage));
+		Routing.RegisterRoute("QuickTimeClock", typeof(QuickTimeClockPage));
 	}
 
 	/// <summary>

@@ -1,0 +1,45 @@
+@inject IJSRuntime JS
+
+<button class="btn btn-link theme-toggle" @onclick="ToggleTheme" title="Toggle theme">
+    @if (isDarkMode)
+    {
+        <span>Light Mode</span>
+    }
+    else
+    {
+        <span>Dark Mode</span>
+    }
+</button>
+
+@code {
+    private bool isDarkMode = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                isDarkMode = await JS.InvokeAsync<bool>("themeManager.getTheme");
+                StateHasChanged();
+            }
+            catch
+            {
+                // JS interop may not be available initially
+            }
+        }
+    }
+
+    private async Task ToggleTheme()
+    {
+        isDarkMode = !isDarkMode;
+        try
+        {
+            await JS.InvokeVoidAsync("themeManager.setTheme", isDarkMode);
+        }
+        catch
+        {
+            // Handle JS interop errors gracefully
+        }
+    }
+}

@@ -245,6 +245,24 @@ public class Job
     [MaxLength(100)]
     public string? LastModifiedBy { get; set; }
 
+    // === Soft Delete ===
+
+    /// <summary>
+    /// Indicates if the job has been soft-deleted.
+    /// </summary>
+    public bool IsDeleted { get; set; } = false;
+
+    /// <summary>
+    /// When the job was deleted.
+    /// </summary>
+    public DateTime? DeletedAt { get; set; }
+
+    /// <summary>
+    /// Who deleted the job.
+    /// </summary>
+    [MaxLength(200)]
+    public string? DeletedBy { get; set; }
+
     // === Navigation Properties ===
 
     public Estimate? Estimate { get; set; }
@@ -262,6 +280,11 @@ public class Job
     public ICollection<TimeEntry> TimeEntries { get; set; } = [];
 
     public ICollection<Invoice> Invoices { get; set; } = [];
+
+    /// <summary>
+    /// Workers assigned to this job.
+    /// </summary>
+    public ICollection<JobWorker> Workers { get; set; } = [];
 
     // === Computed Properties ===
 

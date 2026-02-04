@@ -104,7 +104,7 @@ $sqlReady = $false
 $attempts = 0
 while (!$sqlReady -and $attempts -lt 30) {
     try {
-        docker exec tradeflow-sqlserver /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P 'TradeFlow2025!' -Q "SELECT 1" 2>&1 | Out-Null
+        docker exec onemanvan-db /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P 'OneManVan2025!' -Q "SELECT 1" 2>&1 | Out-Null
         $sqlReady = $true
     } catch {
         Write-Host "." -NoNewline
@@ -152,7 +152,7 @@ Write-Host "Access your application:" -ForegroundColor Cyan
 Write-Host "  Web UI:      http://localhost:7159" -ForegroundColor White
 Write-Host "  SQL Server:  localhost:1433" -ForegroundColor White
 Write-Host "  Username:    sa" -ForegroundColor White
-Write-Host "  Password:    TradeFlow2025!" -ForegroundColor White
+Write-Host "  Password:    OneManVan2025!" -ForegroundColor White
 Write-Host ""
 Write-Host "View logs:" -ForegroundColor Cyan
 Write-Host "  docker compose logs -f" -ForegroundColor White

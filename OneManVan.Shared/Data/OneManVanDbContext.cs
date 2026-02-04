@@ -41,6 +41,7 @@ public class OneManVanDbContext : DbContext
     public DbSet<Job> Jobs => Set<Job>();
     public DbSet<TimeEntry> TimeEntries => Set<TimeEntry>();
     public DbSet<JobPart> JobParts => Set<JobPart>();
+    public DbSet<JobWorker> JobWorkers => Set<JobWorker>();
     
     // Invoicing
     public DbSet<Invoice> Invoices => Set<Invoice>();
@@ -438,7 +439,13 @@ public class OneManVanDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.JobId);
+            entity.HasIndex(e => e.EmployeeId);
             entity.HasIndex(e => e.StartTime);
+
+            entity.HasOne(e => e.Employee)
+                .WithMany()
+                .HasForeignKey(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             entity.Ignore(e => e.Duration);
             entity.Ignore(e => e.DurationHours);
@@ -446,6 +453,36 @@ public class OneManVanDbContext : DbContext
             entity.Ignore(e => e.IsActive);
             entity.Ignore(e => e.DurationDisplay);
             entity.Ignore(e => e.TypeDisplay);
+        });
+
+        // =====================
+        // JobWorker configuration
+        // =====================
+        modelBuilder.Entity<JobWorker>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.JobId);
+            entity.HasIndex(e => e.EmployeeId);
+            entity.HasIndex(e => new { e.JobId, e.EmployeeId }).IsUnique();
+
+            entity.HasOne(e => e.Job)
+                .WithMany(j => j.Workers)
+                .HasForeignKey(e => e.JobId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Employee)
+                .WithMany()
+                .HasForeignKey(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.ActiveTimeEntry)
+                .WithMany()
+                .HasForeignKey(e => e.ActiveTimeEntryId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.Ignore(e => e.EffectiveHourlyRate);
+            entity.Ignore(e => e.DisplayName);
+            entity.Ignore(e => e.RoleDisplay);
         });
 
         // =====================

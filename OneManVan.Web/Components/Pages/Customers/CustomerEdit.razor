@@ -1,10 +1,12 @@
 @page "/customers/new"
 @page "/customers/{Id:int}/edit"
+@using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.EntityFrameworkCore
 @using OneManVan.Shared.Data
 @using OneManVan.Shared.Models
 @using OneManVan.Shared.Models.Enums
 @using OneManVan.Shared.Utilities
+@implements IDisposable
 
 @inject IDbContextFactory<OneManVanDbContext> DbFactory
 @inject NavigationManager Navigation
@@ -34,7 +36,11 @@
             }
             else
             {
-                <EditForm Model="@model" OnValidSubmit="HandleSubmit">
+                <Microsoft.AspNetCore.Components.Routing.NavigationLock 
+                    ConfirmExternalNavigation="@isDirty" 
+                    OnBeforeInternalNavigation="OnBeforeInternalNavigation" />
+                
+                <EditForm EditContext="@editContext" OnValidSubmit="HandleSubmit">
                     <DataAnnotationsValidator />
 
                     <!-- Basic Information -->
@@ -218,41 +224,62 @@
 </div>
 
 @code {
-    [Parameter]
-    public int? Id { get; set; }
+[Parameter]
+public int? Id { get; set; }
 
-    private bool IsNew => !Id.HasValue;
-    private bool isLoading = true;
-    private bool isSaving = false;
-    private string errorMessage = "";
-    private Customer model = new();
-    private string phoneDisplay = "";
-    private string mobileDisplay = "";
+private bool IsNew => !Id.HasValue;
+private bool isLoading = true;
+private bool isSaving = false;
+private bool isDirty = false;
+private string errorMessage = "";
+private Customer model = new();
+private EditContext? editContext;
+private string phoneDisplay = "";
+private string mobileDisplay = "";
 
-    protected override async Task OnInitializedAsync()
+private async Task OnBeforeInternalNavigation(Microsoft.AspNetCore.Components.Routing.LocationChangingContext context)
+{
+    if (isDirty && !isSaving)
     {
-        if (IsNew)
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            "You have unsaved changes. Are you sure you want to leave this page?");
+        if (!confirmed)
         {
-            model = new Customer
-            {
-                CustomerType = CustomerType.Residential,
-                Status = CustomerStatus.Active,
-                PaymentTerms = PaymentTerms.Net30,
-                PreferredContact = ContactMethod.Any,
-                // Default location - set in HomeAddress as "City, State ZIP"
-                HomeAddress = "Pikeville, TN 37367"
-            };
-            isLoading = false;
+            context.PreventNavigation();
         }
-        else
-        {
-            await LoadCustomerAsync();
-        }
-
-        // Initialize phone display
-        phoneDisplay = PhoneNumberFormatter.Format(model.Phone) ?? "";
-        mobileDisplay = PhoneNumberFormatter.Format(model.Mobile) ?? "";
     }
+}
+
+private void OnFieldChanged(object? sender, FieldChangedEventArgs e) => isDirty = true;
+
+protected override async Task OnInitializedAsync()
+{
+    if (IsNew)
+    {
+        model = new Customer
+        {
+            CustomerType = CustomerType.Residential,
+            Status = CustomerStatus.Active,
+            PaymentTerms = PaymentTerms.Net30,
+            PreferredContact = ContactMethod.Any,
+            // Default location - set in HomeAddress as "City, State ZIP"
+            HomeAddress = "Pikeville, TN 37367"
+        };
+        isLoading = false;
+    }
+    else
+    {
+        await LoadCustomerAsync();
+    }
+
+    // Initialize EditContext for dirty tracking
+    editContext = new EditContext(model);
+    editContext.OnFieldChanged += OnFieldChanged;
+
+    // Initialize phone display
+    phoneDisplay = PhoneNumberFormatter.Format(model.Phone) ?? "";
+    mobileDisplay = PhoneNumberFormatter.Format(model.Mobile) ?? "";
+}
 
     private async Task LoadCustomerAsync()
     {
@@ -353,6 +380,9 @@
 
             await db.SaveChangesAsync();
 
+            // Reset dirty flag before navigation
+            isDirty = false;
+
             // Navigate back to customer list or detail
             Navigation.NavigateTo(IsNew ? "/customers" : $"/customers/{model.Id}");
         }
@@ -404,5 +434,13 @@
     {
         var encoded = Uri.EscapeDataString(address);
         return $"https://www.google.com/maps/search/?api=1&query={encoded}";
+    }
+
+    public void Dispose()
+    {
+        if (editContext != null)
+        {
+            editContext.OnFieldChanged -= OnFieldChanged;
+        }
     }
 }

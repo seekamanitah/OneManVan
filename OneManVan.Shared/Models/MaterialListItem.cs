@@ -59,6 +59,7 @@ public class MaterialListItem
     /// <summary>
     /// Quantity needed.
     /// </summary>
+    [Range(0, 99999.99, ErrorMessage = "Quantity must be between 0 and 99,999.99")]
     [Column(TypeName = "decimal(10,2)")]
     public decimal Quantity { get; set; } = 0;
 

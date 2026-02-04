@@ -96,7 +96,7 @@ else
 fi
 
 # Security check
-if [ "$SA_PASSWORD" == "TradeFlow2025!" ] || [ "$SA_PASSWORD" == "ChangeThisPassword123!" ]; then
+if [ "$SA_PASSWORD" == "OneManVan2025!" ] || [ "$SA_PASSWORD" == "ChangeThisPassword123!" ]; then
     echo -e "${RED}WARNING: You are using a default password!${NC}"
     if ! confirm "This is insecure. Continue anyway?"; then
         echo "Please edit $DEPLOY_DIR/$ENV_FILE and change SA_PASSWORD"
@@ -119,17 +119,17 @@ if [ -f "$COMPOSE_FILE" ]; then
 fi
 
 # Backup existing data
-if docker volume ls | grep -q tradeflow-sqldata; then
+if docker volume ls | grep -q onemanvan-sqldata; then
     echo -e "${YELLOW}Existing database volume found${NC}"
     if confirm "Do you want to backup the database first?"; then
         BACKUP_NAME="backup-$(date +%Y%m%d-%H%M%S).bak"
         echo "Creating backup: $BACKUP_NAME"
         docker run --rm \
-            -v tradeflow-sqldata:/var/opt/mssql/data \
+            -v onemanvan-sqldata:/var/opt/mssql/data \
             -v $(pwd):/backup \
             mcr.microsoft.com/mssql/server:2022-latest \
             /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "$SA_PASSWORD" \
-            -Q "BACKUP DATABASE TradeFlowFSM TO DISK='/backup/$BACKUP_NAME'" || true
+            -Q "BACKUP DATABASE OneManVanDB TO DISK='/backup/$BACKUP_NAME'" || true
     fi
 fi
 
@@ -156,7 +156,7 @@ MAX_RETRIES=30
 # Wait for SQL Server
 echo -n "Waiting for SQL Server."
 while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-    if docker exec tradeflow-db /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "$SA_PASSWORD" -Q "SELECT 1" &> /dev/null; then
+if docker exec onemanvan-db /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "$SA_PASSWORD" -Q "SELECT 1" &> /dev/null; then
         echo ""
         echo -e "${GREEN}? SQL Server is healthy${NC}"
         break
@@ -169,7 +169,7 @@ done
 if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
     echo ""
     echo -e "${RED}? SQL Server failed to start${NC}"
-    echo "Check logs: docker logs tradeflow-db"
+    echo "Check logs: docker logs onemanvan-db"
     exit 1
 fi
 
@@ -190,7 +190,7 @@ done
 if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
     echo ""
     echo -e "${YELLOW}? Web UI may still be starting${NC}"
-    echo "Check logs: docker logs tradeflow-webui"
+    echo "Check logs: docker logs onemanvan-webui"
 fi
 
 echo ""
@@ -211,7 +211,7 @@ echo "  - Network: http://$(hostname -I | awk '{print $1}'):${WEB_PORT:-5000}"
 echo ""
 echo "SQL Server:"
 echo "  - Server: $(hostname -I | awk '{print $1}'),${SQL_PORT:-1433}"
-echo "  - Database: ${DB_NAME:-TradeFlowFSM}"
+echo "  - Database: ${DB_NAME:-OneManVanDB}"
 echo "  - Username: sa"
 echo "  - Password: ****** (from .env file)"
 echo ""

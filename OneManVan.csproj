@@ -8,6 +8,8 @@
     <UseWPF>true</UseWPF>
     <RootNamespace>OneManVan</RootNamespace>
     <AssemblyName>OneManVan</AssemblyName>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
   </PropertyGroup>
 
   <!-- Exclude other projects from WPF compilation -->
@@ -80,13 +82,13 @@
 
   <ItemGroup>
     <Folder Include="Data\" />
+    <Folder Include="OneManVan.MauiBlazor\Components\Pages\Jobs\" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include=".github\copilot-instructions.md" />
     <None Include="DbMigrator\DbMigrator.csproj" />
     <None Include="OneManVan.BlazorShared\OneManVan.BlazorShared.csproj" />
-    <None Include="OneManVan.MauiBlazor\OneManVan.MauiBlazor.csproj" />
     <None Include="OneManVan.Web.Tests\OneManVan.Web.Tests.csproj" />
     <None Include="Tools\CheckTables\CheckTables.csproj" />
   </ItemGroup>

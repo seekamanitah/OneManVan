@@ -112,7 +112,7 @@ echo "This may take up to 90 seconds..."
 SECONDS=0
 MAX_WAIT=120
 while [ $SECONDS -lt $MAX_WAIT ]; do
-    STATUS=$(docker inspect --format='{{.State.Health.Status}}' tradeflow-db 2>/dev/null || echo "starting")
+    STATUS=$(docker inspect --format='{{.State.Health.Status}}' onemanvan-db 2>/dev/null || echo "starting")
     
     if [ "$STATUS" = "healthy" ]; then
         echo -e "${GREEN}? SQL Server is healthy!${NC}"
@@ -125,7 +125,7 @@ while [ $SECONDS -lt $MAX_WAIT ]; do
     if [ $SECONDS -ge $MAX_WAIT ]; then
         echo ""
         echo -e "${RED}? SQL Server did not become healthy in time${NC}"
-        echo "Check logs: docker logs tradeflow-db"
+        echo "Check logs: docker logs onemanvan-db"
         exit 1
     fi
 done
@@ -134,12 +134,12 @@ echo ""
 echo -e "${YELLOW}Step 9: Checking Web UI status...${NC}"
 sleep 10
 
-WEB_STATUS=$(docker ps --filter "name=tradeflow-webui" --format "{{.Status}}")
+WEB_STATUS=$(docker ps --filter "name=onemanvan-webui" --format "{{.Status}}")
 if [[ $WEB_STATUS == *"Up"* ]]; then
     echo -e "${GREEN}? Web UI is running${NC}"
 else
-    echo -e "${RED}? Web UI is not running${NC}"
-    echo "Check logs: docker logs tradeflow-webui"
+echo -e "${RED}? Web UI is not running${NC}"
+echo "Check logs: docker logs onemanvan-webui"
 fi
 
 echo ""
@@ -164,16 +164,16 @@ echo "?? View Logs:"
 echo "   docker compose -f /opt/onemanvan/docker-compose-full.yml logs -f"
 echo ""
 echo "???  Troubleshooting:"
-echo "   SQL Server logs: docker logs tradeflow-db"
-echo "   Web UI logs:     docker logs tradeflow-webui"
+echo "   SQL Server logs: docker logs onemanvan-db"
+echo "   Web UI logs:     docker logs onemanvan-webui"
 echo ""
 
 # Final health check
 echo "Running final health check..."
 sleep 5
 
-DB_HEALTHY=$(docker inspect --format='{{.State.Health.Status}}' tradeflow-db 2>/dev/null || echo "unknown")
-WEB_RUNNING=$(docker ps --filter "name=tradeflow-webui" --filter "status=running" -q)
+DB_HEALTHY=$(docker inspect --format='{{.State.Health.Status}}' onemanvan-db 2>/dev/null || echo "unknown")
+WEB_RUNNING=$(docker ps --filter "name=onemanvan-webui" --filter "status=running" -q)
 
 if [ "$DB_HEALTHY" = "healthy" ] && [ ! -z "$WEB_RUNNING" ]; then
     echo -e "${GREEN}??? All systems operational! ???${NC}"

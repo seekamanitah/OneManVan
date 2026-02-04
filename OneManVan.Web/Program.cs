@@ -197,6 +197,8 @@ builder.Services.AddScoped<MaterialListTemplateService>();
 builder.Services.AddScoped<DocumentService>();
 builder.Services.AddScoped<EmployeeService>();
 builder.Services.AddScoped<IEmployeeTimeLogAutoService, EmployeeTimeLogAutoService>();
+builder.Services.AddScoped<IJobTimeClockService, JobTimeClockService>();
+builder.Services.AddScoped<IPayrollService, PayrollService>();
 
 // Data protection for sensitive data encryption
 builder.Services.AddSingleton<IDataProtectionService, DataProtectionService>();

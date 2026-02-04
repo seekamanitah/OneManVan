@@ -118,6 +118,16 @@ public partial class MainPageModern : ContentPage
         await Shell.Current.GoToAsync("AddJob");
     }
 
+    private async void OnQuickNoteClicked(object sender, EventArgs e)
+    {
+        await Shell.Current.GoToAsync("QuickNotes");
+    }
+
+    private async void OnQuickClockClicked(object sender, EventArgs e)
+    {
+        await Shell.Current.GoToAsync("QuickTimeClock");
+    }
+
     // Activity Item Model
     private class ActivityItem
     {

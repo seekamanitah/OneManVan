@@ -3,6 +3,7 @@ using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using OneManVan.Shared.Models;
+using QuestDocument = QuestPDF.Fluent.Document;
 
 namespace OneManVan.Services;
 
@@ -26,7 +27,7 @@ public class InvoicePdfService
     /// </summary>
     public string GenerateInvoicePdf(Invoice invoice, string outputPath)
     {
-        var document = Document.Create(container =>
+        var document = QuestDocument.Create(container =>
         {
             container.Page(page =>
             {
@@ -55,7 +56,7 @@ public class InvoicePdfService
     /// </summary>
     public byte[] GenerateInvoicePdfBytes(Invoice invoice)
     {
-        var document = Document.Create(container =>
+        var document = QuestDocument.Create(container =>
         {
             container.Page(page =>
             {

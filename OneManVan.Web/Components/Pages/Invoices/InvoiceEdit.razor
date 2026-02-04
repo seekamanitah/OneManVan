@@ -1,10 +1,12 @@
 @page "/invoices/new"
 @page "/invoices/{Id:int}/edit"
+@using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.EntityFrameworkCore
 @using OneManVan.Shared.Data
 @using OneManVan.Shared.Models
 @using OneManVan.Shared.Models.Enums
 @using OneManVan.Shared.Services
+@implements IDisposable
 
 @inject IDbContextFactory<OneManVanDbContext> DbFactory
 @inject NavigationManager Navigation
@@ -12,6 +14,7 @@
 @inject ISettingsStorage SettingsStorage
 @inject INotificationService NotificationService
 @inject IEmployeeTimeLogAutoService TimeLogAutoService
+
 
 <PageTitle>@(IsNew ? "New Invoice" : $"Edit Invoice") - OneManVan</PageTitle>
 
@@ -37,7 +40,11 @@
             }
             else
             {
-                <EditForm Model="@model" OnSubmit="HandleSubmit">
+                <Microsoft.AspNetCore.Components.Routing.NavigationLock 
+                    ConfirmExternalNavigation="@isDirty" 
+                    OnBeforeInternalNavigation="OnBeforeInternalNavigation" />
+                
+                <EditForm EditContext="@editContext" OnSubmit="HandleSubmit">
                     <DataAnnotationsValidator />
 
                     <!-- Basic Info -->
@@ -75,10 +82,52 @@
                                     <label class="form-label">Due Date</label>
                                     <InputDate class="form-control" @bind-Value="model.DueDate" />
                                 </div>
+                                <div class="col-12">
+                                    <label class="form-label">Pricing Type</label>
+                                    <InputSelect class="form-select" @bind-Value="model.PricingType" @bind-Value:after="OnPricingTypeChanged">
+                                        <option value="@InvoicePricingType.MaterialAndLabor">Material & Labor (Itemized)</option>
+                                        <option value="@InvoicePricingType.FlatRate">Flat Rate</option>
+                                        <option value="@InvoicePricingType.TimeAndMaterials">Time & Materials</option>
+                                    </InputSelect>
+                                    <small class="text-muted">Choose how to structure pricing on this invoice</small>
+                                </div>
                             </div>
                         </div>
                     </div>
 
+                    @* Flat Rate Section - shown when PricingType is FlatRate *@
+                    @if (model.PricingType == InvoicePricingType.FlatRate)
+                    {
+                        <div class="card border-0 shadow-sm mb-3">
+                            <div class="card-header bg-white border-0 py-3">
+                                <h5 class="mb-0">Flat Rate Pricing</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Flat Rate Amount *</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <InputNumber class="form-control" @bind-Value="model.FlatRateAmount" @bind-Value:after="RecalculateTotals" min="0.01" step="0.01" />
+                                        </div>
+                                        <ValidationMessage For="@(() => model.FlatRateAmount)" />
+                                        @if (model.FlatRateAmount <= 0)
+                                        {
+                                            <small class="text-danger">Amount must be greater than zero</small>
+                                        }
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Description</label>
+                                        <InputText class="form-control" @bind-Value="model.FlatRateDescription" placeholder="e.g., Complete AC System Tune-Up" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    @* Line Items - shown when not FlatRate *@
+                    @if (model.PricingType != InvoicePricingType.FlatRate)
+                    {
                     <!-- Line Items -->
                     <div class="card border-0 shadow-sm mb-3">
                         <div class="card-header bg-white border-0 py-3">
@@ -218,6 +267,7 @@
                             }
                         </div>
                     </div>
+                    } @* End of line items conditional *@
 
                     <!-- Totals (Read-Only, Calculated) -->
                     <div class="card border-0 shadow-sm mb-3">
@@ -468,30 +518,72 @@
 }
 
 @code {
-    [Parameter]
-    public int? Id { get; set; }
+[Parameter]
+public int? Id { get; set; }
 
-    private bool IsNew => !Id.HasValue;
-    private bool isLoading = true;
-    private bool isSaving = false;
-    private string errorMessage = "";
-    private Invoice model = new();
-    private List<Customer> customers = new();
-    private List<InventoryItem> inventoryItems = new();
-    private List<Employee> employees = new();
-    private InventoryItem? selectedInventoryItem = null;
-    private Employee? selectedEmployee = null;
-    private List<InvoiceLineItem> lineItems = new();
-    private List<InvoiceLineItem> laborItems = new();
-    private InvoiceLineItem? editingLineItem = null;
-    private bool showLineItemModal = false;
-    private decimal defaultTaxRate = 7.0m; // Store global default for reference
-    private decimal defaultLaborRate = 75.0m;
+private bool IsNew => !Id.HasValue;
+private bool isLoading = true;
+private bool isSaving = false;
+private bool isDirty = false;
+private string errorMessage = "";
+private Invoice model = new();
+private EditContext? editContext;
+private List<Customer> customers = new();
+private List<InventoryItem> inventoryItems = new();
+private List<Employee> employees = new();
+private InventoryItem? selectedInventoryItem = null;
+private Employee? selectedEmployee = null;
+private List<InvoiceLineItem> lineItems = new();
+private List<InvoiceLineItem> laborItems = new();
+private InvoiceLineItem? editingLineItem = null;
+private bool showLineItemModal = false;
+private decimal defaultTaxRate = 7.0m; // Store global default for reference
+private decimal defaultLaborRate = 75.0m;
+private InvoicePricingType previousPricingType = InvoicePricingType.MaterialAndLabor;
+
+private async Task OnBeforeInternalNavigation(Microsoft.AspNetCore.Components.Routing.LocationChangingContext context)
+{
+    if (isDirty && !isSaving)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            "You have unsaved changes. Are you sure you want to leave this page?");
+        if (!confirmed)
+        {
+            context.PreventNavigation();
+        }
+    }
+}
+
+private void OnFieldChanged(object? sender, FieldChangedEventArgs e) => isDirty = true;
 
     // Calculated properties
-    private decimal CalculatedSubtotal => lineItems.Sum(i => i.Total) + laborItems.Sum(i => i.Total);
+    private decimal CalculatedSubtotal => model.PricingType == InvoicePricingType.FlatRate 
+        ? model.FlatRateAmount 
+        : lineItems.Sum(i => i.Total) + laborItems.Sum(i => i.Total);
     private decimal CalculatedTaxAmount => model.TaxIncluded ? 0 : CalculatedSubtotal * (model.TaxRate / 100);
     private decimal CalculatedTotal => CalculatedSubtotal + CalculatedTaxAmount;
+
+    private async Task OnPricingTypeChanged()
+    {
+        // Warn if switching to FlatRate when there are existing line items
+        if (model.PricingType == InvoicePricingType.FlatRate && (lineItems.Any() || laborItems.Any()))
+        {
+            var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+                "Switching to Flat Rate will hide your itemized line items (they won't be used for the invoice total). Continue?");
+            
+            if (!confirmed)
+            {
+                // Revert to previous pricing type
+                model.PricingType = previousPricingType;
+                return;
+            }
+        }
+        
+        previousPricingType = model.PricingType;
+        
+        // Recalculate totals when pricing type changes
+        RecalculateTotals();
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -521,6 +613,10 @@
         {
             await LoadInvoiceAsync();
         }
+
+        // Initialize EditContext for dirty tracking
+        editContext = new EditContext(model);
+        editContext.OnFieldChanged += OnFieldChanged;
     }
 
     private async Task LoadCustomersAsync()
@@ -597,6 +693,8 @@
                     DeletedBy = invoice.DeletedBy
                 };
                 
+                previousPricingType = model.PricingType;
+                
                 var allItems = invoice.LineItems?.ToList() ?? new();
                 
                 // Separate parts and labor
@@ -616,6 +714,19 @@
 
     private async Task HandleSubmit()
     {
+        // Validate form before saving
+        if (editContext != null && !editContext.Validate())
+        {
+            return;
+        }
+
+        // Additional validation for flat rate
+        if (model.PricingType == InvoicePricingType.FlatRate && model.FlatRateAmount <= 0)
+        {
+            errorMessage = "Flat rate amount must be greater than zero.";
+            return;
+        }
+
         try
         {
             isSaving = true;
@@ -691,6 +802,9 @@
                 // Update employee time logs
                 await TimeLogAutoService.UpdateTimeLogsFromInvoiceAsync(model.Id);
             }
+
+            // Reset dirty flag before navigation
+            isDirty = false;
 
             Navigation.NavigateTo(IsNew ? "/invoices" : $"/invoices/{model.Id}");
         }
@@ -966,6 +1080,14 @@
         editingLineItem = null;
         selectedInventoryItem = null;
         selectedEmployee = null;
+    }
+
+    public void Dispose()
+    {
+        if (editContext != null)
+        {
+            editContext.OnFieldChanged -= OnFieldChanged;
+        }
     }
 }
 

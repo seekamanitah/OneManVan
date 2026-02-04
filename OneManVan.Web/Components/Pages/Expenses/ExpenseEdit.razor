@@ -1,9 +1,11 @@
 @page "/expenses/new"
 @page "/expenses/{Id:int}/edit"
+@using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.EntityFrameworkCore
 @using OneManVan.Shared.Data
 @using OneManVan.Shared.Models
 @using OneManVan.Shared.Models.Enums
+@implements IDisposable
 
 @inject IDbContextFactory<OneManVanDbContext> DbFactory
 @inject NavigationManager Navigation
@@ -33,7 +35,11 @@
             }
             else
             {
-                <EditForm Model="@model" OnValidSubmit="HandleSubmit">
+                <Microsoft.AspNetCore.Components.Routing.NavigationLock 
+                    ConfirmExternalNavigation="@isDirty" 
+                    OnBeforeInternalNavigation="OnBeforeInternalNavigation" />
+                
+                <EditForm EditContext="@editContext" OnValidSubmit="HandleSubmit">
                     <DataAnnotationsValidator />
 
                     <!-- Basic Info -->
@@ -63,7 +69,19 @@
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Vendor/Supplier</label>
-                                    <InputText class="form-control" @bind-Value="model.VendorName" placeholder="e.g., Home Depot, Johnstone Supply" />
+                                    <InputSelect class="form-select" @bind-Value="model.VendorCompanyId" @bind-Value:after="OnVendorCompanyChanged">
+                                        <option value="">Select from companies or enter manually...</option>
+                                        @foreach (var company in vendorCompanies)
+                                        {
+                                            <option value="@company.Id">@company.Name</option>
+                                        }
+                                    </InputSelect>
+                                    <small class="text-muted">Select a company from your list, or leave blank to enter manually below</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Vendor Name (Manual Entry)</label>
+                                    <InputText class="form-control" @bind-Value="model.VendorName" placeholder="e.g., Home Depot, Johnstone Supply" disabled="@(model.VendorCompanyId.HasValue)" />
+                                    <small class="text-muted">Used when vendor is not in your company list</small>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Receipt/Invoice Number</label>
@@ -223,18 +241,36 @@
 </div>
 
 @code {
-    [Parameter]
-    public int? Id { get; set; }
+[Parameter]
+public int? Id { get; set; }
 
-    private bool IsNew => !Id.HasValue;
-    private bool isLoading = true;
-    private bool isSaving = false;
-    private string errorMessage = "";
-    private Expense model = new();
+private bool IsNew => !Id.HasValue;
+private bool isLoading = true;
+private bool isSaving = false;
+private bool isDirty = false;
+private string errorMessage = "";
+private Expense model = new();
+private EditContext? editContext;
     
-    private List<Job> jobs = new();
-    private List<Customer> customers = new();
-    private List<Employee> employees = new();
+private List<Job> jobs = new();
+private List<Customer> customers = new();
+private List<Employee> employees = new();
+private List<Company> vendorCompanies = new();
+
+private async Task OnBeforeInternalNavigation(Microsoft.AspNetCore.Components.Routing.LocationChangingContext context)
+{
+    if (isDirty && !isSaving)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            "You have unsaved changes. Are you sure you want to leave this page?");
+        if (!confirmed)
+        {
+            context.PreventNavigation();
+        }
+    }
+}
+
+private void OnFieldChanged(object? sender, FieldChangedEventArgs e) => isDirty = true;
 
     protected override async Task OnInitializedAsync()
     {
@@ -255,6 +291,10 @@
         {
             await LoadExpenseAsync();
         }
+
+        // Initialize EditContext for dirty tracking
+        editContext = new EditContext(model);
+        editContext.OnFieldChanged += OnFieldChanged;
     }
 
     private async Task LoadDropdownsAsync()
@@ -277,6 +317,12 @@
         employees = await db.Employees
             .Where(e => e.Status == EmployeeStatus.Active)
             .OrderBy(e => e.FirstName).ThenBy(e => e.LastName)
+            .AsNoTracking()
+            .ToListAsync();
+
+        vendorCompanies = await db.Companies
+            .Where(c => c.CompanyType == CompanyType.Vendor || c.CompanyType == CompanyType.Supplier)
+            .OrderBy(c => c.Name)
             .AsNoTracking()
             .ToListAsync();
     }
@@ -332,6 +378,18 @@
         model.TotalAmount = model.Amount + model.TaxAmount;
     }
 
+    private void OnVendorCompanyChanged()
+    {
+        if (model.VendorCompanyId.HasValue)
+        {
+            var company = vendorCompanies.FirstOrDefault(c => c.Id == model.VendorCompanyId);
+            if (company != null)
+            {
+                model.VendorName = company.Name;
+            }
+        }
+    }
+
     private async Task HandleSubmit()
     {
         try
@@ -355,6 +413,10 @@
             }
 
             await db.SaveChangesAsync();
+
+            // Reset dirty flag before navigation
+            isDirty = false;
+
             Navigation.NavigateTo("/expenses");
         }
         catch (Exception ex)
@@ -396,5 +458,13 @@
     private void Cancel()
     {
         Navigation.NavigateTo("/expenses");
+    }
+
+    public void Dispose()
+    {
+        if (editContext != null)
+        {
+            editContext.OnFieldChanged -= OnFieldChanged;
+        }
     }
 }

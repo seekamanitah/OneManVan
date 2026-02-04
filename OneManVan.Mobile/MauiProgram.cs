@@ -124,6 +124,10 @@ public static class MauiProgram
         builder.Services.AddTransient<SyncSettingsPage>();
         builder.Services.AddTransient<SyncStatusPage>();
         builder.Services.AddTransient<MobileTestRunnerPage>();
+        
+        // Quick field technician pages
+        builder.Services.AddTransient<QuickNotesPage>();
+        builder.Services.AddTransient<QuickTimeClockPage>();
 
 #if DEBUG
         builder.Logging.AddDebug();

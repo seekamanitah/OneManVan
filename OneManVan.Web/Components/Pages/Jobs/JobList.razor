@@ -59,6 +59,11 @@
                         }
                     </select>
                 </div>
+                <div class="col-md-2">
+                    <button class="btn @(showDeleted ? "btn-primary" : "btn-outline-secondary")" @onclick="ToggleShowDeleted">
+                        <i class="bi bi-@(showDeleted ? "eye-slash" : "eye") me-1"></i>@(showDeleted ? "Hide" : "Show") Deleted
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -92,12 +97,16 @@
                         <tbody>
                             @foreach (var job in filteredJobs)
                             {
-                                <tr style="cursor: pointer;" @onclick="@(() => ViewJob(job.Id))">
+                                <tr class="@(job.IsDeleted ? "table-secondary" : "")" style="cursor: pointer;" @onclick="@(() => ViewJob(job.Id))">
                                     <td>
                                         <div class="fw-semibold">@job.Title</div>
                                         @if (!string.IsNullOrEmpty(job.JobNumber))
                                         {
                                             <small class="text-muted">@job.JobNumber</small>
+                                        }
+                                        @if (job.IsDeleted)
+                                        {
+                                            <span class="badge bg-warning text-dark ms-2">Deleted</span>
                                         }
                                     </td>
                                     <td>@(job.Customer?.Name ?? "-")</td>
@@ -151,15 +160,27 @@
                                     </td>
                                     <td class="text-end">
                                         <div class="btn-group btn-group-sm" @onclick:stopPropagation="true">
-                                            <button class="btn btn-outline-primary" @onclick="@(() => ViewJob(job.Id))">
-                                                <i class="bi bi-eye"></i>
-                                            </button>
-                                            <button class="btn btn-outline-secondary" @onclick="@(() => EditJob(job.Id))">
-                                                <i class="bi bi-pencil"></i>
-                                            </button>
-                                            <button class="btn btn-outline-danger" title="Delete" @onclick="@(() => ShowDeleteConfirmation(job))">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
+                                            @if (job.IsDeleted)
+                                            {
+                                                <button class="btn btn-outline-success" title="Restore" @onclick="@(() => RestoreJob(job))">
+                                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                                </button>
+                                                <button class="btn btn-outline-danger" title="Delete Permanently" @onclick="@(() => ShowPermanentDeleteConfirmation(job))">
+                                                    <i class="bi bi-x-circle"></i>
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button class="btn btn-outline-primary" @onclick="@(() => ViewJob(job.Id))">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                                <button class="btn btn-outline-secondary" @onclick="@(() => EditJob(job.Id))">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <button class="btn btn-outline-danger" title="Delete" @onclick="@(() => ShowDeleteConfirmation(job))">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            }
                                         </div>
                                     </td>
                                 </tr>
@@ -197,6 +218,16 @@
     OnConfirm="DeleteJob"
     OnCancel="CancelDelete" />
 
+<DeleteConfirmationModal 
+    IsVisible="showPermanentDeleteModal"
+    EntityType="job"
+    EntityName="@(jobToPermanentlyDelete?.Title)"
+    AdditionalWarning="This will permanently delete the job and cannot be undone."
+    OnConfirm="PermanentlyDeleteJob"
+    OnCancel="CancelPermanentDelete" />
+
+
+
 @code {
 private bool isLoading = true;
 private List<Job> allJobs = new();
@@ -205,6 +236,7 @@ private List<Job> filteredJobs = new();
 private string searchText = "";
 private string filterStatus = "";
 private string filterType = "";
+private bool showDeleted = false;
     
 private bool showDeleteModal = false;
 private Job? jobToDelete;
@@ -222,8 +254,17 @@ private Job? jobToDelete;
 
             await using var db = await DbFactory.CreateDbContextAsync();
             
-            allJobs = await db.Jobs
+            var query = db.Jobs
                 .Include(j => j.Customer)
+                .AsQueryable();
+
+            // Filter deleted jobs unless showing them
+            if (!showDeleted)
+            {
+                query = query.Where(j => !j.IsDeleted);
+            }
+
+            allJobs = await query
                 .OrderByDescending(j => j.ScheduledDate ?? DateTime.MaxValue)
                 .ThenByDescending(j => j.CreatedAt)
                 .AsNoTracking()
@@ -370,7 +411,9 @@ private Job? jobToDelete;
             var job = await db.Jobs.FindAsync(jobToDelete.Id);
             if (job != null)
             {
-                db.Jobs.Remove(job);
+                // Soft delete - mark as deleted instead of removing
+                job.IsDeleted = true;
+                job.DeletedAt = DateTime.UtcNow;
                 await db.SaveChangesAsync();
             }
             
@@ -382,6 +425,73 @@ private Job? jobToDelete;
         {
             showDeleteModal = false;
             jobToDelete = null;
+        }
+    }
+
+    private async Task ToggleShowDeleted()
+    {
+        showDeleted = !showDeleted;
+        await LoadJobsAsync();
+    }
+
+    private async Task RestoreJob(Job job)
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var dbJob = await db.Jobs.FindAsync(job.Id);
+            if (dbJob != null)
+            {
+                dbJob.IsDeleted = false;
+                dbJob.DeletedAt = null;
+                dbJob.DeletedBy = null;
+                await db.SaveChangesAsync();
+            }
+            await LoadJobsAsync();
+        }
+        catch
+        {
+            // Could show error toast
+        }
+    }
+
+    private bool showPermanentDeleteModal = false;
+    private Job? jobToPermanentlyDelete;
+
+    private void ShowPermanentDeleteConfirmation(Job job)
+    {
+        jobToPermanentlyDelete = job;
+        showPermanentDeleteModal = true;
+    }
+
+    private void CancelPermanentDelete()
+    {
+        showPermanentDeleteModal = false;
+        jobToPermanentlyDelete = null;
+    }
+
+    private async Task PermanentlyDeleteJob()
+    {
+        if (jobToPermanentlyDelete == null) return;
+        
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var job = await db.Jobs.FindAsync(jobToPermanentlyDelete.Id);
+            if (job != null)
+            {
+                db.Jobs.Remove(job);
+                await db.SaveChangesAsync();
+            }
+            
+            showPermanentDeleteModal = false;
+            jobToPermanentlyDelete = null;
+            await LoadJobsAsync();
+        }
+        catch
+        {
+            showPermanentDeleteModal = false;
+            jobToPermanentlyDelete = null;
         }
     }
 }

@@ -52,8 +52,8 @@ echo ""
 # Step 5: Wait for SQL Server
 echo "5??  Waiting for SQL Server to be ready..."
 for i in {1..30}; do
-    if docker exec tradeflow-db /opt/mssql-tools18/bin/sqlcmd \
-        -S localhost -U sa -P 'TradeFlow2025!' -C -Q "SELECT 1" &> /dev/null; then
+    if docker exec onemanvan-db /opt/mssql-tools18/bin/sqlcmd \
+        -S localhost -U sa -P 'OneManVan2025!' -C -Q "SELECT 1" &> /dev/null; then
         echo "   ? SQL Server is ready!"
         break
     else
@@ -66,7 +66,7 @@ echo ""
 # Step 6: Check web UI
 echo "6??  Checking web UI startup..."
 sleep 10
-docker logs tradeflow-webui --tail 20
+docker logs onemanvan-webui --tail 20
 echo ""
 
 echo "=================================================="
@@ -78,6 +78,6 @@ echo "   http://$(hostname -I | awk '{print $1}'):7159"
 echo ""
 echo "?? Check status:"
 echo "   docker ps"
-echo "   docker logs tradeflow-webui"
-echo "   docker logs tradeflow-db"
+echo "   docker logs onemanvan-webui"
+echo "   docker logs onemanvan-db"
 echo ""

@@ -141,15 +141,27 @@
                                     </td>
                                     <td class="text-end">
                                         <div class="btn-group btn-group-sm" @onclick:stopPropagation="true">
-                                            <button class="btn btn-outline-primary" @onclick="@(() => ViewInvoice(invoice.Id))">
-                                                <i class="bi bi-eye"></i>
-                                            </button>
-                                            <button class="btn btn-outline-secondary" @onclick="@(() => EditInvoice(invoice.Id))">
-                                                <i class="bi bi-pencil"></i>
-                                            </button>
-                                            <button class="btn btn-outline-danger" title="Delete" @onclick="@(() => ShowDeleteConfirmation(invoice))">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
+                                            @if (invoice.IsDeleted)
+                                            {
+                                                <button class="btn btn-outline-success" title="Restore" @onclick="@(() => RestoreInvoice(invoice))">
+                                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                                </button>
+                                                <button class="btn btn-outline-danger" title="Delete Permanently" @onclick="@(() => ShowPermanentDeleteConfirmation(invoice))">
+                                                    <i class="bi bi-x-circle"></i>
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button class="btn btn-outline-primary" @onclick="@(() => ViewInvoice(invoice.Id))">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                                <button class="btn btn-outline-secondary" @onclick="@(() => EditInvoice(invoice.Id))">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <button class="btn btn-outline-danger" title="Delete" @onclick="@(() => ShowDeleteConfirmation(invoice))">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            }
                                         </div>
                                     </td>
                                 </tr>
@@ -179,6 +191,14 @@
     AdditionalWarning="Payment records may be affected."
     OnConfirm="DeleteInvoice"
     OnCancel="CancelDelete" />
+
+<DeleteConfirmationModal 
+    IsVisible="showPermanentDeleteModal"
+    EntityType="invoice"
+    EntityName="@(invoiceToPermanentlyDelete?.InvoiceNumber)"
+    AdditionalWarning="This will permanently delete the invoice and cannot be undone."
+    OnConfirm="PermanentlyDeleteInvoice"
+    OnCancel="CancelPermanentDelete" />
 
 @code {
 private bool isLoading = true;
@@ -314,7 +334,9 @@ private async Task LoadInvoicesAsync()
             var invoice = await db.Invoices.FindAsync(invoiceToDelete.Id);
             if (invoice != null)
             {
-                db.Invoices.Remove(invoice);
+                // Soft delete - mark as deleted instead of removing
+                invoice.IsDeleted = true;
+                invoice.DeletedAt = DateTime.UtcNow;
                 await db.SaveChangesAsync();
             }
             
@@ -326,6 +348,67 @@ private async Task LoadInvoicesAsync()
         {
             showDeleteModal = false;
             invoiceToDelete = null;
+        }
+    }
+
+    private async Task RestoreInvoice(Invoice invoice)
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var dbInvoice = await db.Invoices.FindAsync(invoice.Id);
+            if (dbInvoice != null)
+            {
+                dbInvoice.IsDeleted = false;
+                dbInvoice.DeletedAt = null;
+                dbInvoice.DeletedBy = null;
+                await db.SaveChangesAsync();
+            }
+            await LoadInvoicesAsync();
+        }
+        catch
+        {
+            // Could show error toast
+        }
+    }
+
+    private bool showPermanentDeleteModal = false;
+    private Invoice? invoiceToPermanentlyDelete;
+
+    private void ShowPermanentDeleteConfirmation(Invoice invoice)
+    {
+        invoiceToPermanentlyDelete = invoice;
+        showPermanentDeleteModal = true;
+    }
+
+    private void CancelPermanentDelete()
+    {
+        showPermanentDeleteModal = false;
+        invoiceToPermanentlyDelete = null;
+    }
+
+    private async Task PermanentlyDeleteInvoice()
+    {
+        if (invoiceToPermanentlyDelete == null) return;
+        
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var invoice = await db.Invoices.FindAsync(invoiceToPermanentlyDelete.Id);
+            if (invoice != null)
+            {
+                db.Invoices.Remove(invoice);
+                await db.SaveChangesAsync();
+            }
+            
+            showPermanentDeleteModal = false;
+            invoiceToPermanentlyDelete = null;
+            await LoadInvoicesAsync();
+        }
+        catch
+        {
+            showPermanentDeleteModal = false;
+            invoiceToPermanentlyDelete = null;
         }
     }
 }

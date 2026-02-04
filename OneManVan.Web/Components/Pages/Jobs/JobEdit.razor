@@ -1,10 +1,12 @@
 @page "/jobs/new"
 @page "/jobs/{Id:int}/edit"
+@using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.EntityFrameworkCore
 @using OneManVan.Shared.Data
 @using OneManVan.Shared.Models
 @using OneManVan.Shared.Models.Enums
 @using OneManVan.Shared.Services
+@implements IDisposable
 
 @inject IDbContextFactory<OneManVanDbContext> DbFactory
 @inject NavigationManager Navigation
@@ -36,7 +38,11 @@
             }
             else
             {
-                <EditForm Model="@model" OnValidSubmit="HandleSubmit">
+                <Microsoft.AspNetCore.Components.Routing.NavigationLock 
+                    ConfirmExternalNavigation="@isDirty" 
+                    OnBeforeInternalNavigation="OnBeforeInternalNavigation" />
+                
+                <EditForm EditContext="@editContext" OnValidSubmit="HandleSubmit">
                     <DataAnnotationsValidator />
 
                     <!-- Basic Info -->
@@ -294,19 +300,36 @@
 </div>
 
 @code {
-    [Parameter]
-    public int? Id { get; set; }
+[Parameter]
+public int? Id { get; set; }
 
-    private bool IsNew => !Id.HasValue;
-    private bool isLoading = true;
-    private bool isSaving = false;
-    private string errorMessage = "";
-    private Job model = new();
-    private List<Customer> customers = new();
-    private List<Site> sites = new();
-    private List<Asset> assets = new();
-    private List<MaterialList> materialLists = new();
-    private int? selectedMaterialListId;
+private bool IsNew => !Id.HasValue;
+private bool isLoading = true;
+private bool isSaving = false;
+private bool isDirty = false;
+private string errorMessage = "";
+private Job model = new();
+private EditContext? editContext;
+private List<Customer> customers = new();
+private List<Site> sites = new();
+private List<Asset> assets = new();
+private List<MaterialList> materialLists = new();
+private int? selectedMaterialListId;
+
+private async Task OnBeforeInternalNavigation(Microsoft.AspNetCore.Components.Routing.LocationChangingContext context)
+{
+    if (isDirty && !isSaving)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            "You have unsaved changes. Are you sure you want to leave this page?");
+        if (!confirmed)
+        {
+            context.PreventNavigation();
+        }
+    }
+}
+
+private void OnFieldChanged(object? sender, FieldChangedEventArgs e) => isDirty = true;
 
     protected override async Task OnInitializedAsync()
     {
@@ -333,6 +356,10 @@
         {
             await LoadJobAsync();
         }
+
+        // Initialize EditContext for dirty tracking
+        editContext = new EditContext(model);
+        editContext.OnFieldChanged += OnFieldChanged;
     }
 
     private async Task LoadLookupsAsync()
@@ -512,6 +539,9 @@
                 _ = NotificationService.SendJobScheduledAsync(model);
             }
 
+            // Reset dirty flag before navigation
+            isDirty = false;
+
             Navigation.NavigateTo(IsNew ? "/jobs" : $"/jobs/{model.Id}");
         }
         catch (Exception ex)
@@ -646,11 +676,49 @@
             db.Invoices.Add(invoice);
             await db.SaveChangesAsync();
 
+            // Copy line items from source estimate if job was created from an estimate
+            if (model.EstimateId.HasValue)
+            {
+                var estimate = await db.Estimates
+                    .Include(e => e.Lines)
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(e => e.Id == model.EstimateId.Value);
+
+                if (estimate?.Lines != null && estimate.Lines.Any())
+                {
+                    foreach (var estimateLine in estimate.Lines)
+                    {
+                        var invoiceLine = new InvoiceLineItem
+                        {
+                            InvoiceId = invoice.Id,
+                            Description = estimateLine.Description,
+                            Quantity = estimateLine.Quantity,
+                            UnitPrice = estimateLine.UnitPrice,
+                            Notes = estimateLine.Notes,
+                            Source = estimateLine.Type == LineItemType.Labor 
+                                ? LineItemSource.Labor 
+                                : LineItemSource.Custom,
+                            CreatedAt = DateTime.UtcNow
+                        };
+                        db.InvoiceLineItems.Add(invoiceLine);
+                    }
+                    await db.SaveChangesAsync();
+                }
+            }
+
             Navigation.NavigateTo($"/invoices/{invoice.Id}/edit");
         }
         catch (Exception ex)
         {
             errorMessage = $"Failed to create invoice: {ex.Message}";
+        }
+    }
+
+    public void Dispose()
+    {
+        if (editContext != null)
+        {
+            editContext.OnFieldChanged -= OnFieldChanged;
         }
     }
 }

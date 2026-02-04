@@ -1,0 +1,49 @@
+@* DEPRECATED: Use the built-in Microsoft.AspNetCore.Components.Routing.NavigationLock instead *@
+@* This component was renamed to avoid conflict with the framework NavigationLock *@
+
+@implements IDisposable
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+
+@code {
+    [Parameter]
+    public bool IsDirty { get; set; }
+
+    [Parameter]
+    public string ConfirmationMessage { get; set; } = "You have unsaved changes. Are you sure you want to leave?";
+
+    [Parameter]
+    public EventCallback OnConfirmNavigation { get; set; }
+
+    private IDisposable? _locationChangingRegistration;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _locationChangingRegistration = NavigationManager.RegisterLocationChangingHandler(OnLocationChanging);
+        }
+    }
+
+    private async ValueTask OnLocationChanging(LocationChangingContext context)
+    {
+        if (IsDirty)
+        {
+            var confirmed = await JS.InvokeAsync<bool>("confirm", ConfirmationMessage);
+            
+            if (!confirmed)
+            {
+                context.PreventNavigation();
+            }
+            else if (OnConfirmNavigation.HasDelegate)
+            {
+                await OnConfirmNavigation.InvokeAsync();
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        _locationChangingRegistration?.Dispose();
+    }
+}

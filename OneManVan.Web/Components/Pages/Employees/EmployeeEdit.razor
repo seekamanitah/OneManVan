@@ -318,11 +318,11 @@
                     <div class="card border-0 shadow-sm">
                         <div class="card-body">
                             <div class="d-flex justify-content-between">
-                                <button type="button" class="btn btn-outline-secondary" @onclick="Cancel">Cancel</button>
+                                <button type="button" class="btn btn-outline-secondary" @onclick="Cancel" disabled="@isSaving">Cancel</button>
                                 <div class="d-flex gap-2">
                                     @if (!IsNew)
                                     {
-                                        <button type="button" class="btn btn-outline-danger" @onclick="DeleteEmployee">
+                                        <button type="button" class="btn btn-outline-danger" @onclick="DeleteEmployee" disabled="@isSaving">
                                             <i class="bi bi-trash me-2"></i>Delete
                                         </button>
                                     }
@@ -331,7 +331,10 @@
                                         {
                                             <span class="spinner-border spinner-border-sm me-2"></span>
                                         }
-                                        <i class="bi bi-check-circle me-2"></i>
+                                        else
+                                        {
+                                            <i class="bi bi-check-circle me-2"></i>
+                                        }
                                         @(IsNew ? "Add Employee" : "Save Changes")
                                     </button>
                                 </div>

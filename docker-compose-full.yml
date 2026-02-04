@@ -5,14 +5,14 @@ services:
   # SQL Server Database
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: tradeflow-db
-    hostname: tradeflow-sql
+    container_name: onemanvan-db
+    hostname: onemanvan-sql
     user: "0:0"  # Run as root for Proxmox mount compatibility
     ports:
       - "1433:1433"
     environment:
       - ACCEPT_EULA=Y
-      - MSSQL_SA_PASSWORD=TradeFlow2025!
+      - MSSQL_SA_PASSWORD=OneManVan2025!
       - MSSQL_PID=Express
       - MSSQL_TCP_PORT=1433
       - MSSQL_DATA_DIR=/var/opt/mssql/data
@@ -24,10 +24,10 @@ services:
       - /media/onemanvanDB/backups:/var/opt/mssql/backup
       - ./docker/init:/docker-entrypoint-initdb.d
     networks:
-      - tradeflow-network
+      - onemanvan-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'TradeFlow2025!' -Q 'SELECT 1' -C -b"]
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'OneManVan2025!' -Q 'SELECT 1' -C -b"]
       interval: 15s
       timeout: 10s
       retries: 5
@@ -38,22 +38,22 @@ services:
     build:
       context: .
       dockerfile: OneManVan.Web/Dockerfile
-    container_name: tradeflow-webui
-    hostname: tradeflow-web
+    container_name: onemanvan-webui
+    hostname: onemanvan-web
     ports:
       - "5000:8080"     # HTTP
       - "5001:8081"     # HTTPS (if configured)
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:8080
-      - ConnectionStrings__BusinessConnection=Server=sqlserver,1433;Database=TradeFlowFSM;User Id=sa;Password=TradeFlow2025!;TrustServerCertificate=True;Encrypt=False;
+      - ConnectionStrings__BusinessConnection=Server=sqlserver,1433;Database=OneManVanDB;User Id=sa;Password=OneManVan2025!;TrustServerCertificate=True;Encrypt=False;
     volumes:
-      - webui-data:/app/AppData
+      - /media/onemanvanDB/webui-data:/app/AppData
     depends_on:
       sqlserver:
         condition: service_healthy
     networks:
-      - tradeflow-network
+      - onemanvan-network
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
@@ -63,16 +63,16 @@ services:
       start_period: 40s
 
 volumes:
-  tradeflow-data:
-    name: tradeflow-sqldata
-  tradeflow-log:
-    name: tradeflow-sqllogs
-  tradeflow-backup:
-    name: tradeflow-backups
+  onemanvan-data:
+    name: onemanvan-sqldata
+  onemanvan-log:
+    name: onemanvan-sqllogs
+  onemanvan-backup:
+    name: onemanvan-backups
   webui-data:
-    name: tradeflow-webui-data
+    name: onemanvan-webui-data
 
 networks:
-  tradeflow-network:
-    name: tradeflow-net
+  onemanvan-network:
+    name: onemanvan-net
     driver: bridge

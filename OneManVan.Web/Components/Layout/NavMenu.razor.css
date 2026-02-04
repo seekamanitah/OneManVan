@@ -123,3 +123,23 @@
         overflow-y: auto;
     }
 }
+
+/* Global Search Styles */
+.search-results-dropdown {
+    position: absolute;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+}
+
+.search-result-item {
+    transition: background-color 0.15s ease;
+}
+
+.search-result-item:hover {
+    background-color: #f8f9fa !important;
+}
+
+.search-result-item:last-child {
+    border-bottom: none !important;
+}

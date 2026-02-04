@@ -92,6 +92,11 @@
                         <i class="bi bi-funnel me-2"></i>Filter
                     </button>
                 </div>
+                <div class="col-md-2">
+                    <button class="btn @(showDeleted ? "btn-primary" : "btn-outline-secondary") w-100" @onclick="ToggleShowDeleted">
+                        <i class="bi bi-@(showDeleted ? "eye-slash" : "eye") me-1"></i>@(showDeleted ? "Hide" : "Show") Deleted
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -130,9 +135,13 @@
                         <tbody>
                             @foreach (var estimate in filteredEstimates)
                             {
-                                <tr style="cursor: pointer;" @onclick="@(() => ViewEstimate(estimate.Id))">
+                                <tr class="@(estimate.IsDeleted ? "table-secondary" : "")" style="cursor: pointer;" @onclick="@(() => ViewEstimate(estimate.Id))">
                                     <td>
                                         <span class="badge bg-secondary">@estimate.Title</span>
+                                        @if (estimate.IsDeleted)
+                                        {
+                                            <span class="badge bg-warning text-dark ms-2">Deleted</span>
+                                        }
                                     </td>
                                     <td>@estimate.Customer?.Name</td>
                                     <td>@estimate.CreatedAt.ToString("MMM dd, yyyy")</td>
@@ -152,15 +161,27 @@
                                     </td>
                                     <td class="text-end">
                                         <div class="btn-group btn-group-sm" @onclick:stopPropagation="true">
-                                            <button class="btn btn-outline-primary" @onclick="@(() => ViewEstimate(estimate.Id))">
-                                                <i class="bi bi-eye"></i>
-                                            </button>
-                                            <button class="btn btn-outline-secondary" @onclick="@(() => EditEstimate(estimate.Id))">
-                                                <i class="bi bi-pencil"></i>
-                                            </button>
-                                            <button class="btn btn-outline-danger" title="Delete" @onclick="@(() => ShowDeleteConfirmation(estimate))">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
+                                            @if (estimate.IsDeleted)
+                                            {
+                                                <button class="btn btn-outline-success" title="Restore" @onclick="@(() => RestoreEstimate(estimate))">
+                                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                                </button>
+                                                <button class="btn btn-outline-danger" title="Delete Permanently" @onclick="@(() => ShowPermanentDeleteConfirmation(estimate))">
+                                                    <i class="bi bi-x-circle"></i>
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button class="btn btn-outline-primary" @onclick="@(() => ViewEstimate(estimate.Id))">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                                <button class="btn btn-outline-secondary" @onclick="@(() => EditEstimate(estimate.Id))">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <button class="btn btn-outline-danger" title="Delete" @onclick="@(() => ShowDeleteConfirmation(estimate))">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            }
                                         </div>
                                     </td>
                                 </tr>
@@ -205,6 +226,14 @@
     OnConfirm="DeleteEstimate"
     OnCancel="CancelDelete" />
 
+<DeleteConfirmationModal 
+    IsVisible="showPermanentDeleteModal"
+    EntityType="estimate"
+    EntityName="@(estimateToPermanentlyDelete?.Title)"
+    AdditionalWarning="This will permanently delete the estimate and cannot be undone."
+    OnConfirm="PermanentlyDeleteEstimate"
+    OnCancel="CancelPermanentDelete" />
+
 @code {
     private bool isLoading = true;
     private string errorMessage = "";
@@ -214,6 +243,7 @@
     private string searchText = "";
     private string filterStatus = "";
     private int displayCount = 50;
+    private bool showDeleted = false;
 
     // Summary stats
     private decimal totalValue = 0;
@@ -238,17 +268,27 @@
 
             await using var db = await DbFactory.CreateDbContextAsync();
             
-            allEstimates = await db.Estimates
+            var query = db.Estimates
                 .Include(e => e.Customer)
+                .AsQueryable();
+
+            // Filter deleted estimates unless showing them
+            if (!showDeleted)
+            {
+                query = query.Where(e => !e.IsDeleted);
+            }
+
+            allEstimates = await query
                 .OrderByDescending(e => e.CreatedAt)
                 .AsNoTracking()
                 .ToListAsync();
 
-            // Calculate stats
-            totalValue = allEstimates.Where(e => e.Status == EstimateStatus.Sent || e.Status == EstimateStatus.Accepted).Sum(e => e.Total);
-            pendingCount = allEstimates.Count(e => e.Status == EstimateStatus.Sent);
-            acceptedCount = allEstimates.Count(e => e.Status == EstimateStatus.Accepted);
-            expiredCount = allEstimates.Count(e => e.Status == EstimateStatus.Expired || (e.ExpiresAt.HasValue && e.ExpiresAt < DateTime.Now));
+            // Calculate stats (only for non-deleted)
+            var activeEstimates = allEstimates.Where(e => !e.IsDeleted).ToList();
+            totalValue = activeEstimates.Where(e => e.Status == EstimateStatus.Sent || e.Status == EstimateStatus.Accepted).Sum(e => e.Total);
+            pendingCount = activeEstimates.Count(e => e.Status == EstimateStatus.Sent);
+            acceptedCount = activeEstimates.Count(e => e.Status == EstimateStatus.Accepted);
+            expiredCount = activeEstimates.Count(e => e.Status == EstimateStatus.Expired || (e.ExpiresAt.HasValue && e.ExpiresAt < DateTime.Now));
 
             ApplyFilters();
         }
@@ -349,7 +389,9 @@
             var estimate = await db.Estimates.FindAsync(estimateToDelete.Id);
             if (estimate != null)
             {
-                db.Estimates.Remove(estimate);
+                // Soft delete - mark as deleted instead of removing
+                estimate.IsDeleted = true;
+                estimate.DeletedAt = DateTime.UtcNow;
                 await db.SaveChangesAsync();
             }
             
@@ -361,6 +403,73 @@
         {
             showDeleteModal = false;
             estimateToDelete = null;
+        }
+    }
+
+    private async Task ToggleShowDeleted()
+    {
+        showDeleted = !showDeleted;
+        await LoadEstimatesAsync();
+    }
+
+    private async Task RestoreEstimate(Estimate estimate)
+    {
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var dbEstimate = await db.Estimates.FindAsync(estimate.Id);
+            if (dbEstimate != null)
+            {
+                dbEstimate.IsDeleted = false;
+                dbEstimate.DeletedAt = null;
+                dbEstimate.DeletedBy = null;
+                await db.SaveChangesAsync();
+            }
+            await LoadEstimatesAsync();
+        }
+        catch
+        {
+            // Could show error toast
+        }
+    }
+
+    private bool showPermanentDeleteModal = false;
+    private Estimate? estimateToPermanentlyDelete;
+
+    private void ShowPermanentDeleteConfirmation(Estimate estimate)
+    {
+        estimateToPermanentlyDelete = estimate;
+        showPermanentDeleteModal = true;
+    }
+
+    private void CancelPermanentDelete()
+    {
+        showPermanentDeleteModal = false;
+        estimateToPermanentlyDelete = null;
+    }
+
+    private async Task PermanentlyDeleteEstimate()
+    {
+        if (estimateToPermanentlyDelete == null) return;
+        
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var estimate = await db.Estimates.FindAsync(estimateToPermanentlyDelete.Id);
+            if (estimate != null)
+            {
+                db.Estimates.Remove(estimate);
+                await db.SaveChangesAsync();
+            }
+            
+            showPermanentDeleteModal = false;
+            estimateToPermanentlyDelete = null;
+            await LoadEstimatesAsync();
+        }
+        catch
+        {
+            showPermanentDeleteModal = false;
+            estimateToPermanentlyDelete = null;
         }
     }
 }

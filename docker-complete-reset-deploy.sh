@@ -109,7 +109,7 @@ sleep 10
 
 # Wait for SQL Server
 echo "Waiting for SQL Server..."
-until docker exec tradeflow-sqlserver /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P 'TradeFlow2025!' -Q "SELECT 1" &> /dev/null
+until docker exec onemanvan-db /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P 'OneManVan2025!' -Q "SELECT 1" &> /dev/null
 do
     echo -n "."
     sleep 2
@@ -137,7 +137,7 @@ echo "Access your application:"
 echo -e "  ${BLUE}Web UI:${NC}      http://localhost:7159"
 echo -e "  ${BLUE}SQL Server:${NC}  localhost:1433"
 echo -e "  ${BLUE}Username:${NC}    sa"
-echo -e "  ${BLUE}Password:${NC}    TradeFlow2025!"
+echo -e "  ${BLUE}Password:${NC}    OneManVan2025!"
 echo ""
 echo "View logs:"
 echo "  docker compose logs -f"

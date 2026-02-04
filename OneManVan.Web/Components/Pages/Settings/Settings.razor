@@ -774,11 +774,11 @@
                             <div class="col-md-4 col-lg-3">
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" 
-                                           id="export_@entity.Key" 
+                                           id="@($"export_{entity.Key}")" 
                                            checked="@entity.Value.Selected"
                                            @onchange="@(e => entity.Value.Selected = (bool)(e.Value ?? false))" />
-                                    <label class="form-check-label" for="export_@entity.Key">
-                                        <i class="bi @entity.Value.Icon me-1"></i>@entity.Value.Name
+                                    <label class="form-check-label" for="@($"export_{entity.Key}")">
+                                        @entity.Value.Name
                                     </label>
                                 </div>
                             </div>

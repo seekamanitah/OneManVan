@@ -24,6 +24,25 @@ public class Invoice
 
     public InvoiceStatus Status { get; set; } = InvoiceStatus.Draft;
 
+    /// <summary>
+    /// Pricing type determines how the invoice is structured (flat rate vs itemized).
+    /// </summary>
+    public InvoicePricingType PricingType { get; set; } = InvoicePricingType.MaterialAndLabor;
+
+    /// <summary>
+    /// Flat rate amount when PricingType is FlatRate.
+    /// Must be a positive number.
+    /// </summary>
+    [Column(TypeName = "decimal(10,2)")]
+    [Range(0.01, 999999.99, ErrorMessage = "Flat rate amount must be a positive number")]
+    public decimal FlatRateAmount { get; set; }
+
+    /// <summary>
+    /// Description for flat rate pricing.
+    /// </summary>
+    [MaxLength(500)]
+    public string? FlatRateDescription { get; set; }
+
     public DateTime InvoiceDate { get; set; } = DateTime.UtcNow;
 
     public DateTime DueDate { get; set; }

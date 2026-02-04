@@ -37,7 +37,10 @@
                                BackgroundColor="{AppThemeBinding Light={StaticResource LightCard}, Dark={StaticResource DarkCard}}"
                                BorderColor="Transparent">
                             <VerticalStackLayout Spacing="8">
-                                <Label Text="??" FontSize="24"/>
+                                <Label Text="$"
+                                       FontSize="24"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource Primary}"/>
                                 <Label x:Name="RevenueLabel"
                                        Text="$0"
                                        FontSize="24"
@@ -57,7 +60,10 @@
                                BackgroundColor="{AppThemeBinding Light={StaticResource LightCard}, Dark={StaticResource DarkCard}}"
                                BorderColor="Transparent">
                             <VerticalStackLayout Spacing="8">
-                                <Label Text="??" FontSize="24"/>
+                                <Label Text="JOBS"
+                                       FontSize="12"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource Success}"/>
                                 <Label x:Name="JobsLabel"
                                        Text="0"
                                        FontSize="24"
@@ -77,7 +83,10 @@
                                BackgroundColor="{AppThemeBinding Light={StaticResource LightCard}, Dark={StaticResource DarkCard}}"
                                BorderColor="Transparent">
                             <VerticalStackLayout Spacing="8">
-                                <Label Text="??" FontSize="24"/>
+                                <Label Text="CUST"
+                                       FontSize="12"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource Info}"/>
                                 <Label x:Name="CustomersLabel"
                                        Text="0"
                                        FontSize="24"
@@ -97,7 +106,10 @@
                                BackgroundColor="{AppThemeBinding Light={StaticResource LightCard}, Dark={StaticResource DarkCard}}"
                                BorderColor="Transparent">
                             <VerticalStackLayout Spacing="8">
-                                <Label Text="??" FontSize="24"/>
+                                <Label Text="INV"
+                                       FontSize="12"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource Warning}"/>
                                 <Label x:Name="InvoicesLabel"
                                        Text="0"
                                        FontSize="24"
@@ -185,33 +197,55 @@
                         </CollectionView>
                     </VerticalStackLayout>
 
-                    <!-- Quick Actions -->
+                    <!-- Quick Actions - Field Tech Focused -->
                     <VerticalStackLayout Spacing="12">
                         <Label Text="Quick Actions"
                                FontSize="20"
                                FontAttributes="Bold"
                                TextColor="{AppThemeBinding Light={StaticResource Gray900}, Dark={StaticResource Gray50}}"/>
                         
+                        <!-- Primary Field Actions -->
                         <Grid ColumnDefinitions="*,*" ColumnSpacing="12" RowSpacing="12">
                             <Button Grid.Column="0"
-                                    Text="New Customer"
-                                    BackgroundColor="{StaticResource Primary}"
-                                    TextColor="White"
-                                    CornerRadius="12"
-                                    HeightRequest="50"
-                                    FontSize="14"
-                                    FontAttributes="Bold"
-                                    Clicked="OnNewCustomerClicked"/>
-                            
-                            <Button Grid.Column="1"
-                                    Text="New Job"
+                                    Text="Clock In/Out"
                                     BackgroundColor="{StaticResource Success}"
                                     TextColor="White"
                                     CornerRadius="12"
+                                    HeightRequest="60"
+                                    FontSize="16"
+                                    FontAttributes="Bold"
+                                    Clicked="OnQuickClockClicked"/>
+                            
+                            <Button Grid.Column="1"
+                                    Text="Quick Note"
+                                    BackgroundColor="{StaticResource Primary}"
+                                    TextColor="White"
+                                    CornerRadius="12"
+                                    HeightRequest="60"
+                                    FontSize="16"
+                                    FontAttributes="Bold"
+                                    Clicked="OnQuickNoteClicked"/>
+                        </Grid>
+                        
+                        <!-- Secondary Actions -->
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                            <Button Grid.Column="0"
+                                    Text="New Job"
+                                    BackgroundColor="{StaticResource Info}"
+                                    TextColor="White"
+                                    CornerRadius="12"
                                     HeightRequest="50"
                                     FontSize="14"
-                                    FontAttributes="Bold"
                                     Clicked="OnNewJobClicked"/>
+                            
+                            <Button Grid.Column="1"
+                                    Text="New Customer"
+                                    BackgroundColor="{StaticResource Warning}"
+                                    TextColor="White"
+                                    CornerRadius="12"
+                                    HeightRequest="50"
+                                    FontSize="14"
+                                    Clicked="OnNewCustomerClicked"/>
                         </Grid>
                     </VerticalStackLayout>
 

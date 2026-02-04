@@ -15,6 +15,27 @@ public enum InvoiceStatus
 }
 
 /// <summary>
+/// Pricing type for invoices - determines how the invoice is structured.
+/// </summary>
+public enum InvoicePricingType
+{
+    /// <summary>
+    /// Itemized breakdown of materials and labor (default)
+    /// </summary>
+    MaterialAndLabor = 0,
+    
+    /// <summary>
+    /// Single flat rate price (no breakdown shown)
+    /// </summary>
+    FlatRate = 1,
+    
+    /// <summary>
+    /// Time and materials - hourly rate plus materials at cost
+    /// </summary>
+    TimeAndMaterials = 2
+}
+
+/// <summary>
 /// Payment method for transactions.
 /// </summary>
 public enum PaymentMethod

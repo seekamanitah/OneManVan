@@ -15,6 +15,7 @@
             <!-- Converters -->
             <converters:InitialsConverter x:Key="InitialsConverter"/>
             <converters:StringToBoolConverter x:Key="StringToBoolConverter"/>
+            <converters:StringNotNullConverter x:Key="StringNotNullConverter"/>
             <converters:NullToBoolConverter x:Key="NullToBoolConverter"/>
             <converters:InverseBoolConverter x:Key="InverseBoolConverter"/>
             <converters:FuelTypeIconConverter x:Key="FuelTypeIconConverter"/>

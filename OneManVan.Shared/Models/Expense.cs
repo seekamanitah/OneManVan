@@ -54,7 +54,12 @@ public class Expense
     public decimal TotalAmount { get; set; }
 
     /// <summary>
-    /// Vendor/Supplier name.
+    /// Link to Company (vendor/supplier) from the Companies list.
+    /// </summary>
+    public int? VendorCompanyId { get; set; }
+
+    /// <summary>
+    /// Vendor/Supplier name (for manual entry or when not linked to a Company).
     /// </summary>
     [MaxLength(200)]
     public string? VendorName { get; set; }
@@ -137,6 +142,9 @@ public class Expense
 
     [ForeignKey("EmployeeId")]
     public virtual Employee? Employee { get; set; }
+
+    [ForeignKey("VendorCompanyId")]
+    public virtual Company? VendorCompany { get; set; }
 
     // === Computed Properties ===
     

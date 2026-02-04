@@ -1,6 +1,6 @@
 param(
-  [string]$ImageName = "tradeflow-webui:latest",
-  [string]$OutputTar = "tradeflow-webui.tar"
+  [string]$ImageName = "onemanvan-webui:latest",
+  [string]$OutputTar = "onemanvan-webui.tar"
 )
 
 $ErrorActionPreference = 'Stop'

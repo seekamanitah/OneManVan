@@ -231,6 +231,24 @@ public class Customer
     [MaxLength(500)]
     public string? Tags { get; set; }
 
+    // === Soft Delete ===
+
+    /// <summary>
+    /// Indicates if the customer has been soft-deleted.
+    /// </summary>
+    public bool IsDeleted { get; set; } = false;
+
+    /// <summary>
+    /// Date/time when the customer was soft-deleted.
+    /// </summary>
+    public DateTime? DeletedAt { get; set; }
+
+    /// <summary>
+    /// User who soft-deleted the customer.
+    /// </summary>
+    [MaxLength(100)]
+    public string? DeletedBy { get; set; }
+
     // === Navigation Properties ===
 
     public ICollection<Site> Sites { get; set; } = [];

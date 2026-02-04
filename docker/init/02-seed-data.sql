@@ -1,7 +1,7 @@
--- TradeFlow FSM - Seed Data (Optional)
+-- OneManVan - Seed Data (Optional)
 -- This script runs after database creation
 
-USE TradeFlowFSM;
+USE OneManVanDB;
 GO
 
 -- Database is now ready for Entity Framework Core migrations

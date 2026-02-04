@@ -1,0 +1,2 @@
+@* This file has been deprecated - use the built-in Microsoft.AspNetCore.Components.Routing.NavigationLock instead *@
+@* DO NOT USE THIS COMPONENT - IT IS KEPT ONLY TO PREVENT BUILD ERRORS *@

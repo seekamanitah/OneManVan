@@ -52,6 +52,19 @@ public class NullToBoolConverter : IValueConverter
 }
 
 /// <summary>
+/// Converts a string to boolean (true if not null or whitespace).
+/// Used for visibility bindings based on string content.
+/// </summary>
+public class StringNotNullConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => !string.IsNullOrWhiteSpace(value?.ToString());
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => throw new NotImplementedException();
+}
+
+/// <summary>
 /// Inverts a boolean value.
 /// </summary>
 public class InverseBoolConverter : IValueConverter
@@ -511,13 +524,16 @@ public class BoolToVisibilityConverter : IValueConverter
 
 /// <summary>
 /// Converts decimal balance to formatted currency string.
+/// Uses en-US culture explicitly to ensure consistent $ symbol display.
 /// </summary>
 public class CurrencyConverter : IValueConverter
 {
+    private static readonly CultureInfo UsCulture = new CultureInfo("en-US");
+
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         if (value is decimal d)
-            return d.ToString("C2");
+            return d.ToString("C2", UsCulture);
         return "$0.00";
     }
 

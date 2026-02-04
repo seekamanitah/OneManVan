@@ -58,6 +58,24 @@ public class Estimate
 
     public DateTime? AcceptedAt { get; set; }
 
+    // === Soft Delete ===
+
+    /// <summary>
+    /// Indicates if the estimate has been soft-deleted.
+    /// </summary>
+    public bool IsDeleted { get; set; } = false;
+
+    /// <summary>
+    /// When the estimate was deleted.
+    /// </summary>
+    public DateTime? DeletedAt { get; set; }
+
+    /// <summary>
+    /// Who deleted the estimate.
+    /// </summary>
+    [MaxLength(200)]
+    public string? DeletedBy { get; set; }
+
     // Navigation properties
     public Customer Customer { get; set; } = null!;
 
