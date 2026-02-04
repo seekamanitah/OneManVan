@@ -973,5 +973,22 @@ public partial class SettingsPage : ContentPage
         }
     }
 
+    private async void OnExportAllDataClicked(object sender, EventArgs e)
+    {
+        await DisplayAlertAsync("Export Feature", 
+            "CSV export is available for individual entity types.\n\n" +
+            "For full database export, use:\n" +
+            "Settings ? Database Management ? Create Backup", 
+            "OK");
+    }
+
+    private async void OnImportAllDataClicked(object sender, EventArgs e)
+    {
+        await DisplayAlertAsync("Import Feature", 
+            "For data import, use:\n" +
+            "Settings ? Database ? Sync from Server", 
+            "OK");
+    }
+
     #endregion
 }

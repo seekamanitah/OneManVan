@@ -175,6 +175,45 @@ public partial class ServiceAgreementListPage : ContentPage
     {
         await Shell.Current.GoToAsync("AddServiceAgreement");
     }
+
+    private async void OnAgreementTapped(object sender, EventArgs e)
+    {
+        if (sender is Border border && border.BindingContext is ServiceAgreementViewModel vm)
+        {
+            var agreement = _allAgreements.FirstOrDefault(a => a.Id == vm.Id);
+            if (agreement == null) return;
+
+            var details = $"Customer: {agreement.Customer?.Name}\n" +
+                         $"Type: {agreement.TypeDisplay}\n" +
+                         $"Status: {agreement.StatusDisplay}\n\n" +
+                         $"Start: {agreement.StartDate:MMM dd, yyyy}\n" +
+                         $"End: {agreement.EndDate:MMM dd, yyyy}\n\n" +
+                         $"Visits: {agreement.VisitsUsed} / {agreement.IncludedVisitsPerYear} used\n" +
+                         $"Annual Price: ${agreement.AnnualPrice:N2}\n" +
+                         $"Repair Discount: {agreement.RepairDiscountPercent}%\n\n" +
+                         $"Includes:\n" +
+                         $"  - AC Tune-up: {(agreement.IncludesAcTuneUp ? "Yes" : "No")}\n" +
+                         $"  - Heating Tune-up: {(agreement.IncludesHeatingTuneUp ? "Yes" : "No")}\n" +
+                         $"  - Filter Replacement: {(agreement.IncludesFilterReplacement ? "Yes" : "No")}\n" +
+                         $"  - Priority Service: {(agreement.PriorityService ? "Yes" : "No")}";
+
+            if (agreement.NextMaintenanceDue.HasValue)
+            {
+                details += $"\n\nNext Maintenance: {agreement.NextMaintenanceDue.Value:MMM dd, yyyy}";
+            }
+
+            var action = await DisplayActionSheetAsync($"Agreement: {agreement.Name}", "Close", null, "Edit", "View Details");
+            
+            if (action == "Edit")
+            {
+                await Shell.Current.GoToAsync($"AddServiceAgreement?id={agreement.Id}");
+            }
+            else if (action == "View Details")
+            {
+                await DisplayAlertAsync($"Agreement: {agreement.Name}", details, "OK");
+            }
+        }
+    }
 }
 
 public enum ServiceAgreementFilter
